@@ -1,0 +1,14 @@
+# Build output
+frontend/dist/
+build/bin/
+
+# Dependencies
+frontend/node_modules/
+
+# Go
+*.test
+
+# Editor
+.DS_Store
+*.swp
+*.swo
