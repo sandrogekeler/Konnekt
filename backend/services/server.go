@@ -6,11 +6,19 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
+	"konnekt/backend/models"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+)
+
+var (
+	rePlayerJoin  = regexp.MustCompile(`]: (\w+) joined the game`)
+	rePlayerLeave = regexp.MustCompile(`]: (\w+) left the game`)
 )
 
 type ServerService struct {
@@ -21,10 +29,15 @@ type ServerService struct {
 	running   bool
 	startTime time.Time
 	serverID  string
+
+	playersMu sync.RWMutex
+	players   map[string]struct{}
 }
 
 func NewServerService() *ServerService {
-	return &ServerService{}
+	return &ServerService{
+		players: make(map[string]struct{}),
+	}
 }
 
 func (s *ServerService) SetContext(ctx context.Context) {
@@ -87,12 +100,28 @@ func (s *ServerService) streamOutput(r io.Reader) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
+
 		runtime.EventsEmit(s.ctx, EventLogLine, map[string]string{
 			"timestamp": time.Now().Format("15:04:05"),
 			"line":      line,
 		})
+
 		if strings.Contains(strings.ToLower(line), "eula.txt") {
 			runtime.EventsEmit(s.ctx, EventEulaRequired, nil)
+		}
+
+		if m := rePlayerJoin.FindStringSubmatch(line); m != nil {
+			name := m[1]
+			s.playersMu.Lock()
+			s.players[name] = struct{}{}
+			s.playersMu.Unlock()
+			runtime.EventsEmit(s.ctx, EventPlayerJoined, name)
+		} else if m := rePlayerLeave.FindStringSubmatch(line); m != nil {
+			name := m[1]
+			s.playersMu.Lock()
+			delete(s.players, name)
+			s.playersMu.Unlock()
+			runtime.EventsEmit(s.ctx, EventPlayerLeft, name)
 		}
 	}
 }
@@ -101,6 +130,10 @@ func (s *ServerService) waitForExit() {
 	if s.cmd != nil {
 		_ = s.cmd.Wait()
 	}
+	s.playersMu.Lock()
+	s.players = make(map[string]struct{})
+	s.playersMu.Unlock()
+
 	s.mu.Lock()
 	s.running = false
 	s.mu.Unlock()
@@ -168,4 +201,14 @@ func (s *ServerService) Uptime() string {
 		return fmt.Sprintf("%dm %ds", m, sec)
 	}
 	return fmt.Sprintf("%ds", sec)
+}
+
+func (s *ServerService) GetActivePlayers() []models.Player {
+	s.playersMu.RLock()
+	defer s.playersMu.RUnlock()
+	list := make([]models.Player, 0, len(s.players))
+	for name := range s.players {
+		list = append(list, models.Player{Name: name, Ping: 0})
+	}
+	return list
 }

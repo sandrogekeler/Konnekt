@@ -131,7 +131,7 @@ func (a *App) GetServerStatus(serverID string) (models.ServerStatus, error) {
 }
 
 func (a *App) GetPlayers(serverID string) ([]models.Player, error) {
-	return []models.Player{}, nil
+	return a.serverService.GetActivePlayers(), nil
 }
 
 func (a *App) KickPlayer(serverID string, name string, reason string) error {

@@ -48,11 +48,11 @@ Do not implement Beta features during Alpha development.
   - Detects "eula.txt" in log stream, emits server:eula-required event
   - Amber modal with EULA link (opens system browser), Accept & Restart, Dismiss
   - On accept: writes eula=true to {workingDir}/eula.txt then restarts server
-- [ ] GetPlayers — log-based player tracking
-  - Parse join/leave events from log stream ("UUID of player" / "left the game")
-  - Maintain an in-memory player list updated in real time
-  - Wire GetPlayers() to return this live list instead of empty array
-  - Ping data remains unavailable without RCON (show 0 or omit for alpha)
+- [x] GetPlayers — log-based player tracking
+  - Parses "joined the game" / "left the game" from log stream via regex
+  - Thread-safe in-memory map; cleared on server stop
+  - Emits player:joined and player:left events for future Notifications tile
+  - Ping omitted (requires RCON); GetPlayers() returns live list
 
 ### Tiles — implemented
 
@@ -67,12 +67,11 @@ Do not implement Beta features during Alpha development.
 
 ### Tiles — remaining alpha
 
-- [ ] Players tile
+- [x] Players tile
   
-  - Online player list with name and ping
-  - Kick button per player (opens modal with reason field)
-  - Ban button per player (opens modal with reason field)
-  - Go: GetPlayers(), KickPlayer(), BanPlayer() — bindings exist, wire up tile
+  - Online player list, polls GetPlayers() every 3 seconds
+  - Kick and ban buttons per player; colour-coded modal with optional reason
+  - List clears automatically when server stops
 
 - [ ] Performance tile
   
