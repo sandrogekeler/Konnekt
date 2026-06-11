@@ -11,10 +11,10 @@ export const DEFAULT_LAYOUT_PRESETS = [
   {
     name: 'Default',
     layout: JSON.stringify([
-      { i: 'console',        x: 0, y: 0, w: 4, h: 12 },
-      { i: 'stats',          x: 4, y: 0, w: 2, h: 4 },
-      { i: 'players',        x: 4, y: 4, w: 2, h: 4 },
-      { i: 'quick-commands', x: 4, y: 8, w: 2, h: 4 },
+      { i: 'console',        x: 0, y: 0,  w: 6, h: 12 },
+      { i: 'stats',          x: 0, y: 12, w: 2, h: 4  },
+      { i: 'players',        x: 2, y: 12, w: 2, h: 4  },
+      { i: 'quick-commands', x: 4, y: 12, w: 2, h: 4  },
     ]),
   },
   {

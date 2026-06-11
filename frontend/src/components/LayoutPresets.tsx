@@ -1,10 +1,26 @@
 import { useState } from 'react'
 import { useLayoutStore } from '../stores/useLayoutStore'
+import { SaveLayoutPreset } from '../../wailsjs/go/main/App'
+import { DEFAULT_LAYOUT_PRESETS } from '../lib/constants'
 
 export function LayoutPresets() {
-  const { presets, activePresetName, savePreset, loadPreset, deletePreset } = useLayoutStore()
+  const { presets, activePresetName, savePreset, loadPreset, loadPresets, deletePreset } = useLayoutStore()
   const [newName, setNewName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [resetting, setResetting] = useState(false)
+
+  const handleReset = async () => {
+    setResetting(true)
+    try {
+      for (const p of DEFAULT_LAYOUT_PRESETS) {
+        await SaveLayoutPreset(p.name, p.layout).catch(() => {})
+      }
+      await loadPresets()
+      loadPreset('Default')
+    } finally {
+      setResetting(false)
+    }
+  }
 
   const handleSave = async () => {
     const name = newName.trim() || activePresetName
@@ -63,6 +79,14 @@ export function LayoutPresets() {
           Save
         </button>
       </div>
+
+      <button
+        onClick={handleReset}
+        disabled={resetting}
+        className="mt-1 text-xs text-white/20 hover:text-white/40 transition-colors disabled:opacity-40 text-left px-1"
+      >
+        {resetting ? 'Resetting…' : '↺ Reset to defaults'}
+      </button>
     </div>
   )
 }
