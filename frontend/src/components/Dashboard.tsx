@@ -40,16 +40,6 @@ export function Dashboard() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [canvasWidth, setCanvasWidth] = useState(800)
 
-  // initialLayout is the positions passed to RGL on (re)mount.
-  // layoutKey forces a clean remount when the layout changes externally.
-  // RGL manages its own drag/resize state after mount — we never update
-  // the layout prop during normal interaction, only on preset switches,
-  // tile add/remove, and initial load.
-  const [initialLayout, setInitialLayout] = useState<LayoutItem[] | null>(null)
-  const [layoutKey, setLayoutKey] = useState(0)
-  const skipNextSyncRef = useRef(false) // set by persistLayout to skip the Zustand echo
-  const isFirstMountRef = useRef(true)  // avoids an unnecessary remount on first load
-
   useEffect(() => {
     Promise.all([loadTiles(), loadPresets()]).catch(console.error)
   }, [loadTiles, loadPresets])
@@ -81,7 +71,7 @@ export function Dashboard() {
     for (const tile of tilesOnCanvas) {
       const saved = savedItems.find((l) => l.i === tile.id)
       if (saved) {
-        result.push({ ...saved, minW: tile.minW, minH: tile.minH })
+        result.push(saved)
       } else {
         const { x, y } = findBestPosition(placed, tile.defaultW, tile.defaultH, COLS)
         const item: LayoutItem = {
@@ -100,33 +90,10 @@ export function Dashboard() {
     return result
   }, [tilesOnCanvas, currentLayout])
 
-  // Sync initialLayout from mergedLayout.
-  // Always updates the layout prop so RGL's getDerivedStateFromProps
-  // never sees stale positions. Only increments layoutKey (remount)
-  // for genuine external changes — not for drag/resize ends.
-  useEffect(() => {
-    if (mergedLayout.length === 0) return
-    const fromPersist = skipNextSyncRef.current
-    skipNextSyncRef.current = false
-    setInitialLayout(mergedLayout)
-    if (!fromPersist) {
-      if (isFirstMountRef.current) {
-        isFirstMountRef.current = false
-      } else {
-        setLayoutKey((k) => k + 1)
-      }
-    }
-  }, [mergedLayout])
-
-  // Persist drag/resize results to Zustand.
-  // Also updates initialLayout immediately so that getDerivedStateFromProps
-  // (which runs on the next re-render with activeDrag=null) sees the new
-  // positions rather than reverting the tile to where it started.
-  const persistLayout = useCallback((layout: readonly LayoutItem[]) => {
-    skipNextSyncRef.current = true
-    setInitialLayout([...layout])
-    updateLayout(layout)
-  }, [updateLayout])
+  const persistLayout = useCallback(
+    (layout: readonly LayoutItem[]) => updateLayout(layout),
+    [updateLayout],
+  )
 
   return (
     <div
@@ -134,38 +101,35 @@ export function Dashboard() {
       className="w-full h-full overflow-y-auto"
       style={{ background: 'var(--bg-base)' }}
     >
-      {initialLayout !== null && (
-        <ReactGridLayout
-          key={layoutKey}
-          layout={initialLayout}
-          cols={COLS}
-          rowHeight={ROW_HEIGHT}
-          width={canvasWidth}
-          compactType={null}
-          draggableHandle=".drag-handle"
-          onDragStop={persistLayout}
-          onResizeStop={persistLayout}
-          margin={[12, 12]}
-          containerPadding={[12, 12]}
-          resizeHandles={['se']}
-        >
-          {tilesOnCanvas.map((tile) => {
-            const TileComponent = tile.component
-            return (
-              <div key={tile.id}>
-                <TileWrapper
-                  id={tile.id}
-                  label={tile.label}
-                  icon={tile.icon}
-                  onRemove={removeTile}
-                >
-                  <TileComponent serverId={serverId} />
-                </TileWrapper>
-              </div>
-            )
-          })}
-        </ReactGridLayout>
-      )}
+      <ReactGridLayout
+        layout={mergedLayout}
+        cols={COLS}
+        rowHeight={ROW_HEIGHT}
+        width={canvasWidth}
+        compactType={null}
+        draggableHandle=".drag-handle"
+        onDragStop={persistLayout}
+        onResizeStop={persistLayout}
+        margin={[12, 12]}
+        containerPadding={[12, 12]}
+        resizeHandles={['se']}
+      >
+        {tilesOnCanvas.map((tile) => {
+          const TileComponent = tile.component
+          return (
+            <div key={tile.id}>
+              <TileWrapper
+                id={tile.id}
+                label={tile.label}
+                icon={tile.icon}
+                onRemove={removeTile}
+              >
+                <TileComponent serverId={serverId} />
+              </TileWrapper>
+            </div>
+          )
+        })}
+      </ReactGridLayout>
     </div>
   )
 }
