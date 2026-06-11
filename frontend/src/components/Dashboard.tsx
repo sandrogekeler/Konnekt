@@ -9,8 +9,6 @@ import { TILE_REGISTRY } from '../tiles/registry'
 import { TileWrapper } from '../tiles/TileWrapper'
 import { COLS, ROW_HEIGHT } from '../lib/constants'
 
-// Find the first available gap for a new tile, scanning top-to-bottom
-// left-to-right. Falls back to appending below all existing content.
 function findBestPosition(
   occupied: readonly LayoutItem[],
   w: number,
@@ -42,11 +40,15 @@ export function Dashboard() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [canvasWidth, setCanvasWidth] = useState(800)
 
-  // Local layout — what ReactGridLayout reads directly.
-  // Kept separate from Zustand so RGL's internal drag/resize state is never
-  // overwritten by a subscriber re-render mid-interaction.
-  const [layoutState, setLayoutState] = useState<LayoutItem[] | null>(null)
-  const skipNextSyncRef = useRef(false)
+  // initialLayout is the positions passed to RGL on (re)mount.
+  // layoutKey forces a clean remount when the layout changes externally.
+  // RGL manages its own drag/resize state after mount — we never update
+  // the layout prop during normal interaction, only on preset switches,
+  // tile add/remove, and initial load.
+  const [initialLayout, setInitialLayout] = useState<LayoutItem[] | null>(null)
+  const [layoutKey, setLayoutKey] = useState(0)
+  const skipNextSyncRef = useRef(false) // set by persistLayout to skip the Zustand echo
+  const isFirstMountRef = useRef(true)  // avoids an unnecessary remount on first load
 
   useEffect(() => {
     Promise.all([loadTiles(), loadPresets()]).catch(console.error)
@@ -79,10 +81,8 @@ export function Dashboard() {
     for (const tile of tilesOnCanvas) {
       const saved = savedItems.find((l) => l.i === tile.id)
       if (saved) {
-        // Always carry minW/minH so resize constraints survive save/load cycles
         result.push({ ...saved, minW: tile.minW, minH: tile.minH })
       } else {
-        // New tile: append at left edge below all existing content
         const { x, y } = findBestPosition(placed, tile.defaultW, tile.defaultH, COLS)
         const item: LayoutItem = {
           i: tile.id,
@@ -100,24 +100,29 @@ export function Dashboard() {
     return result
   }, [tilesOnCanvas, currentLayout])
 
-  // Sync local layout from mergedLayout on external changes:
-  // app boot, preset switches, tile add/remove.
-  // Skipped when the change was caused by our own persistLayout call.
+  // On external layout changes: update the positions RGL will mount with.
+  // First change: just set positions (no remount needed, RGL isn't mounted yet).
+  // Subsequent changes: increment key to force a clean remount so RGL
+  // initialises drag/resize listeners against the correct positions.
+  // Changes triggered by persistLayout are skipped via skipNextSyncRef.
   useEffect(() => {
     if (skipNextSyncRef.current) {
       skipNextSyncRef.current = false
       return
     }
-    setLayoutState(mergedLayout)
+    if (mergedLayout.length === 0) return
+    setInitialLayout(mergedLayout)
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false
+    } else {
+      setLayoutKey((k) => k + 1)
+    }
   }, [mergedLayout])
 
-  // User finished a drag or resize — capture the final positions immediately
-  // into local state, then persist to Zustand for save/restore.
-  // onLayoutChange is intentionally NOT used: feeding RGL's output back as a
-  // controlled prop on every change triggers a normalisation oscillation.
+  // Persist drag/resize results to Zustand. Does NOT update any React state —
+  // RGL holds the live positions in its own internal state after mount.
   const persistLayout = useCallback((layout: readonly LayoutItem[]) => {
     skipNextSyncRef.current = true
-    setLayoutState([...layout])
     updateLayout(layout)
   }, [updateLayout])
 
@@ -127,9 +132,10 @@ export function Dashboard() {
       className="w-full h-full overflow-y-auto"
       style={{ background: 'var(--bg-base)' }}
     >
-      {layoutState !== null && (
+      {initialLayout !== null && (
         <ReactGridLayout
-          layout={layoutState}
+          key={layoutKey}
+          layout={initialLayout}
           cols={COLS}
           rowHeight={ROW_HEIGHT}
           width={canvasWidth}

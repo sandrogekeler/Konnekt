@@ -52,8 +52,8 @@ export function ConsoleTile({ serverId }: TileProps) {
   }, [])
 
   useEffect(() => {
-    if (autoScroll) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (autoScroll && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [lines, autoScroll])
 
@@ -79,7 +79,7 @@ export function ConsoleTile({ serverId }: TileProps) {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-3 py-2 font-mono text-xs leading-5 select-text"
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-2 font-mono text-xs leading-5 select-text"
         style={{ fontFamily: "'JetBrains Mono', monospace" }}
       >
         {lines.map((line) => (
@@ -95,7 +95,7 @@ export function ConsoleTile({ serverId }: TileProps) {
         <button
           onClick={() => {
             setAutoScroll(true)
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+            if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
           }}
           className="mx-3 mb-1 text-xs text-white/40 hover:text-white/70 transition-colors text-center"
         >
