@@ -59,9 +59,14 @@ export function ServerSelector() {
     await deleteConfig(id)
   }
 
+  const dirOf = (filePath: string) => {
+    const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'))
+    return idx >= 0 ? filePath.substring(0, idx) : ''
+  }
+
   const browseJar = async () => {
     const path = await BrowseJarFile().catch(() => '')
-    if (path) setForm((f) => ({ ...f, jarPath: path }))
+    if (path) setForm((f) => ({ ...f, jarPath: path, workingDir: dirOf(path) }))
   }
 
   const browseDir = async () => {
@@ -87,7 +92,14 @@ export function ServerSelector() {
       <input
         type="text"
         value={form[key]}
-        onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+        onChange={(e) => {
+          const val = e.target.value
+          if (key === 'jarPath') {
+            setForm((f) => ({ ...f, jarPath: val, workingDir: f.workingDir || dirOf(val) }))
+          } else {
+            setForm((f) => ({ ...f, [key]: val }))
+          }
+        }}
         placeholder={placeholder}
         className={inputClass}
       />

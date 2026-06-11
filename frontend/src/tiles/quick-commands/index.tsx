@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { SendCommand, GetCustomCommands, SaveCustomCommands } from '../../../wailsjs/go/main/App'
+import { SendCommand, GetCustomCommands, SaveCustomCommands, StartServer, StopServer, RestartServer } from '../../../wailsjs/go/main/App'
 import type { TileProps } from '../../types'
 
 interface ModalState {
@@ -8,10 +8,10 @@ interface ModalState {
   reason: string
 }
 
-const BUILT_IN: Array<{ label: string; cmd: string | null; special?: 'kick' | 'ban' }> = [
-  { label: 'Start', cmd: 'start' },
-  { label: 'Stop', cmd: 'stop' },
-  { label: 'Restart', cmd: 'restart' },
+const BUILT_IN: Array<{ label: string; cmd: string | null; special?: 'kick' | 'ban'; lifecycle?: 'start' | 'stop' | 'restart' }> = [
+  { label: 'Start',   cmd: null, lifecycle: 'start' },
+  { label: 'Stop',    cmd: null, lifecycle: 'stop' },
+  { label: 'Restart', cmd: null, lifecycle: 'restart' },
   { label: 'Save All', cmd: 'save-all' },
   { label: 'List', cmd: 'list' },
   { label: 'Set Day', cmd: 'time set day' },
@@ -44,6 +44,18 @@ export function QuickCommandsTile({ serverId }: TileProps) {
   const send = useCallback(
     (cmd: string) => {
       SendCommand(serverId, cmd).catch(console.error)
+    },
+    [serverId],
+  )
+
+  const handleLifecycle = useCallback(
+    (action: 'start' | 'stop' | 'restart') => {
+      const fns = {
+        start:   () => StartServer(serverId),
+        stop:    () => StopServer(serverId),
+        restart: () => RestartServer(serverId),
+      }
+      fns[action]().catch(console.error)
     },
     [serverId],
   )
@@ -85,6 +97,8 @@ export function QuickCommandsTile({ serverId }: TileProps) {
             onClick={() => {
               if (item.special) {
                 setModal({ type: item.special, playerName: '', reason: '' })
+              } else if (item.lifecycle) {
+                handleLifecycle(item.lifecycle)
               } else if (item.cmd) {
                 send(item.cmd)
               }
