@@ -72,7 +72,7 @@ export function Dashboard() {
     for (const tile of tilesOnCanvas) {
       const saved = savedItems.find((l) => l.i === tile.id)
       if (saved) {
-        result.push(saved)
+        result.push({ ...saved, minW: tile.minW, minH: tile.minH })
       } else {
         const { x, y } = findBestPosition(placed, tile.defaultW, tile.defaultH, COLS)
         const item: LayoutItem = {

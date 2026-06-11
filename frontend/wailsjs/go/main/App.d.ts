@@ -20,6 +20,8 @@ export function GetActiveServerID():Promise<string>;
 
 export function GetActiveTiles():Promise<Array<string>>;
 
+export function GetCommandButtons():Promise<string>;
+
 export function GetCustomCommands():Promise<Array<string>>;
 
 export function GetLayoutPresets():Promise<Array<models.LayoutPreset>>;
@@ -37,6 +39,8 @@ export function RestartServer(arg1:string):Promise<void>;
 export function SaveActiveLayout(arg1:string):Promise<void>;
 
 export function SaveActiveTiles(arg1:Array<string>):Promise<void>;
+
+export function SaveCommandButtons(arg1:string):Promise<void>;
 
 export function SaveCustomCommands(arg1:Array<string>):Promise<void>;
 

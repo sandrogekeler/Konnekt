@@ -266,3 +266,20 @@ func (a *App) SaveCustomCommands(cmds []string) error {
 	}
 	return os.WriteFile(filepath.Join(a.dataDir, "custom_commands.json"), data, 0644)
 }
+
+// --- Command buttons (unified, ordered, customizable) ---
+
+func (a *App) GetCommandButtons() (string, error) {
+	data, err := os.ReadFile(filepath.Join(a.dataDir, "command_buttons.json"))
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func (a *App) SaveCommandButtons(data string) error {
+	return os.WriteFile(filepath.Join(a.dataDir, "command_buttons.json"), []byte(data), 0644)
+}

@@ -38,6 +38,10 @@ export function GetActiveTiles() {
   return window['go']['main']['App']['GetActiveTiles']();
 }
 
+export function GetCommandButtons() {
+  return window['go']['main']['App']['GetCommandButtons']();
+}
+
 export function GetCustomCommands() {
   return window['go']['main']['App']['GetCustomCommands']();
 }
@@ -72,6 +76,10 @@ export function SaveActiveLayout(arg1) {
 
 export function SaveActiveTiles(arg1) {
   return window['go']['main']['App']['SaveActiveTiles'](arg1);
+}
+
+export function SaveCommandButtons(arg1) {
+  return window['go']['main']['App']['SaveCommandButtons'](arg1);
 }
 
 export function SaveCustomCommands(arg1) {
