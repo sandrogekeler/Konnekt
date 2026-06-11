@@ -45,7 +45,7 @@ export function Dashboard() {
   // Local layout — what ReactGridLayout reads directly.
   // Kept separate from Zustand so RGL's internal drag/resize state is never
   // overwritten by a subscriber re-render mid-interaction.
-  const [layoutState, setLayoutState] = useState<LayoutItem[]>([])
+  const [layoutState, setLayoutState] = useState<LayoutItem[] | null>(null)
   const skipNextSyncRef = useRef(false)
 
   useEffect(() => {
@@ -127,34 +127,37 @@ export function Dashboard() {
       className="w-full h-full overflow-y-auto"
       style={{ background: 'var(--bg-base)' }}
     >
-      <ReactGridLayout
-        layout={layoutState}
-        cols={COLS}
-        rowHeight={ROW_HEIGHT}
-        width={canvasWidth}
-        draggableHandle=".drag-handle"
-        onDragStop={persistLayout}
-        onResizeStop={persistLayout}
-        margin={[12, 12]}
-        containerPadding={[12, 12]}
-        resizeHandles={['se']}
-      >
-        {tilesOnCanvas.map((tile) => {
-          const TileComponent = tile.component
-          return (
-            <div key={tile.id}>
-              <TileWrapper
-                id={tile.id}
-                label={tile.label}
-                icon={tile.icon}
-                onRemove={removeTile}
-              >
-                <TileComponent serverId={serverId} />
-              </TileWrapper>
-            </div>
-          )
-        })}
-      </ReactGridLayout>
+      {layoutState !== null && (
+        <ReactGridLayout
+          layout={layoutState}
+          cols={COLS}
+          rowHeight={ROW_HEIGHT}
+          width={canvasWidth}
+          compactType={null}
+          draggableHandle=".drag-handle"
+          onDragStop={persistLayout}
+          onResizeStop={persistLayout}
+          margin={[12, 12]}
+          containerPadding={[12, 12]}
+          resizeHandles={['se']}
+        >
+          {tilesOnCanvas.map((tile) => {
+            const TileComponent = tile.component
+            return (
+              <div key={tile.id}>
+                <TileWrapper
+                  id={tile.id}
+                  label={tile.label}
+                  icon={tile.icon}
+                  onRemove={removeTile}
+                >
+                  <TileComponent serverId={serverId} />
+                </TileWrapper>
+              </div>
+            )
+          })}
+        </ReactGridLayout>
+      )}
     </div>
   )
 }
