@@ -100,29 +100,31 @@ export function Dashboard() {
     return result
   }, [tilesOnCanvas, currentLayout])
 
-  // On external layout changes: update the positions RGL will mount with.
-  // First change: just set positions (no remount needed, RGL isn't mounted yet).
-  // Subsequent changes: increment key to force a clean remount so RGL
-  // initialises drag/resize listeners against the correct positions.
-  // Changes triggered by persistLayout are skipped via skipNextSyncRef.
+  // Sync initialLayout from mergedLayout.
+  // Always updates the layout prop so RGL's getDerivedStateFromProps
+  // never sees stale positions. Only increments layoutKey (remount)
+  // for genuine external changes — not for drag/resize ends.
   useEffect(() => {
-    if (skipNextSyncRef.current) {
-      skipNextSyncRef.current = false
-      return
-    }
     if (mergedLayout.length === 0) return
+    const fromPersist = skipNextSyncRef.current
+    skipNextSyncRef.current = false
     setInitialLayout(mergedLayout)
-    if (isFirstMountRef.current) {
-      isFirstMountRef.current = false
-    } else {
-      setLayoutKey((k) => k + 1)
+    if (!fromPersist) {
+      if (isFirstMountRef.current) {
+        isFirstMountRef.current = false
+      } else {
+        setLayoutKey((k) => k + 1)
+      }
     }
   }, [mergedLayout])
 
-  // Persist drag/resize results to Zustand. Does NOT update any React state —
-  // RGL holds the live positions in its own internal state after mount.
+  // Persist drag/resize results to Zustand.
+  // Also updates initialLayout immediately so that getDerivedStateFromProps
+  // (which runs on the next re-render with activeDrag=null) sees the new
+  // positions rather than reverting the tile to where it started.
   const persistLayout = useCallback((layout: readonly LayoutItem[]) => {
     skipNextSyncRef.current = true
+    setInitialLayout([...layout])
     updateLayout(layout)
   }, [updateLayout])
 
