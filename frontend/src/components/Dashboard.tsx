@@ -8,6 +8,7 @@ import { useServerConfigStore } from '../stores/useServerConfigStore'
 import { TILE_REGISTRY } from '../tiles/registry'
 import { TileWrapper } from '../tiles/TileWrapper'
 import { COLS, ROW_HEIGHT } from '../lib/constants'
+import { collapseEmptyRows } from '../lib/layout'
 
 function findBestPosition(
   occupied: readonly LayoutItem[],
@@ -87,11 +88,14 @@ export function Dashboard() {
       }
     }
 
-    return result
+    // Collapse here too (not just on drag/resize stop) so the grid reflows when
+    // tiles are added or removed, which change tilesOnCanvas without going through
+    // persistLayout. Idempotent, so it's a no-op for an already-tidy layout.
+    return collapseEmptyRows(result)
   }, [tilesOnCanvas, currentLayout])
 
   const persistLayout = useCallback(
-    (layout: readonly LayoutItem[]) => updateLayout(layout),
+    (layout: readonly LayoutItem[]) => updateLayout(collapseEmptyRows(layout)),
     [updateLayout],
   )
 
@@ -107,6 +111,7 @@ export function Dashboard() {
         rowHeight={ROW_HEIGHT}
         width={canvasWidth}
         compactType={null}
+        preventCollision
         draggableHandle=".drag-handle"
         onDragStop={persistLayout}
         onResizeStop={persistLayout}
