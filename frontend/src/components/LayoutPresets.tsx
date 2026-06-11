@@ -69,12 +69,12 @@ export function LayoutPresets() {
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           placeholder={activePresetName || 'Preset name...'}
-          className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder-white/25 outline-none focus:border-white/20"
+          className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder-white/25 outline-none focus:border-white/20"
         />
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-2 py-1 text-xs rounded border border-white/10 text-white/60 hover:text-white hover:border-white/25 transition-colors disabled:opacity-40"
+          className="shrink-0 px-2 py-1 text-xs rounded border border-white/10 text-white/60 hover:text-white hover:border-white/25 transition-colors disabled:opacity-40"
         >
           Save
         </button>

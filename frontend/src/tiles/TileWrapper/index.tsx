@@ -13,7 +13,8 @@ export function TileWrapper({ id, label, icon, onRemove, children }: TileWrapper
     <div
       className="tile-wrapper flex flex-col h-full rounded-[10px] overflow-hidden"
       style={{
-        background: 'var(--bg-surface)',
+        backgroundColor: 'var(--bg-base)',
+        backgroundImage: 'linear-gradient(var(--bg-surface), var(--bg-surface))',
         border: '0.5px solid var(--border-subtle)',
         transition: 'border-color 150ms, transform 150ms',
       }}

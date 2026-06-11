@@ -99,11 +99,20 @@ export function Dashboard() {
     [updateLayout],
   )
 
+  const colStep = (canvasWidth - 84) / COLS + 12
+  const rowStep = ROW_HEIGHT + 12
+
   return (
     <div
       ref={canvasRef}
       className="w-full h-full overflow-y-auto"
-      style={{ background: 'var(--bg-base)' }}
+      style={{
+        backgroundColor: 'var(--bg-base)',
+        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)',
+        backgroundSize: `${colStep}px ${rowStep}px`,
+        backgroundPosition: '12px 12px',
+        backgroundAttachment: 'local',
+      }}
     >
       <ReactGridLayout
         layout={mergedLayout}
