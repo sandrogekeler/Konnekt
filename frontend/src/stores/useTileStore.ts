@@ -17,7 +17,8 @@ export const useTileStore = create<TileStore>((set, get) => ({
   crateTileIds: ALL_TILE_IDS,
 
   loadTiles: async () => {
-    const saved = await GetActiveTiles()
+    let saved: string[] = []
+    try { saved = await GetActiveTiles() } catch { /* Wails IPC unavailable */ }
     const active = saved.length > 0 ? saved : ['console', 'stats', 'players', 'quick-commands']
     const crate = ALL_TILE_IDS.filter((id) => !active.includes(id))
     set({ activeTileIds: active, crateTileIds: crate })
@@ -27,7 +28,7 @@ export const useTileStore = create<TileStore>((set, get) => ({
     const { activeTileIds, crateTileIds } = get()
     if (activeTileIds.includes(id)) return
     const next = [...activeTileIds, id]
-    await SaveActiveTiles(next)
+    try { await SaveActiveTiles(next) } catch { /* best-effort */ }
     set({
       activeTileIds: next,
       crateTileIds: crateTileIds.filter((c) => c !== id),
@@ -37,7 +38,7 @@ export const useTileStore = create<TileStore>((set, get) => ({
   removeTile: async (id: string) => {
     const { activeTileIds, crateTileIds } = get()
     const next = activeTileIds.filter((a) => a !== id)
-    await SaveActiveTiles(next)
+    try { await SaveActiveTiles(next) } catch { /* best-effort */ }
     set({
       activeTileIds: next,
       crateTileIds: [...crateTileIds, id],

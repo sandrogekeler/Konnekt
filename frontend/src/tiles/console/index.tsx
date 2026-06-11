@@ -45,9 +45,9 @@ export function ConsoleTile({ serverId }: TileProps) {
         },
       ])
     }
-    EventsOn('log:line', handler)
+    try { EventsOn('log:line', handler) } catch { /* Wails runtime unavailable */ }
     return () => {
-      EventsOff('log:line')
+      try { EventsOff('log:line') } catch { /* */ }
     }
   }, [])
 

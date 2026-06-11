@@ -16,7 +16,7 @@ interface LayoutStore {
   savePreset: (name: string) => Promise<void>
   loadPreset: (name: string) => void
   deletePreset: (name: string) => Promise<void>
-  updateLayout: (layout: LayoutItem[]) => void
+  updateLayout: (layout: readonly LayoutItem[]) => void
 }
 
 export const useLayoutStore = create<LayoutStore>((set, get) => ({
@@ -25,12 +25,13 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   currentLayout: [],
 
   loadPresets: async () => {
-    const remote = await GetLayoutPresets()
-    let presets: LayoutPreset[] = remote ?? []
+    let remote: LayoutPreset[] = []
+    try { remote = await GetLayoutPresets() ?? [] } catch { /* Wails IPC unavailable */ }
+    let presets: LayoutPreset[] = remote
 
     if (presets.length === 0) {
       for (const p of DEFAULT_LAYOUT_PRESETS) {
-        await SaveLayoutPreset(p.name, p.layout)
+        try { await SaveLayoutPreset(p.name, p.layout) } catch { /* best-effort */ }
       }
       presets = DEFAULT_LAYOUT_PRESETS
     }
@@ -43,7 +44,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   savePreset: async (name: string) => {
     const { currentLayout } = get()
     const layoutStr = JSON.stringify(currentLayout)
-    await SaveLayoutPreset(name, layoutStr)
+    try { await SaveLayoutPreset(name, layoutStr) } catch { /* best-effort */ }
     const updated: LayoutPreset = { name, layout: layoutStr }
     set((s) => {
       const idx = s.presets.findIndex((p) => p.name === name)
@@ -64,7 +65,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   },
 
   deletePreset: async (name: string) => {
-    await DeleteLayoutPreset(name)
+    try { await DeleteLayoutPreset(name) } catch { /* best-effort */ }
     set((s) => ({
       presets: s.presets.filter((p) => p.name !== name),
       activePresetName:
@@ -72,5 +73,5 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     }))
   },
 
-  updateLayout: (layout: LayoutItem[]) => set({ currentLayout: layout }),
+  updateLayout: (layout: readonly LayoutItem[]) => set({ currentLayout: layout as LayoutItem[] }),
 }))

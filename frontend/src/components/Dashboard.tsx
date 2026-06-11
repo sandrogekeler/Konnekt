@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { ReactGridLayout } from 'react-grid-layout/legacy'
-import type { Layout, LayoutItem } from 'react-grid-layout'
+import type { LayoutItem } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import { useTileStore } from '../stores/useTileStore'
 import { useLayoutStore } from '../stores/useLayoutStore'
@@ -17,13 +17,6 @@ export function Dashboard() {
   useEffect(() => {
     Promise.all([loadTiles(), loadPresets()]).catch(console.error)
   }, [loadTiles, loadPresets])
-
-  const handleLayoutChange = useCallback(
-    (layout: Layout) => {
-      updateLayout([...layout])
-    },
-    [updateLayout],
-  )
 
   const tilesOnCanvas = activeTileIds
     .map((id) => TILE_REGISTRY.find((t) => t.id === id))
@@ -50,7 +43,7 @@ export function Dashboard() {
         rowHeight={ROW_HEIGHT}
         width={1400}
         draggableHandle=".drag-handle"
-        onLayoutChange={handleLayoutChange}
+        onLayoutChange={updateLayout}
         margin={[8, 8]}
         containerPadding={[12, 12]}
         resizeHandles={['se']}

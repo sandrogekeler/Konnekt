@@ -24,7 +24,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'stats',
     label: 'Stats',
-    icon: '📊',
+    icon: '##',
     defaultW: 4,
     defaultH: 4,
     minW: 3,
@@ -34,7 +34,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'players',
     label: 'Players',
-    icon: '👥',
+    icon: '[]',
     defaultW: 4,
     defaultH: 6,
     minW: 3,
@@ -44,7 +44,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'quick-commands',
     label: 'Quick Commands',
-    icon: '⚡',
+    icon: '>>',
     defaultW: 4,
     defaultH: 6,
     minW: 3,
@@ -54,7 +54,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'performance',
     label: 'Performance',
-    icon: '📈',
+    icon: '/\\',
     defaultW: 6,
     defaultH: 6,
     minW: 4,
@@ -64,7 +64,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'scheduler',
     label: 'Scheduler',
-    icon: '🕐',
+    icon: '()',
     defaultW: 4,
     defaultH: 6,
     minW: 3,
@@ -74,7 +74,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'worlds',
     label: 'Worlds',
-    icon: '🌍',
+    icon: '{}',
     defaultW: 4,
     defaultH: 6,
     minW: 3,
@@ -84,7 +84,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'backups',
     label: 'Backups',
-    icon: '💾',
+    icon: '[+]',
     defaultW: 4,
     defaultH: 6,
     minW: 3,
@@ -94,7 +94,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'server-config',
     label: 'Server Config',
-    icon: '⚙️',
+    icon: '==',
     defaultW: 6,
     defaultH: 8,
     minW: 4,
@@ -104,7 +104,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
   {
     id: 'notifications',
     label: 'Notifications',
-    icon: '🔔',
+    icon: '[!]',
     defaultW: 4,
     defaultH: 4,
     minW: 3,
