@@ -1,0 +1,4 @@
+# Normalize line endings to LF in the repo (the index is already LF everywhere).
+# Stops Wails-generated files (go.mod, wailsjs/runtime/*) from showing as modified
+# due to CRLF churn under core.autocrlf=true.
+* text=auto eol=lf

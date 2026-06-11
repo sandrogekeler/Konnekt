@@ -14,6 +14,8 @@ export function DeleteLayoutPreset(arg1:string):Promise<void>;
 
 export function DeleteServerConfig(arg1:string):Promise<void>;
 
+export function GetActiveLayout():Promise<string>;
+
 export function GetActiveServerID():Promise<string>;
 
 export function GetActiveTiles():Promise<Array<string>>;
@@ -31,6 +33,8 @@ export function GetServerStatus(arg1:string):Promise<models.ServerStatus>;
 export function KickPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RestartServer(arg1:string):Promise<void>;
+
+export function SaveActiveLayout(arg1:string):Promise<void>;
 
 export function SaveActiveTiles(arg1:Array<string>):Promise<void>;
 

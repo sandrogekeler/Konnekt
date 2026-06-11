@@ -2,6 +2,9 @@
 frontend/dist/
 build/bin/
 
+# Wails frontend-hash cache
+frontend/package.json.md5
+
 # Dependencies
 frontend/node_modules/
 

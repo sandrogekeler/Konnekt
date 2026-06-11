@@ -26,6 +26,10 @@ export function DeleteServerConfig(arg1) {
   return window['go']['main']['App']['DeleteServerConfig'](arg1);
 }
 
+export function GetActiveLayout() {
+  return window['go']['main']['App']['GetActiveLayout']();
+}
+
 export function GetActiveServerID() {
   return window['go']['main']['App']['GetActiveServerID']();
 }
@@ -60,6 +64,10 @@ export function KickPlayer(arg1, arg2, arg3) {
 
 export function RestartServer(arg1) {
   return window['go']['main']['App']['RestartServer'](arg1);
+}
+
+export function SaveActiveLayout(arg1) {
+  return window['go']['main']['App']['SaveActiveLayout'](arg1);
 }
 
 export function SaveActiveTiles(arg1) {

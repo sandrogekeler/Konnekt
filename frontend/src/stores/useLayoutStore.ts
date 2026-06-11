@@ -6,7 +6,15 @@ import {
   GetLayoutPresets,
   SaveLayoutPreset,
   DeleteLayoutPreset,
+  GetActiveLayout,
+  SaveActiveLayout,
 } from '../../wailsjs/go/main/App'
+
+// Persist the current on-screen layout independently of named presets, so
+// drags/resizes/removals survive a restart without overwriting the templates.
+function persistActiveLayout(layout: readonly LayoutItem[]) {
+  SaveActiveLayout(JSON.stringify(layout)).catch(() => { /* Wails IPC unavailable */ })
+}
 
 interface LayoutStore {
   presets: LayoutPreset[]
@@ -36,8 +44,15 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
       presets = DEFAULT_LAYOUT_PRESETS
     }
 
+    // Restore the last working layout if one was saved; otherwise fall back to
+    // the first preset as the starting arrangement.
     const active = presets[0]
-    const layout: LayoutItem[] = active ? JSON.parse(active.layout) : []
+    let layout: LayoutItem[] = active ? JSON.parse(active.layout) : []
+    try {
+      const saved = await GetActiveLayout()
+      if (saved) layout = JSON.parse(saved)
+    } catch { /* Wails IPC unavailable */ }
+
     set({ presets, activePresetName: active?.name ?? 'Default', currentLayout: layout })
   },
 
@@ -62,6 +77,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     if (!preset) return
     const layout: LayoutItem[] = JSON.parse(preset.layout)
     set({ activePresetName: name, currentLayout: layout })
+    persistActiveLayout(layout)
   },
 
   deletePreset: async (name: string) => {
@@ -73,5 +89,8 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     }))
   },
 
-  updateLayout: (layout: readonly LayoutItem[]) => set({ currentLayout: layout as LayoutItem[] }),
+  updateLayout: (layout: readonly LayoutItem[]) => {
+    set({ currentLayout: layout as LayoutItem[] })
+    persistActiveLayout(layout)
+  },
 }))

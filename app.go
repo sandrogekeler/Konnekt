@@ -223,6 +223,25 @@ func (a *App) SaveActiveTiles(ids []string) error {
 	return os.WriteFile(filepath.Join(a.dataDir, "active_tiles.json"), data, 0644)
 }
 
+// --- Active (working) layout ---
+// The current on-screen tile arrangement, persisted independently of the named
+// layout presets so drags/resizes survive a restart without overwriting templates.
+
+func (a *App) GetActiveLayout() (string, error) {
+	data, err := os.ReadFile(filepath.Join(a.dataDir, "active_layout.json"))
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func (a *App) SaveActiveLayout(layout string) error {
+	return os.WriteFile(filepath.Join(a.dataDir, "active_layout.json"), []byte(layout), 0644)
+}
+
 // --- Custom commands ---
 
 func (a *App) GetCustomCommands() ([]string, error) {
