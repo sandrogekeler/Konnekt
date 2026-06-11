@@ -23,6 +23,11 @@ Do not implement Beta features during Alpha development.
 - [x] JetBrains Mono + Inter fonts
 - [x] Tile layout system (react-grid-layout, drag, resize, snap)
 - [x] Tile crate (inactive tiles panel, add/remove from canvas)
+- [ ] Tile scale and maximise
+  - Per-tile zoom level (font/content scale independent of grid size)
+  - Maximise button in tile header: expands tile to fill the canvas area as an overlay
+  - Restore button returns tile to its previous grid position and size
+  - Only one tile maximised at a time; closing restores the previous layout
 - [x] Layout presets (save, restore, delete named layouts)
 - [x] Default presets: "Default", "Console Focus", "Compact"
 - [x] Persistence via Go JSON files (~/.config/konnekt/)
