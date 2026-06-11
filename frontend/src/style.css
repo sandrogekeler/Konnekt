@@ -55,3 +55,20 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
+
+/* Custom tile resize handle — replaces RGL's default invisible SVG */
+.react-resizable-handle-se {
+  background-image: none;
+  width: 14px;
+  height: 14px;
+  bottom: 6px;
+  right: 6px;
+  border-right: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0 0 3px 0;
+  transition: border-color 150ms;
+}
+
+.react-resizable-handle-se:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}

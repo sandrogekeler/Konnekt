@@ -40,6 +40,12 @@ export function Dashboard() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [canvasWidth, setCanvasWidth] = useState(800)
 
+  // Local layout state — what ReactGridLayout reads directly.
+  // Decoupled from Zustand so RGL's internal drag/resize state is never
+  // overwritten by a subscriber re-render mid-interaction.
+  const [layoutState, setLayoutState] = useState<LayoutItem[]>([])
+  const skipNextSyncRef = useRef(false)
+
   useEffect(() => {
     Promise.all([loadTiles(), loadPresets()]).catch(console.error)
   }, [loadTiles, loadPresets])
@@ -64,7 +70,6 @@ export function Dashboard() {
 
   const mergedLayout = useMemo(() => {
     const activeIds = new Set(tilesOnCanvas.map((t) => t.id))
-    // Only include positions for tiles currently on canvas and with valid coordinates
     const savedItems = currentLayout.filter((l) => isFinite(l.y) && activeIds.has(l.i))
     const placed: LayoutItem[] = [...savedItems]
     const result: LayoutItem[] = []
@@ -72,10 +77,8 @@ export function Dashboard() {
     for (const tile of tilesOnCanvas) {
       const saved = savedItems.find((l) => l.i === tile.id)
       if (saved) {
-        // Spread minW/minH so resize constraints are always enforced
         result.push({ ...saved, minW: tile.minW, minH: tile.minH })
       } else {
-        // New tile — find the closest available gap rather than appending at bottom
         const { x, y } = findBestPosition(placed, tile.defaultW, tile.defaultH, COLS)
         const item: LayoutItem = {
           i: tile.id,
@@ -86,17 +89,37 @@ export function Dashboard() {
           minH: tile.minH,
         }
         result.push(item)
-        placed.push(item) // mark as occupied for subsequent new tiles in the same pass
+        placed.push(item)
       }
     }
 
     return result
   }, [tilesOnCanvas, currentLayout])
 
-  const persistLayout = useCallback(
-    (layout: readonly LayoutItem[]) => updateLayout(layout),
-    [updateLayout],
-  )
+  // Sync local layout from mergedLayout on external changes:
+  // app boot, preset switches, tile add/remove.
+  // Skipped when the Zustand update was triggered by our own persistLayout.
+  useEffect(() => {
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false
+      return
+    }
+    setLayoutState(mergedLayout)
+  }, [mergedLayout])
+
+  // Mirror RGL's internal layout into local state after every change.
+  // Because local state feeds back into layout={layoutState}, RGL never
+  // sees a stale prop and won't re-normalise or snap tiles back.
+  const handleLayoutChange = useCallback((incoming: readonly LayoutItem[]) => {
+    setLayoutState([...incoming])
+  }, [])
+
+  // User finished a drag or resize — persist the result to Zustand.
+  // Mark the next mergedLayout change as internal so we skip the sync.
+  const persistLayout = useCallback((layout: readonly LayoutItem[]) => {
+    skipNextSyncRef.current = true
+    updateLayout(layout)
+  }, [updateLayout])
 
   return (
     <div
@@ -105,11 +128,12 @@ export function Dashboard() {
       style={{ background: 'var(--bg-base)' }}
     >
       <ReactGridLayout
-        layout={mergedLayout}
+        layout={layoutState}
         cols={COLS}
         rowHeight={ROW_HEIGHT}
         width={canvasWidth}
         draggableHandle=".drag-handle"
+        onLayoutChange={handleLayoutChange}
         onDragStop={persistLayout}
         onResizeStop={persistLayout}
         margin={[12, 12]}
