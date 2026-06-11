@@ -29,7 +29,7 @@ func (s *ServerService) SetContext(ctx context.Context) {
 	s.ctx = ctx
 }
 
-func (s *ServerService) Start(jarPath string, jvmArgs []string) error {
+func (s *ServerService) Start(jarPath string, jvmArgs []string, workingDir string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -39,6 +39,9 @@ func (s *ServerService) Start(jarPath string, jvmArgs []string) error {
 
 	args := append(jvmArgs, "-jar", jarPath, "--nogui")
 	s.cmd = exec.Command("java", args...)
+	if workingDir != "" {
+		s.cmd.Dir = workingDir
+	}
 
 	stdin, err := s.cmd.StdinPipe()
 	if err != nil {

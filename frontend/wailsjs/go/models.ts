@@ -28,6 +28,26 @@ export namespace models {
 	        this.ping = source["ping"];
 	    }
 	}
+	export class ServerConfig {
+	    id: string;
+	    name: string;
+	    jarPath: string;
+	    jvmArgs: string[];
+	    workingDir: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ServerConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.jarPath = source["jarPath"];
+	        this.jvmArgs = source["jvmArgs"];
+	        this.workingDir = source["workingDir"];
+	    }
+	}
 	export class ServerStatus {
 	    running: boolean;
 	    uptime: string;

@@ -6,8 +6,24 @@ export function BanPlayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['BanPlayer'](arg1, arg2, arg3);
 }
 
+export function BrowseDirectory() {
+  return window['go']['main']['App']['BrowseDirectory']();
+}
+
+export function BrowseJarFile() {
+  return window['go']['main']['App']['BrowseJarFile']();
+}
+
 export function DeleteLayoutPreset(arg1) {
   return window['go']['main']['App']['DeleteLayoutPreset'](arg1);
+}
+
+export function DeleteServerConfig(arg1) {
+  return window['go']['main']['App']['DeleteServerConfig'](arg1);
+}
+
+export function GetActiveServerID() {
+  return window['go']['main']['App']['GetActiveServerID']();
 }
 
 export function GetActiveTiles() {
@@ -24,6 +40,10 @@ export function GetLayoutPresets() {
 
 export function GetPlayers(arg1) {
   return window['go']['main']['App']['GetPlayers'](arg1);
+}
+
+export function GetServerConfigs() {
+  return window['go']['main']['App']['GetServerConfigs']();
 }
 
 export function GetServerStatus(arg1) {
@@ -50,8 +70,16 @@ export function SaveLayoutPreset(arg1, arg2) {
   return window['go']['main']['App']['SaveLayoutPreset'](arg1, arg2);
 }
 
+export function SaveServerConfig(arg1) {
+  return window['go']['main']['App']['SaveServerConfig'](arg1);
+}
+
 export function SendCommand(arg1, arg2) {
   return window['go']['main']['App']['SendCommand'](arg1, arg2);
+}
+
+export function SetActiveServerID(arg1) {
+  return window['go']['main']['App']['SetActiveServerID'](arg1);
 }
 
 export function StartServer(arg1) {

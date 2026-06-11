@@ -4,7 +4,15 @@ import {models} from '../models';
 
 export function BanPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function BrowseDirectory():Promise<string>;
+
+export function BrowseJarFile():Promise<string>;
+
 export function DeleteLayoutPreset(arg1:string):Promise<void>;
+
+export function DeleteServerConfig(arg1:string):Promise<void>;
+
+export function GetActiveServerID():Promise<string>;
 
 export function GetActiveTiles():Promise<Array<string>>;
 
@@ -13,6 +21,8 @@ export function GetCustomCommands():Promise<Array<string>>;
 export function GetLayoutPresets():Promise<Array<models.LayoutPreset>>;
 
 export function GetPlayers(arg1:string):Promise<Array<models.Player>>;
+
+export function GetServerConfigs():Promise<Array<models.ServerConfig>>;
 
 export function GetServerStatus(arg1:string):Promise<models.ServerStatus>;
 
@@ -26,7 +36,11 @@ export function SaveCustomCommands(arg1:Array<string>):Promise<void>;
 
 export function SaveLayoutPreset(arg1:string,arg2:string):Promise<void>;
 
+export function SaveServerConfig(arg1:models.ServerConfig):Promise<void>;
+
 export function SendCommand(arg1:string,arg2:string):Promise<void>;
+
+export function SetActiveServerID(arg1:string):Promise<void>;
 
 export function StartServer(arg1:string):Promise<void>;
 

@@ -1,6 +1,7 @@
 import { Dashboard } from './components/Dashboard'
 import { TileCrate } from './components/TileCrate'
 import { LayoutPresets } from './components/LayoutPresets'
+import { ServerSelector } from './components/ServerSelector'
 
 function App() {
   return (
@@ -16,6 +17,9 @@ function App() {
           <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--accent)' }}>
             Konnekt
           </span>
+        </div>
+        <div style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+          <ServerSelector />
         </div>
         <div className="flex-1 overflow-y-auto">
           <TileCrate />

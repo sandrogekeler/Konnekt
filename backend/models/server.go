@@ -1,5 +1,13 @@
 package models
 
+type ServerConfig struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	JarPath    string   `json:"jarPath"`
+	JvmArgs    []string `json:"jvmArgs"`
+	WorkingDir string   `json:"workingDir"`
+}
+
 type ServerStatus struct {
 	Running    bool    `json:"running"`
 	Uptime     string  `json:"uptime"`

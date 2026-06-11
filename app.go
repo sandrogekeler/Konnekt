@@ -9,17 +9,20 @@ import (
 
 	"konnekt/backend/models"
 	"konnekt/backend/services"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type App struct {
 	ctx           context.Context
 	serverService *services.ServerService
+	configService *services.ConfigService
 	dataDir       string
 }
 
 func NewApp() *App {
 	return &App{
 		serverService: services.NewServerService(),
+		configService: services.NewConfigService(),
 	}
 }
 
@@ -33,12 +36,56 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.dataDir = filepath.Join(configDir, "konnekt")
 	_ = os.MkdirAll(a.dataDir, 0755)
+	a.configService.SetDataDir(a.dataDir)
+}
+
+// --- File dialogs ---
+
+func (a *App) BrowseJarFile() (string, error) {
+	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Server JAR",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "JAR Files (*.jar)", Pattern: "*.jar"},
+		},
+	})
+}
+
+func (a *App) BrowseDirectory() (string, error) {
+	return runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Working Directory",
+	})
+}
+
+// --- Server config ---
+
+func (a *App) GetServerConfigs() ([]models.ServerConfig, error) {
+	return a.configService.GetServerConfigs()
+}
+
+func (a *App) SaveServerConfig(cfg models.ServerConfig) error {
+	return a.configService.SaveServerConfig(cfg)
+}
+
+func (a *App) DeleteServerConfig(id string) error {
+	return a.configService.DeleteServerConfig(id)
+}
+
+func (a *App) GetActiveServerID() (string, error) {
+	return a.configService.GetActiveServerID()
+}
+
+func (a *App) SetActiveServerID(id string) error {
+	return a.configService.SetActiveServerID(id)
 }
 
 // --- Server lifecycle ---
 
 func (a *App) StartServer(serverID string) error {
-	return a.serverService.Start("server.jar", []string{"-Xmx2G", "-Xms512M"})
+	cfg, err := a.configService.GetServerConfig(serverID)
+	if err != nil {
+		return err
+	}
+	return a.serverService.Start(cfg.JarPath, cfg.JvmArgs, cfg.WorkingDir)
 }
 
 func (a *App) StopServer(serverID string) error {
@@ -49,7 +96,11 @@ func (a *App) RestartServer(serverID string) error {
 	if err := a.serverService.Stop(); err != nil {
 		return err
 	}
-	return a.serverService.Start("server.jar", []string{"-Xmx2G", "-Xms512M"})
+	cfg, err := a.configService.GetServerConfig(serverID)
+	if err != nil {
+		return err
+	}
+	return a.serverService.Start(cfg.JarPath, cfg.JvmArgs, cfg.WorkingDir)
 }
 
 func (a *App) SendCommand(serverID string, command string) error {

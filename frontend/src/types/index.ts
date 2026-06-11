@@ -21,6 +21,14 @@ export interface LayoutPreset {
   layout: string
 }
 
+export interface ServerConfig {
+  id: string
+  name: string
+  jarPath: string
+  jvmArgs: string[]
+  workingDir: string
+}
+
 export interface Player {
   name: string
   ping: number
