@@ -9,26 +9,12 @@ import { TILE_REGISTRY } from '../tiles/registry'
 import { TileWrapper } from '../tiles/TileWrapper'
 import { COLS, ROW_HEIGHT } from '../lib/constants'
 
-function findBestPosition(
-  occupied: readonly LayoutItem[],
-  w: number,
-  h: number,
-  cols: number,
-): { x: number; y: number } {
-  const valid = occupied.filter((l) => isFinite(l.y))
-  for (let y = 0; y < 500; y++) {
-    for (let x = 0; x <= cols - w; x++) {
-      const fits = !valid.some(
-        (l) =>
-          x     < l.x + l.w &&
-          x + w > l.x       &&
-          y     < l.y + l.h &&
-          y + h > l.y,
-      )
-      if (fits) return { x, y }
-    }
-  }
-  const maxY = valid.reduce((m, l) => Math.max(m, l.y + l.h), 0)
+// New tiles always land at the left edge, stacked below existing content.
+// Sequential new tiles in the same pass stack on top of each other.
+function getAppendPosition(occupied: readonly LayoutItem[], h: number): { x: number; y: number } {
+  const maxY = occupied
+    .filter((l) => isFinite(l.y))
+    .reduce((m, l) => Math.max(m, l.y + l.h), 0)
   return { x: 0, y: maxY }
 }
 
@@ -40,8 +26,8 @@ export function Dashboard() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [canvasWidth, setCanvasWidth] = useState(800)
 
-  // Local layout state — what ReactGridLayout reads directly.
-  // Decoupled from Zustand so RGL's internal drag/resize state is never
+  // Local layout — what ReactGridLayout reads directly.
+  // Kept separate from Zustand so RGL's internal drag/resize state is never
   // overwritten by a subscriber re-render mid-interaction.
   const [layoutState, setLayoutState] = useState<LayoutItem[]>([])
   const skipNextSyncRef = useRef(false)
@@ -77,9 +63,11 @@ export function Dashboard() {
     for (const tile of tilesOnCanvas) {
       const saved = savedItems.find((l) => l.i === tile.id)
       if (saved) {
+        // Always carry minW/minH so resize constraints survive save/load cycles
         result.push({ ...saved, minW: tile.minW, minH: tile.minH })
       } else {
-        const { x, y } = findBestPosition(placed, tile.defaultW, tile.defaultH, COLS)
+        // New tile: append at left edge below all existing content
+        const { x, y } = getAppendPosition(placed, tile.defaultH)
         const item: LayoutItem = {
           i: tile.id,
           x, y,
@@ -98,7 +86,7 @@ export function Dashboard() {
 
   // Sync local layout from mergedLayout on external changes:
   // app boot, preset switches, tile add/remove.
-  // Skipped when the Zustand update was triggered by our own persistLayout.
+  // Skipped when the change was caused by our own persistLayout call.
   useEffect(() => {
     if (skipNextSyncRef.current) {
       skipNextSyncRef.current = false
@@ -107,17 +95,13 @@ export function Dashboard() {
     setLayoutState(mergedLayout)
   }, [mergedLayout])
 
-  // Mirror RGL's internal layout into local state after every change.
-  // Because local state feeds back into layout={layoutState}, RGL never
-  // sees a stale prop and won't re-normalise or snap tiles back.
-  const handleLayoutChange = useCallback((incoming: readonly LayoutItem[]) => {
-    setLayoutState([...incoming])
-  }, [])
-
-  // User finished a drag or resize — persist the result to Zustand.
-  // Mark the next mergedLayout change as internal so we skip the sync.
+  // User finished a drag or resize — capture the final positions immediately
+  // into local state, then persist to Zustand for save/restore.
+  // onLayoutChange is intentionally NOT used: feeding RGL's output back as a
+  // controlled prop on every change triggers a normalisation oscillation.
   const persistLayout = useCallback((layout: readonly LayoutItem[]) => {
     skipNextSyncRef.current = true
+    setLayoutState([...layout])
     updateLayout(layout)
   }, [updateLayout])
 
@@ -133,7 +117,6 @@ export function Dashboard() {
         rowHeight={ROW_HEIGHT}
         width={canvasWidth}
         draggableHandle=".drag-handle"
-        onLayoutChange={handleLayoutChange}
         onDragStop={persistLayout}
         onResizeStop={persistLayout}
         margin={[12, 12]}

@@ -29,7 +29,7 @@ export function TileWrapper({ id, label, icon, onRemove, children }: TileWrapper
       }}
     >
       <div
-        className="drag-handle flex items-center justify-between px-3 py-2 shrink-0"
+        className="drag-handle flex items-center justify-between px-3 py-2 shrink-0 select-none"
         style={{
           borderBottom: '0.5px solid var(--border-subtle)',
           cursor: 'grab',
