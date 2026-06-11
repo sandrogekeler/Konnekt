@@ -37,7 +37,13 @@ func (s *ServerService) Start(jarPath string, jvmArgs []string, workingDir strin
 		return fmt.Errorf("server already running")
 	}
 
-	args := append(jvmArgs, "-jar", jarPath, "--nogui")
+	if _, err := exec.LookPath("java"); err != nil {
+		return fmt.Errorf("java not found in PATH — install Java and ensure it is accessible")
+	}
+
+	args := make([]string, 0, len(jvmArgs)+3)
+	args = append(args, jvmArgs...)
+	args = append(args, "-jar", jarPath, "--nogui")
 	s.cmd = exec.Command("java", args...)
 	if workingDir != "" {
 		s.cmd.Dir = workingDir

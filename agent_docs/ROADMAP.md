@@ -41,15 +41,27 @@ Do not implement Beta features during Alpha development.
 - [x] Restart server
 - [x] Send command (write to process stdin)
 - [x] Multi-server instance support (multiple server configs)
-- [ ] Server config storage (name, jar path, JVM args, working dir per server)
-- [ ] Add / remove server instances from sidebar
+- [x] Server config storage (name, jar path, JVM args, working dir per server)
+- [x] Add / remove server instances from sidebar
+- [ ] EULA acceptance prompt
+  - Detect EULA rejection in log stream (look for "eula.txt" in output)
+  - Show in-app modal asking the user to accept the Minecraft EULA
+  - On accept: write eula=true to eula.txt in server working directory
+  - Offer to restart the server automatically after writing
+- [ ] GetPlayers — log-based player tracking
+  - Parse join/leave events from log stream ("UUID of player" / "left the game")
+  - Maintain an in-memory player list updated in real time
+  - Wire GetPlayers() to return this live list instead of empty array
+  - Ping data remains unavailable without RCON (show 0 or omit for alpha)
 
 ### Tiles — implemented
 
 - [x] Console tile (live log streaming, ANSI colour coding, auto-scroll,
   pause on scroll up, command input)
-- [x] Stats tile (status, players online, TPS with colour banding,
+- [~] Stats tile (status, players online, TPS with colour banding,
   RAM used/total with progress bar, uptime)
+  - Running state and uptime are real; TPS, RAM, and player count are
+    hardcoded placeholders (20 TPS, 0 RAM, 0 players) pending StatsService
 - [x] Quick commands tile (start, stop, restart, save-all, list, set day,
   clear weather, freeze time, kick/ban with modal, custom commands)
 
@@ -65,7 +77,11 @@ Do not implement Beta features during Alpha development.
 - [ ] Performance tile
   
   - Time-series chart of TPS, RAM, CPU (last 1 hour)
-  - Go: ring buffer in StatsService, emit snapshot every 10s
+  - Go: StatsService — ring buffer, snapshot every 10s, emit stats:snapshot event
+    - TPS: parse "Can't keep up" log lines or derive from tick timing
+    - RAM: read process RSS via runtime.ReadMemStats or OS proc query
+    - CPU: read process CPU % via OS proc query
+  - Implementing StatsService also unblocks the Stats tile placeholders
   - Frontend: recharts LineChart, 3 series, colour-coded axes
   - No external data store — in-memory ring buffer only for alpha
 
