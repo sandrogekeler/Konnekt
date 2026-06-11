@@ -20,6 +20,7 @@ Do not implement Beta features during Alpha development.
 
 - [x] Wails v2 app scaffold (Go + React + TypeScript + Vite)
 - [x] Tailwind CSS v3 design system (dark, #05060a base, #4ade80 accent)
+- [x] Custom scrollbar (4px, dark minimal, matches design scheme)
 - [x] JetBrains Mono + Inter fonts
 - [x] Tile layout system (react-grid-layout, drag, resize, snap)
 - [x] Tile crate (inactive tiles panel, add/remove from canvas)
@@ -43,11 +44,10 @@ Do not implement Beta features during Alpha development.
 - [x] Multi-server instance support (multiple server configs)
 - [x] Server config storage (name, jar path, JVM args, working dir per server)
 - [x] Add / remove server instances from sidebar
-- [ ] EULA acceptance prompt
-  - Detect EULA rejection in log stream (look for "eula.txt" in output)
-  - Show in-app modal asking the user to accept the Minecraft EULA
-  - On accept: write eula=true to eula.txt in server working directory
-  - Offer to restart the server automatically after writing
+- [x] EULA acceptance prompt
+  - Detects "eula.txt" in log stream, emits server:eula-required event
+  - Amber modal with EULA link (opens system browser), Accept & Restart, Dismiss
+  - On accept: writes eula=true to {workingDir}/eula.txt then restarts server
 - [ ] GetPlayers — log-based player tracking
   - Parse join/leave events from log stream ("UUID of player" / "left the game")
   - Maintain an in-memory player list updated in real time
@@ -56,8 +56,8 @@ Do not implement Beta features during Alpha development.
 
 ### Tiles — implemented
 
-- [x] Console tile (live log streaming, ANSI colour coding, auto-scroll,
-  pause on scroll up, command input)
+- [x] Console tile (live log streaming, auto-scroll, pause on scroll up,
+  command input, clear console button)
 - [~] Stats tile (status, players online, TPS with colour banding,
   RAM used/total with progress bar, uptime)
   - Running state and uptime are real; TPS, RAM, and player count are
