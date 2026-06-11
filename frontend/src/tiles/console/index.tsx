@@ -119,6 +119,14 @@ export function ConsoleTile({ serverId }: TileProps) {
         >
           Send
         </button>
+        <button
+          type="button"
+          onClick={() => setLines([])}
+          className="px-3 py-1 text-xs rounded border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-colors"
+          title="Clear console"
+        >
+          clr
+        </button>
       </form>
     </div>
   )

@@ -58,7 +58,7 @@ export function Dashboard() {
         draggableHandle=".drag-handle"
         onDragStop={persistLayout}
         onResizeStop={persistLayout}
-        margin={[8, 8]}
+        margin={[12, 12]}
         containerPadding={[12, 12]}
         resizeHandles={['se']}
       >
