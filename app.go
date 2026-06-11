@@ -85,7 +85,7 @@ func (a *App) StartServer(serverID string) error {
 	if err != nil {
 		return err
 	}
-	return a.serverService.Start(cfg.JarPath, cfg.JvmArgs, cfg.WorkingDir)
+	return a.serverService.Start(serverID, cfg.JarPath, cfg.JvmArgs, cfg.WorkingDir)
 }
 
 func (a *App) StopServer(serverID string) error {
@@ -100,7 +100,16 @@ func (a *App) RestartServer(serverID string) error {
 	if err != nil {
 		return err
 	}
-	return a.serverService.Start(cfg.JarPath, cfg.JvmArgs, cfg.WorkingDir)
+	return a.serverService.Start(serverID, cfg.JarPath, cfg.JvmArgs, cfg.WorkingDir)
+}
+
+func (a *App) AcceptEula(serverID string) error {
+	cfg, err := a.configService.GetServerConfig(serverID)
+	if err != nil {
+		return err
+	}
+	content := "# EULA accepted via Konnekt\neula=true\n"
+	return os.WriteFile(filepath.Join(cfg.WorkingDir, "eula.txt"), []byte(content), 0644)
 }
 
 func (a *App) SendCommand(serverID string, command string) error {

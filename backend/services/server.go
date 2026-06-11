@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ type ServerService struct {
 	stdin     io.WriteCloser
 	running   bool
 	startTime time.Time
+	serverID  string
 }
 
 func NewServerService() *ServerService {
@@ -29,7 +31,7 @@ func (s *ServerService) SetContext(ctx context.Context) {
 	s.ctx = ctx
 }
 
-func (s *ServerService) Start(jarPath string, jvmArgs []string, workingDir string) error {
+func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string, workingDir string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -44,6 +46,7 @@ func (s *ServerService) Start(jarPath string, jvmArgs []string, workingDir strin
 	args := make([]string, 0, len(jvmArgs)+3)
 	args = append(args, jvmArgs...)
 	args = append(args, "-jar", jarPath, "--nogui")
+
 	s.cmd = exec.Command("java", args...)
 	if workingDir != "" {
 		s.cmd.Dir = workingDir
@@ -71,6 +74,7 @@ func (s *ServerService) Start(jarPath string, jvmArgs []string, workingDir strin
 
 	s.running = true
 	s.startTime = time.Now()
+	s.serverID = serverID
 
 	go s.streamOutput(stdout)
 	go s.streamOutput(stderr)
@@ -83,10 +87,13 @@ func (s *ServerService) streamOutput(r io.Reader) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
-		runtime.EventsEmit(s.ctx, "log:line", map[string]string{
+		runtime.EventsEmit(s.ctx, EventLogLine, map[string]string{
 			"timestamp": time.Now().Format("15:04:05"),
 			"line":      line,
 		})
+		if strings.Contains(strings.ToLower(line), "eula.txt") {
+			runtime.EventsEmit(s.ctx, EventEulaRequired, nil)
+		}
 	}
 }
 
@@ -97,7 +104,7 @@ func (s *ServerService) waitForExit() {
 	s.mu.Lock()
 	s.running = false
 	s.mu.Unlock()
-	runtime.EventsEmit(s.ctx, "server:stopped", nil)
+	runtime.EventsEmit(s.ctx, EventServerStopped, nil)
 }
 
 func (s *ServerService) Stop() error {

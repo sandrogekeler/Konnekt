@@ -1,9 +1,25 @@
+import { useEffect, useState } from 'react'
+import { EventsOn } from '../wailsjs/runtime/runtime'
 import { Dashboard } from './components/Dashboard'
 import { TileCrate } from './components/TileCrate'
 import { LayoutPresets } from './components/LayoutPresets'
 import { ServerSelector } from './components/ServerSelector'
+import { EulaModal } from './components/EulaModal'
+import { useServerConfigStore } from './stores/useServerConfigStore'
+import { EVENTS } from './lib/constants'
 
 function App() {
+  const { activeId } = useServerConfigStore()
+  const [eulaRequired, setEulaRequired] = useState(false)
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.EULA_REQUIRED, () => setEulaRequired(true))
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       <aside
@@ -31,6 +47,13 @@ function App() {
       <main className="flex-1 overflow-hidden">
         <Dashboard />
       </main>
+
+      {eulaRequired && (
+        <EulaModal
+          serverId={activeId}
+          onClose={() => setEulaRequired(false)}
+        />
+      )}
     </div>
   )
 }
