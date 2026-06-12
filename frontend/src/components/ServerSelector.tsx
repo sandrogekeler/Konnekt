@@ -25,6 +25,7 @@ export function ServerSelector() {
   const { configs, activeId, loadConfigs, saveConfig, deleteConfig, setActiveId } = useServerConfigStore()
   const [editing, setEditing] = useState<string | null>(null) // null | 'new' | config id
   const [form, setForm] = useState<FormState>(emptyForm)
+  const [pendingDisconnect, setPendingDisconnect] = useState<string | null>(null)
 
   useEffect(() => {
     loadConfigs().catch(console.error)
@@ -55,8 +56,9 @@ export function ServerSelector() {
     setEditing(null)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDisconnect = async (id: string) => {
     await deleteConfig(id)
+    setPendingDisconnect(null)
   }
 
   const dirOf = (filePath: string) => {
@@ -140,9 +142,9 @@ export function ServerSelector() {
             ✎
           </button>
           <button
-            onClick={() => handleDelete(cfg.id)}
+            onClick={() => setPendingDisconnect(cfg.id)}
             className="text-xs text-white/20 hover:text-red-400 transition-colors px-1"
-            title="Delete"
+            title="Disconnect"
           >
             ×
           </button>
@@ -179,6 +181,43 @@ export function ServerSelector() {
           <span>Add server</span>
         </button>
       )}
+      {pendingDisconnect && (() => {
+        const name = configs.find(c => c.id === pendingDisconnect)?.name ?? 'this server'
+        return (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            onClick={() => setPendingDisconnect(null)}
+          >
+            <div
+              className="flex flex-col gap-4 p-5 rounded-xl w-72"
+              style={{ backgroundColor: 'var(--bg-base)', border: '0.5px solid var(--border-subtle)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-white">Disconnect server?</span>
+                <span className="text-xs text-white/50">
+                  <span className="text-white/80">{name}</span> will be removed from Konnekt. Your server files and data will not be affected.
+                </span>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setPendingDisconnect(null)}
+                  className="px-3 py-1.5 text-xs text-white/50 hover:text-white transition-colors rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDisconnect(pendingDisconnect)}
+                  className="px-3 py-1.5 text-xs rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
