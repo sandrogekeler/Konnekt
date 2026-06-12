@@ -74,7 +74,7 @@ export function TileCrate() {
       <button
         key={tile.id}
         onMouseDown={(e) => onMouseDown(tile, e)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all text-white/60 hover:text-white hover:bg-white/5"
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all ${onCanvas ? 'text-white bg-white/[0.07] hover:bg-white/[0.11]' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
         style={{ border: '0.5px solid transparent', cursor: 'grab' }}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'
@@ -85,12 +85,6 @@ export function TileCrate() {
       >
         <span className="text-base w-6 text-center">{tile.icon}</span>
         <span className="text-xs font-medium flex-1">{tile.label}</span>
-        {onCanvas && (
-          <span
-            className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ backgroundColor: 'var(--accent)' }}
-          />
-        )}
       </button>
     )
   }
