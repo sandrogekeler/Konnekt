@@ -53,8 +53,8 @@ export function StatsTile({ serverId }: TileProps) {
         <StatRow label="Players" value={`${status.players} / ${status.maxPlayers}`} />
         <StatRow
           label="TPS"
-          value={status.running ? status.tps.toFixed(1) : '—'}
-          className={status.running ? tpsColor(status.tps) : 'text-white/30'}
+          value={status.running && status.tps >= 0 ? status.tps.toFixed(1) : '—'}
+          className={status.running && status.tps >= 0 ? tpsColor(status.tps) : 'text-white/30'}
         />
         <StatRow
           label="RAM"

@@ -13,6 +13,7 @@ export interface TileDefinition {
   defaultH: number
   minW: number
   minH: number
+  maximizable?: boolean
   component: FC<TileProps>
 }
 

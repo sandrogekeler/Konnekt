@@ -16,13 +16,18 @@ type App struct {
 	ctx           context.Context
 	serverService *services.ServerService
 	configService *services.ConfigService
+	rconService   *services.RconService
 	dataDir       string
 }
 
 func NewApp() *App {
+	rcon := services.NewRconService()
+	srv := services.NewServerService()
+	srv.SetRcon(rcon)
 	return &App{
-		serverService: services.NewServerService(),
+		serverService: srv,
 		configService: services.NewConfigService(),
+		rconService:   rcon,
 	}
 }
 
@@ -122,11 +127,11 @@ func (a *App) GetServerStatus(serverID string) (models.ServerStatus, error) {
 	return models.ServerStatus{
 		Running:    a.serverService.IsRunning(),
 		Uptime:     a.serverService.Uptime(),
-		Players:    0,
-		MaxPlayers: 20,
-		TPS:        20.0,
-		RAMUsed:    0,
-		RAMTotal:   2048,
+		Players:    a.serverService.PlayerCount(),
+		MaxPlayers: a.serverService.MaxPlayers(),
+		TPS:        a.serverService.CurrentTPS(),
+		RAMUsed:    a.serverService.RAMUsedMB(),
+		RAMTotal:   a.serverService.RAMTotalMB(),
 	}, nil
 }
 

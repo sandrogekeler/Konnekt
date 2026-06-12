@@ -6,9 +6,23 @@ interface TileWrapperProps {
   icon: string
   onRemove: (id: string) => void
   children: ReactNode
+  maximizable?: boolean
+  maximized?: boolean
+  flash?: boolean
+  onToggleMaximize?: (id: string) => void
 }
 
-export function TileWrapper({ id, label, icon, onRemove, children }: TileWrapperProps) {
+export function TileWrapper({
+  id,
+  label,
+  icon,
+  onRemove,
+  children,
+  maximizable,
+  maximized,
+  flash,
+  onToggleMaximize,
+}: TileWrapperProps) {
   return (
     <div
       className="tile-wrapper flex flex-col h-full rounded-[10px] overflow-hidden"
@@ -16,14 +30,17 @@ export function TileWrapper({ id, label, icon, onRemove, children }: TileWrapper
         backgroundColor: 'var(--bg-base)',
         backgroundImage: 'linear-gradient(var(--bg-surface), var(--bg-surface))',
         border: '0.5px solid var(--border-subtle)',
-        transition: 'border-color 150ms, transform 150ms',
+        transition: 'border-color 150ms, transform 150ms, box-shadow 300ms ease',
+        boxShadow: flash
+          ? '0 0 0 2px rgba(34,197,94,0.85), 0 0 18px 2px rgba(34,197,94,0.45)'
+          : undefined,
       }}
-      onMouseEnter={(e) => {
+      onMouseEnter={maximized ? undefined : (e) => {
         const el = e.currentTarget as HTMLDivElement
         el.style.borderColor = 'rgba(255,255,255,0.12)'
         el.style.transform = 'translateY(-1px)'
       }}
-      onMouseLeave={(e) => {
+      onMouseLeave={maximized ? undefined : (e) => {
         const el = e.currentTarget as HTMLDivElement
         el.style.borderColor = 'var(--border-subtle)'
         el.style.transform = 'translateY(0)'
@@ -33,21 +50,37 @@ export function TileWrapper({ id, label, icon, onRemove, children }: TileWrapper
         className="drag-handle flex items-center justify-between px-3 py-2 shrink-0 select-none"
         style={{
           borderBottom: '0.5px solid var(--border-subtle)',
-          cursor: 'grab',
+          cursor: maximized ? 'default' : 'grab',
         }}
+        onDoubleClick={maximizable ? () => onToggleMaximize?.(id) : undefined}
+        title={maximizable && !maximized ? 'Double-click to maximize' : undefined}
       >
         <div className="flex items-center gap-2">
           <span className="text-sm leading-none">{icon}</span>
           <span className="text-xs font-medium text-white/70">{label}</span>
         </div>
-        <button
-          onClick={() => onRemove(id)}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 text-sm transition-colors leading-none"
-          title="Remove tile"
-        >
-          ×
-        </button>
+        <div className="flex items-center gap-1">
+          {maximizable && (
+            <button
+              onClick={() => onToggleMaximize?.(id)}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 text-xs transition-colors leading-none"
+              title={maximized ? 'Restore tile' : 'Maximize tile'}
+            >
+              {maximized ? '⤡' : '⤢'}
+            </button>
+          )}
+          {!maximized && (
+            <button
+              onClick={() => onRemove(id)}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 text-sm transition-colors leading-none"
+              title="Remove tile"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>

@@ -19,6 +19,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 12,
     minW: 2,
     minH: 6,
+    maximizable: true,
     component: ConsoleTile,
   },
   {
@@ -28,7 +29,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultW: 1,
     defaultH: 4,
     minW: 1,
-    minH: 4,
+    minH: 3,
     component: StatsTile,
   },
   {
@@ -39,11 +40,12 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 4,
     minW: 2,
     minH: 2,
+    maximizable: true,
     component: PlayersTile,
   },
   {
     id: 'quick-commands',
-    label: 'Quick Commands',
+    label: 'Commands',
     icon: '>>',
     defaultW: 1,
     defaultH: 6,
@@ -57,8 +59,9 @@ export const TILE_REGISTRY: TileDefinition[] = [
     icon: '/\\',
     defaultW: 3,
     defaultH: 6,
-    minW: 3,
-    minH: 6,
+    minW: 2,
+    minH: 2,
+    maximizable: true,
     component: PerformanceTile,
   },
   {
@@ -69,6 +72,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 6,
     minW: 2,
     minH: 6,
+    maximizable: true,
     component: SchedulerTile,
   },
   {
@@ -79,6 +83,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 6,
     minW: 2,
     minH: 6,
+    maximizable: true,
     component: WorldsTile,
   },
   {
@@ -89,6 +94,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 6,
     minW: 2,
     minH: 6,
+    maximizable: true,
     component: BackupsTile,
   },
   {
@@ -99,6 +105,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 8,
     minW: 3,
     minH: 8,
+    maximizable: true,
     component: ServerConfigTile,
   },
   {
@@ -109,6 +116,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultH: 4,
     minW: 2,
     minH: 2,
+    maximizable: true,
     component: NotificationsTile,
   },
 ]

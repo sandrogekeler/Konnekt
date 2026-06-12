@@ -56,6 +56,14 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
+/* Drag/resize placeholder — replaces RGL's default red square */
+.react-grid-placeholder {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 10px;
+  opacity: 1 !important;
+}
+
 /* Custom tile resize handle — replaces RGL's default invisible SVG */
 .react-resizable-handle-se {
   background-image: none;
