@@ -8,7 +8,7 @@ export function LayoutPresets() {
   const [newName, setNewName] = useState('')
   const [saving, setSaving] = useState(false)
   const [resetting, setResetting] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
 
   const handleReset = async () => {
     setResetting(true)
