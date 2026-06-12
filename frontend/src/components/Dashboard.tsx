@@ -171,6 +171,16 @@ export function Dashboard() {
       void panel.offsetHeight
       panel.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0, 0, 1)`
       panel.style.transform = 'translate(0px, 0px) scale(1, 1)'
+    } else if (panelRef.current) {
+      const panel = panelRef.current
+      panel.style.transition = 'none'
+      panel.style.transformOrigin = 'center'
+      panel.style.opacity = '0'
+      panel.style.transform = 'scale(0.93)'
+      void panel.offsetHeight
+      panel.style.transition = `transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 140ms ease-out`
+      panel.style.opacity = '1'
+      panel.style.transform = 'scale(1)'
     }
   }, [maximizedId]) // intentionally excludes `closing` — only fires on open
 
@@ -191,6 +201,11 @@ export function Dashboard() {
       const panel = panelRef.current
       panel.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0, 0, 1)`
       panel.style.transform = flipTransform(rect, containerRect, padding)
+    } else if (panelRef.current) {
+      const panel = panelRef.current
+      panel.style.transition = `transform 130ms cubic-bezier(0.4, 0, 1, 0.6), opacity 120ms ease-in`
+      panel.style.opacity = '0'
+      panel.style.transform = 'scale(0.93)'
     }
   }, [closing])
 
