@@ -32,11 +32,17 @@ export function TileCrate() {
   // we hand off to the Dashboard, which renders the wireframe + grid placeholder
   // and performs the drop. Mouse events give the same smooth feel as moving a
   // tile inside the canvas (HTML5 drag-and-drop is noticeably clunkier).
-  const press = useRef<{ tile: TileDefinition; startX: number; startY: number; dragging: boolean } | null>(null)
+  const handleShiftClick = (tile: TileDefinition) => {
+    requestCloseMaximize()
+    if (!activeTileIds.includes(tile.id)) addTile(tile.id)
+    flashTile(tile.id)
+  }
+
+  const press = useRef<{ tile: TileDefinition; startX: number; startY: number; dragging: boolean; shiftKey: boolean } | null>(null)
 
   const onWindowMove = (e: MouseEvent) => {
     const p = press.current
-    if (!p || p.dragging) return
+    if (!p || p.dragging || p.shiftKey) return
     if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > DRAG_THRESHOLD) {
       p.dragging = true
       setDraggingTileId(p.tile.id) // Dashboard takes over move/up from here
@@ -48,14 +54,16 @@ export function TileCrate() {
     window.removeEventListener('mouseup', onWindowUp)
     const p = press.current
     press.current = null
-    if (p && !p.dragging) handleClick(p.tile) // a plain click
+    if (p && !p.dragging) {
+      p.shiftKey ? handleShiftClick(p.tile) : handleClick(p.tile)
+    }
     // If it was a drag, the Dashboard's mouseup handler does the drop + cleanup.
   }
 
   const onMouseDown = (tile: TileDefinition, e: React.MouseEvent) => {
     if (e.button !== 0) return
     e.preventDefault() // stop text selection / focus during a drag
-    press.current = { tile, startX: e.clientX, startY: e.clientY, dragging: false }
+    press.current = { tile, startX: e.clientX, startY: e.clientY, dragging: false, shiftKey: e.shiftKey }
     window.addEventListener('mousemove', onWindowMove)
     window.addEventListener('mouseup', onWindowUp)
   }
