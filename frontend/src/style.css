@@ -76,6 +76,14 @@ body {
   100% { opacity: 0; box-shadow: none; }
 }
 
+.tile-outer {
+  transition: transform 150ms;
+}
+
+.tile-outer:hover {
+  transform: translateY(-1px);
+}
+
 .tile-wrapper {
   position: absolute;
   inset: 0;

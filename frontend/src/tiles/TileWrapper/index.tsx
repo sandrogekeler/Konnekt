@@ -24,7 +24,7 @@ export function TileWrapper({
   onToggleMaximize,
 }: TileWrapperProps) {
   return (
-    <div className="relative h-full">
+    <div className={`relative h-full${maximized ? '' : ' tile-outer'}`}>
       {flash && <div className="tile-flash-ring" />}
     <div
       className="tile-wrapper flex flex-col h-full rounded-[10px] overflow-hidden"
@@ -32,17 +32,13 @@ export function TileWrapper({
         backgroundColor: 'var(--bg-base)',
         backgroundImage: 'linear-gradient(var(--bg-surface), var(--bg-surface))',
         border: '0.5px solid var(--border-subtle)',
-        transition: 'border-color 150ms, transform 150ms',
+        transition: 'border-color 150ms',
       }}
       onMouseEnter={maximized ? undefined : (e) => {
-        const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = 'rgba(255,255,255,0.12)'
-        el.style.transform = 'translateY(-1px)'
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.12)'
       }}
       onMouseLeave={maximized ? undefined : (e) => {
-        const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = 'var(--border-subtle)'
-        el.style.transform = 'translateY(0)'
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)'
       }}
     >
       <div
