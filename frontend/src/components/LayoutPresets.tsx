@@ -42,8 +42,8 @@ export function LayoutPresets() {
         <span style={{ display: 'inline-block', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}>▾</span>
       </button>
 
-      <div style={{ display: 'grid', gridTemplateRows: collapsed ? '0fr' : '1fr', transition: 'grid-template-rows 200ms ease', overflow: 'hidden' }}>
-      <div style={{ minHeight: 0 }} className="flex flex-col gap-2">
+      <div style={{ display: 'grid', gridTemplateRows: collapsed ? '0fr' : '1fr', transition: 'grid-template-rows 200ms ease', overflow: 'hidden', minWidth: 0 }}>
+      <div style={{ minHeight: 0, minWidth: 0 }} className="flex flex-col gap-2">
 
       {presets.map((preset) => (
         <div
