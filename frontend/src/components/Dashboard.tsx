@@ -261,7 +261,7 @@ export function Dashboard() {
   )
 
   // Tile being dragged from the navbar, if it isn't already on canvas
-  const draggingTile = draggingTileId
+  const draggingTile = draggingTileId && !activeTileIds.includes(draggingTileId)
     ? TILE_REGISTRY.find((t) => t.id === draggingTileId)
     : undefined
 
