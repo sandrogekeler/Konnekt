@@ -33,7 +33,7 @@ export function LayoutPresets() {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2">
+    <div className="flex flex-col gap-2 p-2 overflow-hidden">
       <button
         onClick={() => setCollapsed(c => !c)}
         className="flex items-center justify-between px-1 text-xs text-white/40 font-medium uppercase tracking-wider hover:text-white/60 transition-colors w-full"
