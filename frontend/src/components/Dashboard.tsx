@@ -169,7 +169,7 @@ export function Dashboard() {
       panel.style.transformOrigin = 'center'
       panel.style.transform = flipTransform(rect, containerRect, padding)
       void panel.offsetHeight
-      panel.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0, 0, 1)`
+      panel.style.transition = `transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1)`
       panel.style.transform = 'translate(0px, 0px) scale(1, 1)'
     } else if (panelRef.current) {
       const panel = panelRef.current
@@ -199,7 +199,7 @@ export function Dashboard() {
 
     if (panelRef.current && rect) {
       const panel = panelRef.current
-      panel.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.2, 0, 0, 1)`
+      panel.style.transition = `transform 130ms cubic-bezier(0.4, 0, 1, 0.6)`
       panel.style.transform = flipTransform(rect, containerRect, padding)
     } else if (panelRef.current) {
       const panel = panelRef.current
