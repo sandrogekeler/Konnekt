@@ -76,6 +76,10 @@ body {
   100% { opacity: 0; box-shadow: none; }
 }
 
+.tile-wrapper {
+  position: relative;
+}
+
 .tile-flash-ring {
   position: absolute;
   inset: -1.5px;
