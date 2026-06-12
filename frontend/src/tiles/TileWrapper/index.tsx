@@ -24,16 +24,15 @@ export function TileWrapper({
   onToggleMaximize,
 }: TileWrapperProps) {
   return (
+    <div className="relative h-full">
+      {flash && <div className="tile-flash-ring" />}
     <div
       className="tile-wrapper flex flex-col h-full rounded-[10px] overflow-hidden"
       style={{
         backgroundColor: 'var(--bg-base)',
         backgroundImage: 'linear-gradient(var(--bg-surface), var(--bg-surface))',
         border: '0.5px solid var(--border-subtle)',
-        transition: 'border-color 150ms, transform 150ms, box-shadow 300ms ease',
-        boxShadow: flash
-          ? '0 0 0 2px rgba(34,197,94,0.85), 0 0 18px 2px rgba(34,197,94,0.45)'
-          : undefined,
+        transition: 'border-color 150ms, transform 150ms',
       }}
       onMouseEnter={maximized ? undefined : (e) => {
         const el = e.currentTarget as HTMLDivElement
@@ -83,6 +82,7 @@ export function TileWrapper({
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    </div>
     </div>
   )
 }

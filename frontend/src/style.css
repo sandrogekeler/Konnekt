@@ -64,6 +64,39 @@ body {
   opacity: 1 !important;
 }
 
+/* Tile flash: spinning gradient border + outer glow on shift-click / utility placement */
+@keyframes flash-ring-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes flash-ring-fade {
+  0%   { opacity: 0; box-shadow: none; }
+  6%   { opacity: 1; box-shadow: 0 0 20px 4px rgba(34,197,94,0.2); }
+  72%  { opacity: 1; box-shadow: 0 0 20px 4px rgba(34,197,94,0.2); }
+  100% { opacity: 0; box-shadow: none; }
+}
+
+.tile-flash-ring {
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 11px;
+  overflow: hidden;
+  pointer-events: none;
+  animation: flash-ring-fade 1.2s ease forwards;
+}
+
+.tile-flash-ring::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(0deg);
+  background: conic-gradient(#166534 0%, #22c55e 30%, #4ade80 50%, #22c55e 70%, #166534 100%);
+  animation: flash-ring-spin 3s linear infinite;
+}
+
 /* Custom tile resize handle — replaces RGL's default invisible SVG */
 .react-resizable-handle-se {
   background-image: none;
