@@ -77,7 +77,8 @@ body {
 }
 
 .tile-wrapper {
-  position: relative;
+  position: absolute;
+  inset: 0;
 }
 
 .tile-flash-ring {
