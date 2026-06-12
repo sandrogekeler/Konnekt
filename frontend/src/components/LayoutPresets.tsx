@@ -8,6 +8,7 @@ export function LayoutPresets() {
   const [newName, setNewName] = useState('')
   const [saving, setSaving] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   const handleReset = async () => {
     setResetting(true)
@@ -33,7 +34,16 @@ export function LayoutPresets() {
 
   return (
     <div className="flex flex-col gap-2 p-2">
-      <div className="text-xs text-white/40 px-1 font-medium uppercase tracking-wider">Layouts</div>
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="flex items-center justify-between px-1 text-xs text-white/40 font-medium uppercase tracking-wider hover:text-white/60 transition-colors w-full"
+      >
+        <span>Layouts</span>
+        <span style={{ display: 'inline-block', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}>▾</span>
+      </button>
+
+      <div style={{ display: 'grid', gridTemplateRows: collapsed ? '0fr' : '1fr', transition: 'grid-template-rows 200ms ease', overflow: 'hidden' }}>
+      <div style={{ minHeight: 0 }} className="flex flex-col gap-2">
 
       {presets.map((preset) => (
         <div
@@ -87,6 +97,9 @@ export function LayoutPresets() {
       >
         {resetting ? 'Resetting…' : '↺ Reset to defaults'}
       </button>
+
+      </div>
+      </div>
     </div>
   )
 }
