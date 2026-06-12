@@ -7,24 +7,49 @@ interface FormState {
   name: string
   jarPath: string
   workingDir: string
-  jvmArgs: string
+  jvmArgs: string  // canonical full expression, always kept in sync
+  minRam: string
+  maxRam: string
 }
 
-const emptyForm: FormState = { name: '', jarPath: '', workingDir: '', jvmArgs: '-Xmx2G -Xms512M' }
+const emptyForm: FormState = {
+  name: '', jarPath: '', workingDir: '',
+  jvmArgs: '-Xms512M -Xmx2G', minRam: '512M', maxRam: '2G',
+}
+
+function parseRamFromArgs(args: string): { minRam: string; maxRam: string } {
+  return {
+    minRam: args.match(/-Xms(\S+)/)?.[1] ?? '',
+    maxRam: args.match(/-Xmx(\S+)/)?.[1] ?? '',
+  }
+}
+
+function mergeRamIntoArgs(args: string, minRam: string, maxRam: string): string {
+  let result = args
+  if (minRam) {
+    result = /-Xms\S+/.test(result)
+      ? result.replace(/-Xms\S+/, `-Xms${minRam}`)
+      : `${result} -Xms${minRam}`.trim()
+  }
+  if (maxRam) {
+    result = /-Xmx\S+/.test(result)
+      ? result.replace(/-Xmx\S+/, `-Xmx${maxRam}`)
+      : `${result} -Xmx${maxRam}`.trim()
+  }
+  return result
+}
 
 function configToForm(cfg: ServerConfig): FormState {
-  return {
-    name: cfg.name,
-    jarPath: cfg.jarPath,
-    workingDir: cfg.workingDir,
-    jvmArgs: cfg.jvmArgs.join(' '),
-  }
+  const jvmArgs = cfg.jvmArgs.join(' ')
+  const { minRam, maxRam } = parseRamFromArgs(jvmArgs)
+  return { name: cfg.name, jarPath: cfg.jarPath, workingDir: cfg.workingDir, jvmArgs, minRam, maxRam }
 }
 
 export function ServerSelector() {
   const { configs, activeId, loadConfigs, saveConfig, deleteConfig, setActiveId } = useServerConfigStore()
-  const [editing, setEditing] = useState<string | null>(null) // null | 'new' | config id
+  const [editing, setEditing] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
+  const [advancedMode, setAdvancedMode] = useState(false)
   const [pendingDisconnect, setPendingDisconnect] = useState<string | null>(null)
 
   useEffect(() => {
@@ -33,15 +58,28 @@ export function ServerSelector() {
 
   const openNew = () => {
     setForm(emptyForm)
+    setAdvancedMode(false)
     setEditing('new')
   }
 
   const openEdit = (cfg: ServerConfig) => {
     setForm(configToForm(cfg))
+    setAdvancedMode(cfg.jvmArgs.some(a => !a.startsWith('-Xms') && !a.startsWith('-Xmx')))
     setEditing(cfg.id)
   }
 
   const cancel = () => setEditing(null)
+
+  const toggleAdvanced = () => {
+    if (!advancedMode) {
+      // simple → advanced: merge current min/max into the expression first
+      setForm(f => ({ ...f, jvmArgs: mergeRamIntoArgs(f.jvmArgs, f.minRam, f.maxRam) }))
+    } else {
+      // advanced → simple: parse min/max out of the raw expression
+      setForm(f => ({ ...f, ...parseRamFromArgs(f.jvmArgs) }))
+    }
+    setAdvancedMode(v => !v)
+  }
 
   const submit = async () => {
     const name = form.name.trim()
@@ -50,7 +88,10 @@ export function ServerSelector() {
     if (!name || !jarPath || !workingDir) return
 
     const id = editing === 'new' ? crypto.randomUUID() : editing!
-    const jvmArgs = form.jvmArgs.trim() ? form.jvmArgs.trim().split(/\s+/) : []
+    const finalArgs = advancedMode
+      ? form.jvmArgs
+      : mergeRamIntoArgs(form.jvmArgs, form.minRam, form.maxRam)
+    const jvmArgs = finalArgs.trim() ? finalArgs.trim().split(/\s+/) : []
 
     await saveConfig({ id, name, jarPath, jvmArgs, workingDir })
     setEditing(null)
@@ -79,7 +120,7 @@ export function ServerSelector() {
   const inputClass = 'flex-1 min-w-0 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors font-mono'
   const plainInputClass = 'w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors font-mono'
 
-  const field = (key: keyof FormState, placeholder: string) => (
+  const field = (key: 'name', placeholder: string) => (
     <input
       type="text"
       value={form[key]}
@@ -114,6 +155,43 @@ export function ServerSelector() {
         …
       </button>
     </div>
+  )
+
+  const ramFields = (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex gap-1.5">
+        <div className="flex flex-col gap-1 flex-1">
+          <span className="text-xs text-white/30 px-0.5">Min RAM</span>
+          <input
+            type="text"
+            value={form.minRam}
+            onChange={(e) => setForm((f) => ({ ...f, minRam: e.target.value }))}
+            placeholder="512M"
+            className={plainInputClass}
+          />
+        </div>
+        <div className="flex flex-col gap-1 flex-1">
+          <span className="text-xs text-white/30 px-0.5">Max RAM</span>
+          <input
+            type="text"
+            value={form.maxRam}
+            onChange={(e) => setForm((f) => ({ ...f, maxRam: e.target.value }))}
+            placeholder="2G"
+            className={plainInputClass}
+          />
+        </div>
+      </div>
+    </div>
+  )
+
+  const advancedField = (
+    <input
+      type="text"
+      value={form.jvmArgs}
+      onChange={(e) => setForm((f) => ({ ...f, jvmArgs: e.target.value }))}
+      placeholder="-Xms512M -Xmx2G -XX:+UseG1GC"
+      className={plainInputClass}
+    />
   )
 
   return (
@@ -156,7 +234,13 @@ export function ServerSelector() {
           {field('name', 'Name')}
           {browseField('jarPath', 'Jar path', browseJar)}
           {browseField('workingDir', 'Working dir', browseDir)}
-          {field('jvmArgs', 'JVM args')}
+          {advancedMode ? advancedField : ramFields}
+          <button
+            onClick={toggleAdvanced}
+            className="self-start text-xs text-white/25 hover:text-white/50 transition-colors"
+          >
+            {advancedMode ? '← Simple' : '⚙ Advanced'}
+          </button>
           <div className="flex gap-1 mt-0.5">
             <button
               onClick={submit}
@@ -181,6 +265,7 @@ export function ServerSelector() {
           <span>Add server</span>
         </button>
       )}
+
       {pendingDisconnect && (() => {
         const name = configs.find(c => c.id === pendingDisconnect)?.name ?? 'this server'
         return (
