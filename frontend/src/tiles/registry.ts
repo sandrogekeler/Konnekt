@@ -71,7 +71,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     defaultW: 2,
     defaultH: 6,
     minW: 2,
-    minH: 6,
+    minH: 3,
     maximizable: true,
     component: SchedulerTile,
   },
