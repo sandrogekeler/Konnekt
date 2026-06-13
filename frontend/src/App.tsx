@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EventsOn } from '../wailsjs/runtime/runtime'
+import { StartServer } from '../wailsjs/go/main/App'
 import { Dashboard } from './components/Dashboard'
 import { TileCrate } from './components/TileCrate'
 import { LayoutPresets } from './components/LayoutPresets'
@@ -9,16 +10,28 @@ import { SettingsModal } from './components/SettingsModal'
 import { useServerConfigStore } from './stores/useServerConfigStore'
 import { useConsoleStore } from './stores/useConsoleStore'
 import { useSettingsStore } from './stores/useSettingsStore'
+import { emitNotification } from './lib/notify'
 import { EVENTS } from './lib/constants'
 
 function App() {
   const { activeId } = useServerConfigStore()
+  const settingsLoaded = useSettingsStore((s) => s.loaded)
   const [eulaRequired, setEulaRequired] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const autoStarted = useRef(false)
 
   useEffect(() => {
     useSettingsStore.getState().load()
   }, [])
+
+  // Auto-start active server on launch
+  useEffect(() => {
+    if (!settingsLoaded || !activeId || autoStarted.current) return
+    if (useSettingsStore.getState().settings.autoStartActiveServer) {
+      autoStarted.current = true
+      StartServer(activeId).catch(() => { /* already running or no server */ })
+    }
+  }, [settingsLoaded, activeId])
 
   useEffect(() => {
     let cleanup: (() => void) | undefined
@@ -33,6 +46,34 @@ function App() {
     try {
       cleanup = EventsOn(EVENTS.LOG_LINE, (data: { timestamp: string; line: string }) => {
         useConsoleStore.getState().appendLine(data.timestamp, data.line)
+      })
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
+  // Server stopped — detect crash vs. deliberate stop
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.SERVER_STOPPED, (payload?: { expected?: boolean }) => {
+        const { settings } = useSettingsStore.getState()
+        if (!payload?.expected && settings.notifyOnCrash) {
+          emitNotification('crash', 'Server stopped unexpectedly')
+        }
+      })
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
+  // Player join notifications
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.PLAYER_JOINED, (name: string) => {
+        const { settings } = useSettingsStore.getState()
+        if (settings.notifyOnJoin) {
+          emitNotification('join', `${name} joined the game`)
+        }
       })
     } catch { /* non-Wails context */ }
     return () => { try { cleanup?.() } catch { } }

@@ -74,6 +74,10 @@ export function KickPlayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['KickPlayer'](arg1, arg2, arg3);
 }
 
+export function OpenDataDir() {
+  return window['go']['main']['App']['OpenDataDir']();
+}
+
 export function RestartServer(arg1) {
   return window['go']['main']['App']['RestartServer'](arg1);
 }

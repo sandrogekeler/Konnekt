@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useSettingsStore } from './useSettingsStore'
 
 export interface LogLine {
   id: number
@@ -25,11 +26,14 @@ interface ConsoleStore {
 export const useConsoleStore = create<ConsoleStore>((set) => ({
   lines: [],
   appendLine: (timestamp, text) =>
-    set((s) => ({
-      lines: [
-        ...s.lines.slice(-2000),
-        { id: ++lineId, timestamp, text, level: classifyLine(text) },
-      ],
-    })),
+    set((s) => {
+      const max = useSettingsStore.getState().settings.consoleBufferLines || 1000
+      return {
+        lines: [
+          ...s.lines.slice(-(max - 1)),
+          { id: ++lineId, timestamp, text, level: classifyLine(text) },
+        ],
+      }
+    }),
   clear: () => set({ lines: [] }),
 }))

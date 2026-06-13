@@ -1,19 +1,24 @@
 # Konnekt Roadmap
 
-## Settings — pending behavior hookups
+## Settings — completed
 
-The settings UI, store, and persistence are complete. The items below save/restore correctly but their described effect is not yet wired into the app.
+All settings are now fully wired:
 
-### General
-- **Auto-start active server** — `App.tsx` needs a `useEffect` that reads `useSettingsStore().settings.autoStartActiveServer` and calls `StartServer(activeId)` on mount if true.
-- **Confirm before stop** — the stop flow in `ServerSelector.tsx` needs to check `confirmBeforeStop` and show a confirmation dialog before calling `StopServer`.
+| Setting | Status |
+|---|---|
+| Theme (Light/Dark/System) | ✅ Live DOM switch, persisted |
+| Accent color | ✅ Live DOM switch, persisted |
+| Auto-start active server | ✅ Starts on launch if enabled |
+| Confirm before stop/restart | ✅ Confirmation dialog in Quick Commands |
+| Console timestamps | ✅ Toggle shows/hides timestamp column |
+| Console buffer size | ✅ Store trims lines to this cap |
+| Crash alerts | ✅ Desktop + in-app notification feed |
+| Player join alerts | ✅ Desktop + in-app notification feed |
+| Open config folder | ✅ Opens ~/.config/konnekt in file manager |
 
-### Console
-- **Show timestamps** — the console tile (or `useConsoleStore`) needs to read `consoleTimestamps` from the settings store and conditionally prefix each line when rendering.
-- **Buffer size** — `useConsoleStore.appendLine` needs to trim `lines` to `consoleBufferLines` after each append (currently unbounded).
+## Future ideas
 
-### Notifications
-- **Crash alerts / Player join alerts** — no notification system exists yet. Needs either the browser `Notification` API or a Wails runtime call, triggered from the appropriate server events (`server:stopped` for crashes, player join polling).
-
-### About
-- **Open config folder** — add a button that calls `BrowserOpenURL` or a new `OpenDataDir` Go binding to open `~/.config/konnekt` in the system file manager.
+- Notifications tile: add filter by kind (crash / join)
+- Console: syntax highlighting, search/filter
+- General: minimize to system tray option
+- General: check for updates

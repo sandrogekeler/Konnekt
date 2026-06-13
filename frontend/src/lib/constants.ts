@@ -5,6 +5,8 @@ export const EVENTS = {
   SERVER_STOPPED: 'server:stopped',
   EULA_REQUIRED:  'server:eula-required',
   STATS_SNAPSHOT: 'stats:snapshot',
+  PLAYER_JOINED:  'player:joined',
+  PLAYER_LEFT:    'player:left',
 } as const
 
 export const DEFAULT_LAYOUT_PRESETS = [

@@ -1,19 +1,21 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { SendCommand } from '../../../wailsjs/go/main/App'
 import { useConsoleStore } from '../../stores/useConsoleStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
 import type { TileProps } from '../../types'
 import { useState } from 'react'
 
 const LEVEL_CLASS = {
-  success: 'text-green-400',
+  success: 'text-accent',
   warn: 'text-yellow-400',
   error: 'text-red-400',
-  dim: 'text-white/50',
+  dim: 'text-[var(--text-secondary)]',
 } as const
 
 export function ConsoleTile({ serverId }: TileProps) {
   const lines = useConsoleStore((s) => s.lines)
   const clear = useConsoleStore((s) => s.clear)
+  const showTimestamps = useSettingsStore((s) => s.settings.consoleTimestamps)
   const [input, setInput] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -51,7 +53,9 @@ export function ConsoleTile({ serverId }: TileProps) {
       >
         {lines.map((line) => (
           <div key={line.id} className="flex gap-2">
-            <span className="text-white/25 shrink-0">{line.timestamp}</span>
+            {showTimestamps && (
+              <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>{line.timestamp}</span>
+            )}
             <span className={LEVEL_CLASS[line.level]}>{line.text}</span>
           </div>
         ))}
@@ -63,7 +67,8 @@ export function ConsoleTile({ serverId }: TileProps) {
             setAutoScroll(true)
             if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
           }}
-          className="mx-3 mb-1 text-xs text-white/40 hover:text-white/70 transition-colors text-center"
+          className="mx-3 mb-1 text-xs transition-colors text-center"
+          style={{ color: 'var(--text-muted)' }}
         >
           ↓ scroll to bottom
         </button>
@@ -76,19 +81,44 @@ export function ConsoleTile({ serverId }: TileProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter command..."
-          className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm font-mono text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          className="flex-1 rounded px-2 py-1 text-sm font-mono outline-none transition-colors"
+          style={{
+            background: 'var(--hover-surface)',
+            border: '0.5px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+          onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)' }}
+          onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)' }}
         />
         <button
           type="submit"
-          className="px-3 py-1 text-xs rounded border border-white/10 text-white/60 hover:text-white hover:border-white/25 transition-colors"
+          className="px-3 py-1 text-xs rounded transition-colors"
+          style={{ border: '0.5px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-hover)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'
+          }}
         >
           Send
         </button>
         <button
           type="button"
           onClick={clear}
-          className="px-3 py-1 text-xs rounded border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-colors"
+          className="px-3 py-1 text-xs rounded transition-colors"
+          style={{ border: '0.5px solid var(--border-subtle)', color: 'var(--text-faint)' }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-hover)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'
+          }}
           title="Clear console"
         >
           clr

@@ -6,6 +6,7 @@ import { Toggle } from './ui/Toggle'
 import { Segmented } from './ui/Segmented'
 import { ColorSwatch } from './ui/ColorSwatch'
 import { SettingRow } from './ui/SettingRow'
+import { OpenDataDir } from '../../wailsjs/go/main/App'
 
 type UpdateFn = (patch: Partial<AppSettings>) => Promise<void>
 
@@ -297,6 +298,10 @@ function NotificationsPane({ settings, update }: {
 // ─── About ────────────────────────────────────────────────────────────────────
 
 function AboutPane() {
+  const openFolder = () => {
+    try { OpenDataDir().catch(() => {}) } catch { /* non-Wails context */ }
+  }
+
   return (
     <div className="flex flex-col gap-4 py-2">
       <div className="flex flex-col gap-1">
@@ -310,7 +315,16 @@ function AboutPane() {
         </div>
         <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-secondary)' }}>
           <span>Data directory</span>
-          <span className="font-mono text-[11px]" style={{ color: 'var(--text-muted)' }}>~/.config/konnekt</span>
+          <button
+            onClick={openFolder}
+            className="font-mono text-[11px] transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+            title="Open config folder"
+          >
+            ~/.config/konnekt ↗
+          </button>
         </div>
       </div>
     </div>

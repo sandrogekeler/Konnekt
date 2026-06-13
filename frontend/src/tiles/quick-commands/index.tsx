@@ -9,6 +9,7 @@ import {
   StopServer,
   RestartServer,
 } from '../../../wailsjs/go/main/App'
+import { useSettingsStore } from '../../stores/useSettingsStore'
 import type { TileProps } from '../../types'
 
 interface ModalState {
@@ -79,12 +80,14 @@ export function QuickCommandsTile({ serverId }: TileProps) {
   const [items, setItems] = useState<CmdItem[]>([])
   const [newCmd, setNewCmd] = useState('')
   const [modal, setModal] = useState<ModalState | null>(null)
+  const [confirmAction, setConfirmAction] = useState<'stop' | 'restart' | null>(null)
   const [editing, setEditing] = useState(false)
   const [dropdownPos, setDropdownPos] = useState<DropdownPos | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
   const dragIndex = useRef<number | null>(null)
   const presetsButtonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const confirmBeforeStop = useSettingsStore((s) => s.settings.confirmBeforeStop)
 
   useEffect(() => {
     let cancelled = false
@@ -177,7 +180,7 @@ export function QuickCommandsTile({ serverId }: TileProps) {
     [serverId],
   )
 
-  const handleLifecycle = useCallback(
+  const execLifecycle = useCallback(
     (action: string) => {
       const fns: Record<string, () => Promise<void>> = {
         start:   () => StartServer(serverId),
@@ -187,6 +190,17 @@ export function QuickCommandsTile({ serverId }: TileProps) {
       fns[action]?.().catch(console.error)
     },
     [serverId],
+  )
+
+  const handleLifecycle = useCallback(
+    (action: string) => {
+      if (confirmBeforeStop && (action === 'stop' || action === 'restart')) {
+        setConfirmAction(action as 'stop' | 'restart')
+        return
+      }
+      execLifecycle(action)
+    },
+    [confirmBeforeStop, execLifecycle],
   )
 
   const run = useCallback(
@@ -393,6 +407,46 @@ export function QuickCommandsTile({ serverId }: TileProps) {
           </div>,
           document.body,
         )}
+
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div
+            className="rounded-xl p-5 w-72 flex flex-col gap-4"
+            style={{ background: 'var(--bg-base)', border: '0.5px solid var(--border-subtle)' }}
+          >
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+                {confirmAction === 'stop' ? 'Stop server?' : 'Restart server?'}
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {confirmAction === 'stop'
+                  ? 'This will stop the running server. Any unsaved progress may be lost.'
+                  : 'This will restart the running server. Players will be briefly disconnected.'}
+              </span>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="px-3 py-1.5 text-xs transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { execLifecycle(confirmAction); setConfirmAction(null) }}
+                className="px-3 py-1.5 text-xs rounded transition-colors"
+                style={{ background: 'rgba(248,113,113,0.15)', border: '0.5px solid rgba(248,113,113,0.3)', color: '#f87171' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.25)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.15)' }}
+              >
+                {confirmAction === 'stop' ? 'Stop' : 'Restart'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">

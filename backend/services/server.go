@@ -21,11 +21,12 @@ import (
 )
 
 var (
-	rePlayerJoin  = regexp.MustCompile(`]: (\w+) joined the game`)
-	rePlayerLeave = regexp.MustCompile(`]: (\w+) left the game`)
-	reTPSPaper    = regexp.MustCompile(`TPS from.*?:\s*[*‡]*\s*(\d+(?:\.\d+)?)`)
-	reTPSForge    = regexp.MustCompile(`(?i)Mean TPS:\s*(\d+(?:\.\d+)?)`)
-	reTickQuery   = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*ms\s*per tick`)
+	rePlayerJoin   = regexp.MustCompile(`]: (\w+) joined the game`)
+	rePlayerLeave  = regexp.MustCompile(`]: (\w+) left the game`)
+	reTPSPaper     = regexp.MustCompile(`TPS from.*?:\s*[*‡]*\s*(\d+(?:\.\d+)?)`)
+	reTPSForge     = regexp.MustCompile(`(?i)Mean TPS:\s*(\d+(?:\.\d+)?)`)
+	reTickQuery    = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*ms\s*per tick`)
+	reServerStop   = regexp.MustCompile(`(?i)Stopping the server`)
 )
 
 type ServerService struct {
@@ -72,6 +73,11 @@ type ServerService struct {
 	// When non-zero, the OS kills the entire Java process tree automatically
 	// if Konnekt exits for any reason (crash, SIGKILL, etc.).
 	job uintptr
+
+	// expectedStop is set to true when the server is being stopped intentionally
+	// (via Stop(), app quit, or the server's own "Stopping the server" log line).
+	// waitForExit reads it to emit {expected} in the server:stopped payload.
+	expectedStop bool
 }
 
 func NewServerService() *ServerService {
@@ -136,6 +142,7 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	s.running = true
 	s.startTime = time.Now()
 	s.serverID = serverID
+	s.expectedStop = false
 
 	// Parse RAM total from JVM args
 	s.maxRAMMB = parseXmx(jvmArgs)
@@ -194,6 +201,12 @@ func (s *ServerService) streamOutput(r io.Reader) {
 			runtime.EventsEmit(s.ctx, EventEulaRequired, nil)
 		}
 
+		if reServerStop.MatchString(line) {
+			s.mu.Lock()
+			s.expectedStop = true
+			s.mu.Unlock()
+		}
+
 		if m := rePlayerJoin.FindStringSubmatch(line); m != nil {
 			name := m[1]
 			s.playersMu.Lock()
@@ -230,10 +243,11 @@ func (s *ServerService) waitForExit() {
 	s.stopTPSPoll()
 
 	s.mu.Lock()
+	expected := s.expectedStop
 	s.running = false
 	s.cachedProc = nil
 	s.mu.Unlock()
-	runtime.EventsEmit(s.ctx, EventServerStopped, nil)
+	runtime.EventsEmit(s.ctx, EventServerStopped, map[string]bool{"expected": expected})
 }
 
 func (s *ServerService) Stop() error {
@@ -242,6 +256,8 @@ func (s *ServerService) Stop() error {
 		s.mu.Unlock()
 		return fmt.Errorf("server not running")
 	}
+
+	s.expectedStop = true
 
 	if s.stdin != nil {
 		_, _ = fmt.Fprintln(s.stdin, "stop")

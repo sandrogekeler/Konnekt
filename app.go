@@ -101,6 +101,10 @@ func (a *App) SaveAppSettings(s models.AppSettings) error {
 	return a.configService.SaveAppSettings(s)
 }
 
+func (a *App) OpenDataDir() error {
+	return services.OpenPath(a.dataDir)
+}
+
 // --- Server lifecycle ---
 
 func (a *App) StartServer(serverID string) error {

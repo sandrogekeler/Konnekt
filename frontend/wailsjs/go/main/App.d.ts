@@ -38,6 +38,8 @@ export function GetStatsHistory(arg1:string):Promise<Array<models.StatsSnapshot>
 
 export function KickPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function OpenDataDir():Promise<void>;
+
 export function RestartServer(arg1:string):Promise<void>;
 
 export function SaveActiveLayout(arg1:string):Promise<void>;
