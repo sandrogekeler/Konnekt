@@ -1,24 +1,31 @@
 # Konnekt Roadmap
 
-## Settings — completed
+## Recently shipped
 
-All settings are now fully wired:
+- **Settings page** — Light/Dark/System theme, accent color picker, all sections wired: auto-start, confirm-before-stop, console timestamps + buffer cap, crash + join notifications (desktop + in-app feed), open config folder.
+- **Theme token system** — CSS variable tokens across shared chrome; light mode works app-wide on core components.
+- **Notifications tile** — live reverse-chronological feed (crash ⚠ / join ●), replaces placeholder.
+- **Layout rework** — spring animations on tile flip and maximize, collapsible layouts menu.
 
-| Setting | Status |
-|---|---|
-| Theme (Light/Dark/System) | ✅ Live DOM switch, persisted |
-| Accent color | ✅ Live DOM switch, persisted |
-| Auto-start active server | ✅ Starts on launch if enabled |
-| Confirm before stop/restart | ✅ Confirmation dialog in Quick Commands |
-| Console timestamps | ✅ Toggle shows/hides timestamp column |
-| Console buffer size | ✅ Store trims lines to this cap |
-| Crash alerts | ✅ Desktop + in-app notification feed |
-| Player join alerts | ✅ Desktop + in-app notification feed |
-| Open config folder | ✅ Opens ~/.config/konnekt in file manager |
+---
 
-## Future ideas
+## Planned
 
-- Notifications tile: add filter by kind (crash / join)
-- Console: syntax highlighting, search/filter
-- General: minimize to system tray option
-- General: check for updates
+### Polish & UX
+- Notifications tile: filter by kind (crash / join / all)
+- Console: search / filter bar
+- Console: syntax highlighting for log levels in the tile
+- Light mode: convert remaining deep tile internals (performance table, charts, players, worlds, backups, server-config) to CSS variable tokens
+- Minimize to system tray
+
+### Features
+- Check for updates (GitHub releases API)
+- Server resource packs / datapacks management tab
+- Player history log (join/leave times persisted across sessions)
+- Scheduler: recurring task editor (currently placeholder)
+- Worlds tile: world size display, per-world backup trigger
+- Backups tile: restore flow (copy backup → working dir)
+
+### Infrastructure
+- Split the JS bundle (dynamic imports for heavy tiles — recharts, etc.)
+- Export / import app settings (backup + migrate between machines)
