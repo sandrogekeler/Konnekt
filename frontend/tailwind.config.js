@@ -2,8 +2,11 @@
 export default {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
+      },
+    },
   },
   plugins: [],
 }
-

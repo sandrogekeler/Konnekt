@@ -1,6 +1,17 @@
 import type { FC } from 'react'
 export type { LayoutItem } from 'react-grid-layout'
 
+export interface AppSettings {
+  theme: 'light' | 'dark' | 'system'
+  accentColor: string
+  autoStartActiveServer: boolean
+  confirmBeforeStop: boolean
+  consoleBufferLines: number
+  consoleTimestamps: boolean
+  notifyOnCrash: boolean
+  notifyOnJoin: boolean
+}
+
 export interface TileProps {
   serverId: string
   maximized?: boolean

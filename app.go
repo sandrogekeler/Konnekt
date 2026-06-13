@@ -93,6 +93,14 @@ func (a *App) SetActiveServerID(id string) error {
 	return a.configService.SetActiveServerID(id)
 }
 
+func (a *App) GetAppSettings() (models.AppSettings, error) {
+	return a.configService.GetAppSettings()
+}
+
+func (a *App) SaveAppSettings(s models.AppSettings) error {
+	return a.configService.SaveAppSettings(s)
+}
+
 // --- Server lifecycle ---
 
 func (a *App) StartServer(serverID string) error {

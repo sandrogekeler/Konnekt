@@ -5,13 +5,20 @@ import { TileCrate } from './components/TileCrate'
 import { LayoutPresets } from './components/LayoutPresets'
 import { ServerSelector } from './components/ServerSelector'
 import { EulaModal } from './components/EulaModal'
+import { SettingsModal } from './components/SettingsModal'
 import { useServerConfigStore } from './stores/useServerConfigStore'
 import { useConsoleStore } from './stores/useConsoleStore'
+import { useSettingsStore } from './stores/useSettingsStore'
 import { EVENTS } from './lib/constants'
 
 function App() {
   const { activeId } = useServerConfigStore()
   const [eulaRequired, setEulaRequired] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  useEffect(() => {
+    useSettingsStore.getState().load()
+  }, [])
 
   useEffect(() => {
     let cleanup: (() => void) | undefined
@@ -38,12 +45,22 @@ function App() {
         style={{ borderRight: '0.5px solid var(--border-subtle)' }}
       >
         <div
-          className="px-3 py-3 shrink-0"
+          className="px-3 py-3 shrink-0 flex items-center justify-between"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
         >
           <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--accent)' }}>
             Konnekt
           </span>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="w-6 h-6 flex items-center justify-center rounded transition-colors text-sm"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+            title="Settings"
+          >
+            ⚙
+          </button>
         </div>
         <div style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
           <ServerSelector />
@@ -65,6 +82,11 @@ function App() {
           onClose={() => setEulaRequired(false)}
         />
       )}
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   )
 }

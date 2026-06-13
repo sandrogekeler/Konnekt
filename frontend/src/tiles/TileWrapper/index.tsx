@@ -35,7 +35,7 @@ export function TileWrapper({
         transition: 'border-color 150ms',
       }}
       onMouseEnter={maximized ? undefined : (e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.12)'
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-hover)'
       }}
       onMouseLeave={maximized ? undefined : (e) => {
         (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)'
@@ -52,14 +52,17 @@ export function TileWrapper({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm leading-none">{icon}</span>
-          <span className="text-xs font-medium text-white/70">{label}</span>
+          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
         </div>
         <div className="flex items-center gap-1">
           {maximizable && (
             <button
               onClick={() => onToggleMaximize?.(id)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 text-xs transition-colors leading-none"
+              className="w-5 h-5 flex items-center justify-center text-xs transition-colors leading-none"
+              style={{ color: 'var(--text-faint)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
               title={maximized ? 'Restore tile' : 'Maximize tile'}
             >
               {maximized ? '⤡' : '⤢'}
@@ -69,7 +72,10 @@ export function TileWrapper({
             <button
               onClick={() => onRemove(id)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 text-sm transition-colors leading-none"
+              className="w-5 h-5 flex items-center justify-center text-sm transition-colors leading-none"
+              style={{ color: 'var(--text-faint)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
               title="Remove tile"
             >
               ×

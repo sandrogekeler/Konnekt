@@ -108,3 +108,31 @@ func (s *ConfigService) SetActiveServerID(id string) error {
 	}
 	return os.WriteFile(filepath.Join(s.dataDir, "active_server.json"), data, 0644)
 }
+
+func (s *ConfigService) GetAppSettings() (models.AppSettings, error) {
+	defaults := models.AppSettings{
+		Theme:              "dark",
+		AccentColor:        "#4ade80",
+		ConsoleBufferLines: 1000,
+	}
+	data, err := os.ReadFile(filepath.Join(s.dataDir, "app_settings.json"))
+	if os.IsNotExist(err) {
+		return defaults, nil
+	}
+	if err != nil {
+		return defaults, err
+	}
+	settings := defaults
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return defaults, err
+	}
+	return settings, nil
+}
+
+func (s *ConfigService) SaveAppSettings(settings models.AppSettings) error {
+	data, err := json.Marshal(settings)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(s.dataDir, "app_settings.json"), data, 0644)
+}

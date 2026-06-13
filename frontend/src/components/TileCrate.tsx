@@ -74,13 +74,21 @@ export function TileCrate() {
       <button
         key={tile.id}
         onMouseDown={(e) => onMouseDown(tile, e)}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all ${onCanvas ? 'text-white hover:bg-white/5' : 'text-white bg-black/[0.25] hover:bg-black/[0.15]'}`}
-        style={{ border: '0.5px solid transparent', cursor: 'grab' }}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all"
+        style={{
+          color: onCanvas ? 'var(--text-primary)' : 'var(--text-secondary)',
+          background: onCanvas ? 'transparent' : 'rgba(0,0,0,0.2)',
+          border: '0.5px solid transparent',
+          cursor: 'grab',
+        }}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'
+          if (!onCanvas) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.1)'
+          else (e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)'
         }}
         onMouseLeave={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'
+          ;(e.currentTarget as HTMLButtonElement).style.background = onCanvas ? 'transparent' : 'rgba(0,0,0,0.2)'
         }}
       >
         <span className="text-base w-6 text-center">{tile.icon}</span>

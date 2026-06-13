@@ -38,6 +38,10 @@ export function GetActiveTiles() {
   return window['go']['main']['App']['GetActiveTiles']();
 }
 
+export function GetAppSettings() {
+  return window['go']['main']['App']['GetAppSettings']();
+}
+
 export function GetCommandButtons() {
   return window['go']['main']['App']['GetCommandButtons']();
 }
@@ -80,6 +84,10 @@ export function SaveActiveLayout(arg1) {
 
 export function SaveActiveTiles(arg1) {
   return window['go']['main']['App']['SaveActiveTiles'](arg1);
+}
+
+export function SaveAppSettings(arg1) {
+  return window['go']['main']['App']['SaveAppSettings'](arg1);
 }
 
 export function SaveCommandButtons(arg1) {

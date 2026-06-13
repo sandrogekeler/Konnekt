@@ -17,15 +17,15 @@ import type { StatsSnapshot } from './usePerformanceHistory'
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function tpsColor(tps: number): string {
-  if (tps < 0) return 'text-white/30'
-  if (tps >= 18) return 'text-green-400'
+  if (tps < 0) return 'text-[var(--text-faint)]'
+  if (tps >= 18) return 'text-accent'
   if (tps >= 14) return 'text-yellow-400'
   return 'text-red-400'
 }
 
 function tpsStrokeColor(tps: number): string {
-  if (tps < 0) return '#ffffff30'
-  if (tps >= 18) return '#4ade80'
+  if (tps < 0) return 'var(--border-hover)'
+  if (tps >= 18) return 'var(--accent)'
   if (tps >= 14) return '#facc15'
   return '#f87171'
 }
@@ -73,17 +73,17 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
       </div>
 
       {ramTotal > 0 && (
-        <div className="h-1 bg-white/10 rounded-full overflow-hidden shrink-0">
+        <div className="h-1 rounded-full overflow-hidden shrink-0" style={{ background: 'var(--hover-surface)' }}>
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              ramPct > 80 ? 'bg-red-500' : ramPct > 60 ? 'bg-yellow-500' : 'bg-green-400'
+              ramPct > 80 ? 'bg-red-500' : ramPct > 60 ? 'bg-yellow-500' : 'bg-accent'
             }`}
             style={{ width: `${Math.min(ramPct, 100)}%` }}
           />
         </div>
       )}
 
-      <div className="flex-1 min-h-0 rounded border border-white/[0.06] overflow-hidden">
+      <div className="flex-1 min-h-0 rounded overflow-hidden" style={{ border: '0.5px solid var(--border-subtle)' }}>
         {sparkData.length > 1 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
@@ -140,7 +140,7 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-full text-white/20 text-xs">
+          <div className="flex items-center justify-center h-full text-xs" style={{ color: 'var(--text-faint)' }}>
             waiting for data…
           </div>
         )}
@@ -256,14 +256,14 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
             onClick={() => setRange(minutes)}
             className={`px-2 py-0.5 text-xs rounded border transition-colors ${
               range === minutes
-                ? 'border-green-400/60 text-green-400 bg-green-400/10'
-                : 'border-white/10 text-white/40 hover:text-white/70 hover:border-white/25'
+                ? 'border-accent/60 text-accent bg-accent/10'
+                : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)]'
             }`}
           >
             {label}
           </button>
         ))}
-        <span className="ml-auto text-white/30 text-xs">{filtered.length} samples</span>
+        <span className="ml-auto text-xs" style={{ color: 'var(--text-faint)' }}>{filtered.length} samples</span>
       </div>
 
       {/* chart */}
@@ -367,7 +367,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
           </ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-full text-white/20 text-sm">
-            {history.length === 0 ? 'No data yet — start the server to begin recording' : 'No data in this time window'}
+            <span style={{ color: 'var(--text-faint)' }}>{history.length === 0 ? 'No data yet — start the server to begin recording' : 'No data in this time window'}</span>
           </div>
         )}
       </div>
@@ -394,7 +394,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
                 >
                   {label}
                   {sortKey === key && (
-                    <span className="ml-1 text-green-400">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                    <span className="ml-1 text-accent">{sortDir === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
               ))}

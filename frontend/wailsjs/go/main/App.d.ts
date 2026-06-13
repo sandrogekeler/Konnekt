@@ -20,6 +20,8 @@ export function GetActiveServerID():Promise<string>;
 
 export function GetActiveTiles():Promise<Array<string>>;
 
+export function GetAppSettings():Promise<models.AppSettings>;
+
 export function GetCommandButtons():Promise<string>;
 
 export function GetCustomCommands():Promise<Array<string>>;
@@ -41,6 +43,8 @@ export function RestartServer(arg1:string):Promise<void>;
 export function SaveActiveLayout(arg1:string):Promise<void>;
 
 export function SaveActiveTiles(arg1:Array<string>):Promise<void>;
+
+export function SaveAppSettings(arg1:models.AppSettings):Promise<void>;
 
 export function SaveCommandButtons(arg1:string):Promise<void>;
 

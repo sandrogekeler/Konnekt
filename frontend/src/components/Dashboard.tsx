@@ -458,7 +458,7 @@ export function Dashboard() {
             zIndex: 60,
             borderRadius: 10,
             border: '2px solid var(--accent)',
-            background: 'rgba(74, 222, 128, 0.06)',
+            background: 'rgb(var(--accent-rgb) / 0.06)',
             ...dragVisual.wireframe,
           }}
         />

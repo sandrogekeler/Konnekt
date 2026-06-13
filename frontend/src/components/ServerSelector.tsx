@@ -204,12 +204,12 @@ export function ServerSelector() {
             onClick={() => setActiveId(cfg.id)}
             className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-all ${
               cfg.id === activeId
-                ? 'text-green-400 bg-green-400/10'
+                ? 'text-accent bg-accent/10'
                 : 'text-white/60 hover:text-white hover:bg-white/5'
             }`}
             title={cfg.jarPath}
           >
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.id === activeId ? 'bg-green-400' : 'bg-white/20'}`} />
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.id === activeId ? 'bg-accent' : 'bg-white/20'}`} />
             <span className="truncate">{cfg.name}</span>
           </button>
           <button

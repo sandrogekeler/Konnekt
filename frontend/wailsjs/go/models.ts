@@ -1,5 +1,31 @@
 export namespace models {
 	
+	export class AppSettings {
+	    theme: string;
+	    accentColor: string;
+	    autoStartActiveServer: boolean;
+	    confirmBeforeStop: boolean;
+	    consoleBufferLines: number;
+	    consoleTimestamps: boolean;
+	    notifyOnCrash: boolean;
+	    notifyOnJoin: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.theme = source["theme"];
+	        this.accentColor = source["accentColor"];
+	        this.autoStartActiveServer = source["autoStartActiveServer"];
+	        this.confirmBeforeStop = source["confirmBeforeStop"];
+	        this.consoleBufferLines = source["consoleBufferLines"];
+	        this.consoleTimestamps = source["consoleTimestamps"];
+	        this.notifyOnCrash = source["notifyOnCrash"];
+	        this.notifyOnJoin = source["notifyOnJoin"];
+	    }
+	}
 	export class LayoutPreset {
 	    name: string;
 	    layout: string;
