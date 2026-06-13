@@ -17,6 +17,7 @@ type App struct {
 	serverService *services.ServerService
 	configService *services.ConfigService
 	rconService   *services.RconService
+	statsService  *services.StatsService
 	dataDir       string
 }
 
@@ -28,12 +29,21 @@ func NewApp() *App {
 		serverService: srv,
 		configService: services.NewConfigService(),
 		rconService:   rcon,
+		statsService:  services.NewStatsService(srv),
 	}
+}
+
+func (a *App) beforeClose(ctx context.Context) bool {
+	if a.serverService.IsRunning() {
+		_ = a.serverService.Stop()
+	}
+	return false
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.serverService.SetContext(ctx)
+	a.statsService.SetContext(ctx)
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -133,6 +143,10 @@ func (a *App) GetServerStatus(serverID string) (models.ServerStatus, error) {
 		RAMUsed:    a.serverService.RAMUsedMB(),
 		RAMTotal:   a.serverService.RAMTotalMB(),
 	}, nil
+}
+
+func (a *App) GetStatsHistory(serverID string) ([]models.StatsSnapshot, error) {
+	return a.statsService.GetStatsHistory(), nil
 }
 
 func (a *App) GetPlayers(serverID string) ([]models.Player, error) {

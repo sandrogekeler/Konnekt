@@ -17,3 +17,12 @@ type ServerStatus struct {
 	RAMUsed    float64 `json:"ramUsed"`
 	RAMTotal   float64 `json:"ramTotal"`
 }
+
+type StatsSnapshot struct {
+	Timestamp  int64   `json:"timestamp"`
+	TPS        float64 `json:"tps"`
+	RAMUsedMB  float64 `json:"ramUsedMB"`
+	RAMTotalMB float64 `json:"ramTotalMB"`
+	CPUPercent float64 `json:"cpuPercent"`
+	Players    int     `json:"players"`
+}

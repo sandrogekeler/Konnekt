@@ -72,6 +72,28 @@ export namespace models {
 	        this.ramTotal = source["ramTotal"];
 	    }
 	}
+	export class StatsSnapshot {
+	    timestamp: number;
+	    tps: number;
+	    ramUsedMB: number;
+	    ramTotalMB: number;
+	    cpuPercent: number;
+	    players: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new StatsSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timestamp = source["timestamp"];
+	        this.tps = source["tps"];
+	        this.ramUsedMB = source["ramUsedMB"];
+	        this.ramTotalMB = source["ramTotalMB"];
+	        this.cpuPercent = source["cpuPercent"];
+	        this.players = source["players"];
+	    }
+	}
 
 }
 

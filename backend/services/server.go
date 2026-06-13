@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -22,8 +23,9 @@ import (
 var (
 	rePlayerJoin  = regexp.MustCompile(`]: (\w+) joined the game`)
 	rePlayerLeave = regexp.MustCompile(`]: (\w+) left the game`)
-	// Matches the first decimal number in a TPS response, e.g. "TPS from last 1m, 5m, 15m: 19.98, 19.99, 20.0"
-	reTPS = regexp.MustCompile(`(\d+(?:\.\d+)?)`)
+	reTPSPaper    = regexp.MustCompile(`TPS from.*?:\s*[*‡]*\s*(\d+(?:\.\d+)?)`)
+	reTPSForge    = regexp.MustCompile(`(?i)Mean TPS:\s*(\d+(?:\.\d+)?)`)
+	reTickQuery   = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*ms\s*per tick`)
 )
 
 type ServerService struct {
@@ -34,6 +36,7 @@ type ServerService struct {
 	running  bool
 	startTime time.Time
 	serverID string
+	exited   chan struct{} // closed by waitForExit when the child process exits
 
 	playersMu sync.RWMutex
 	players   map[string]struct{}
@@ -47,20 +50,35 @@ type ServerService struct {
 	rconAddr     string
 	rconPassword string
 
-	// live TPS — -1 means unknown / RCON unavailable
-	tpsMu      sync.RWMutex
-	currentTPS float64
+	// live TPS — -1 means unknown / RCON unavailable; tpsLastUpdate tracks freshness
+	tpsMu         sync.RWMutex
+	currentTPS    float64
+	tpsLastUpdate time.Time
 
 	// TPS poll goroutine lifecycle
-	stopTPS    chan struct{}
-	tpsOnce    sync.Once
-	rcon       *RconService
+	stopTPS chan struct{}
+	tpsOnce sync.Once
+	rcon    *RconService
+
+	// log-derived TPS fallback (always active while server is running)
+	logTPSMu       sync.RWMutex
+	logTPS         float64
+	logLastWarning time.Time
+
+	// cached gopsutil process handle — set on Start, cleared on exit
+	cachedProc *process.Process
+
+	// Windows Job Object handle (uintptr so server.go compiles cross-platform).
+	// When non-zero, the OS kills the entire Java process tree automatically
+	// if Konnekt exits for any reason (crash, SIGKILL, etc.).
+	job uintptr
 }
 
 func NewServerService() *ServerService {
 	return &ServerService{
 		players:    make(map[string]struct{}),
 		currentTPS: -1,
+		logTPS:     -1,
 	}
 }
 
@@ -92,6 +110,7 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	if workingDir != "" {
 		s.cmd.Dir = workingDir
 	}
+	s.exited = make(chan struct{})
 
 	stdin, err := s.cmd.StdinPipe()
 	if err != nil {
@@ -112,6 +131,7 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	if err := s.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+	s.createJob() // tie Java process tree to this process lifetime via OS job object
 
 	s.running = true
 	s.startTime = time.Now()
@@ -129,10 +149,22 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	s.rconAddr = fmt.Sprintf("localhost:%d", rconPort)
 	s.rconPassword = props["rcon.password"]
 
-	// Reset TPS
+	// Cache gopsutil process handle for CPU% sampling
+	if p, err := process.NewProcess(int32(s.cmd.Process.Pid)); err == nil {
+		s.cachedProc = p
+		// Prime the first measurement so subsequent Percent(0) calls return a delta
+		_, _ = p.Percent(0)
+	}
+
+	// Reset TPS state
 	s.tpsMu.Lock()
 	s.currentTPS = -1
+	s.tpsLastUpdate = time.Time{}
 	s.tpsMu.Unlock()
+	s.logTPSMu.Lock()
+	s.logTPS = 20.0
+	s.logLastWarning = time.Time{}
+	s.logTPSMu.Unlock()
 
 	// Start TPS polling if RCON is configured
 	if s.rconEnabled && s.rconPassword != "" && s.rcon != nil {
@@ -175,6 +207,12 @@ func (s *ServerService) streamOutput(r io.Reader) {
 			s.playersMu.Unlock()
 			runtime.EventsEmit(s.ctx, EventPlayerLeft, name)
 		}
+		if strings.Contains(line, "Can't keep up") {
+			s.logTPSMu.Lock()
+			s.logTPS = 10.0
+			s.logLastWarning = time.Now()
+			s.logTPSMu.Unlock()
+		}
 	}
 }
 
@@ -182,6 +220,9 @@ func (s *ServerService) waitForExit() {
 	if s.cmd != nil {
 		_ = s.cmd.Wait()
 	}
+	s.closeJob()
+	close(s.exited)
+
 	s.playersMu.Lock()
 	s.players = make(map[string]struct{})
 	s.playersMu.Unlock()
@@ -190,15 +231,15 @@ func (s *ServerService) waitForExit() {
 
 	s.mu.Lock()
 	s.running = false
+	s.cachedProc = nil
 	s.mu.Unlock()
 	runtime.EventsEmit(s.ctx, EventServerStopped, nil)
 }
 
 func (s *ServerService) Stop() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if !s.running {
+		s.mu.Unlock()
 		return fmt.Errorf("server not running")
 	}
 
@@ -209,18 +250,17 @@ func (s *ServerService) Stop() error {
 
 	s.stopTPSPoll()
 
-	done := make(chan error, 1)
-	go func() {
-		done <- s.cmd.Wait()
-	}()
+	pid := s.cmd.Process.Pid
+	exited := s.exited
+	s.mu.Unlock()
 
 	select {
-	case <-done:
-	case <-time.After(10 * time.Second):
-		_ = s.cmd.Process.Kill()
+	case <-exited:
+	case <-time.After(8 * time.Second):
+		killTree(pid)
+		<-exited
 	}
 
-	s.running = false
 	return nil
 }
 
@@ -232,11 +272,15 @@ func (s *ServerService) stopTPSPoll() {
 	})
 	s.tpsMu.Lock()
 	s.currentTPS = -1
+	s.tpsLastUpdate = time.Time{}
 	s.tpsMu.Unlock()
+	s.logTPSMu.Lock()
+	s.logTPS = -1
+	s.logLastWarning = time.Time{}
+	s.logTPSMu.Unlock()
 }
 
 func (s *ServerService) pollTPS() {
-	// Wait a bit for RCON to become available after server start
 	select {
 	case <-time.After(15 * time.Second):
 	case <-s.stopTPS:
@@ -251,20 +295,50 @@ func (s *ServerService) pollTPS() {
 		case <-s.stopTPS:
 			return
 		case <-ticker.C:
-			resp, err := s.rcon.Execute(s.rconAddr, s.rconPassword, "tps")
-			if err != nil {
-				s.tpsMu.Lock()
-				s.currentTPS = -1
-				s.tpsMu.Unlock()
-				continue
-			}
-			if tps, ok := parseFirstFloat(resp); ok {
+			if tps, ok := s.queryTPSViaRcon(); ok {
 				s.tpsMu.Lock()
 				s.currentTPS = tps
+				s.tpsLastUpdate = time.Now()
+				s.tpsMu.Unlock()
+			} else {
+				s.tpsMu.Lock()
+				s.tpsLastUpdate = time.Time{}
 				s.tpsMu.Unlock()
 			}
 		}
 	}
+}
+
+func (s *ServerService) queryTPSViaRcon() (float64, bool) {
+	// Paper/Spigot/Purpur: /tps → "TPS from last 1m, 5m, 15m: *20.0, 20.0, 20.0"
+	resp, err := s.rcon.Execute(s.rconAddr, s.rconPassword, "tps")
+	if err == nil {
+		if m := reTPSPaper.FindStringSubmatch(resp); m != nil {
+			if tps, e := strconv.ParseFloat(m[1], 64); e == nil {
+				return math.Min(tps, 20.0), true
+			}
+		}
+	}
+	// NeoForge/Forge: /forge tps → "Mean TPS: 20.0 ..."
+	resp, err = s.rcon.Execute(s.rconAddr, s.rconPassword, "forge tps")
+	if err == nil {
+		if m := reTPSForge.FindStringSubmatch(resp); m != nil {
+			if tps, e := strconv.ParseFloat(m[1], 64); e == nil {
+				return math.Min(tps, 20.0), true
+			}
+		}
+	}
+	// Vanilla 1.21+: /tick query → "Xms per tick"
+	resp, err = s.rcon.Execute(s.rconAddr, s.rconPassword, "tick query")
+	if err != nil {
+		return 0, false
+	}
+	if m := reTickQuery.FindStringSubmatch(resp); m != nil {
+		if mspt, e := strconv.ParseFloat(m[1], 64); e == nil && mspt > 0 {
+			return math.Min(1000.0/mspt, 20.0), true
+		}
+	}
+	return 0, false
 }
 
 func (s *ServerService) SendCommand(command string) error {
@@ -329,8 +403,33 @@ func (s *ServerService) MaxPlayers() int {
 
 func (s *ServerService) CurrentTPS() float64 {
 	s.tpsMu.RLock()
-	defer s.tpsMu.RUnlock()
-	return s.currentTPS
+	rconTPS := s.currentTPS
+	lastUpdate := s.tpsLastUpdate
+	s.tpsMu.RUnlock()
+
+	if rconTPS >= 0 && !lastUpdate.IsZero() && time.Since(lastUpdate) < 15*time.Second {
+		return rconTPS
+	}
+	return s.currentLogTPS()
+}
+
+func (s *ServerService) currentLogTPS() float64 {
+	s.logTPSMu.RLock()
+	logTPS := s.logTPS
+	lastWarning := s.logLastWarning
+	s.logTPSMu.RUnlock()
+
+	if logTPS < 0 {
+		return -1
+	}
+	if lastWarning.IsZero() {
+		return logTPS
+	}
+	elapsed := time.Since(lastWarning).Seconds()
+	if elapsed >= 60 {
+		return 20.0
+	}
+	return logTPS + (20.0-logTPS)*(elapsed/60.0)
 }
 
 func (s *ServerService) RAMUsedMB() float64 {
@@ -359,6 +458,21 @@ func (s *ServerService) RAMTotalMB() float64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return float64(s.maxRAMMB)
+}
+
+func (s *ServerService) CPUPercent() float64 {
+	s.mu.Lock()
+	proc := s.cachedProc
+	s.mu.Unlock()
+
+	if proc == nil {
+		return 0
+	}
+	pct, err := proc.Percent(0)
+	if err != nil {
+		return 0
+	}
+	return pct
 }
 
 // parseXmx extracts the -Xmx value from JVM args and returns megabytes.
@@ -406,17 +520,4 @@ func propInt(props map[string]string, key string, def int) int {
 		return def
 	}
 	return n
-}
-
-// parseFirstFloat extracts the first decimal number from a string.
-func parseFirstFloat(s string) (float64, bool) {
-	m := reTPS.FindString(s)
-	if m == "" {
-		return 0, false
-	}
-	f, err := strconv.ParseFloat(m, 64)
-	if err != nil {
-		return 0, false
-	}
-	return f, true
 }

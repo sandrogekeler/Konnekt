@@ -1,55 +1,22 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { EventsOn, EventsOff } from '../../../wailsjs/runtime/runtime'
+import { useEffect, useRef, useCallback } from 'react'
 import { SendCommand } from '../../../wailsjs/go/main/App'
+import { useConsoleStore } from '../../stores/useConsoleStore'
 import type { TileProps } from '../../types'
+import { useState } from 'react'
 
-interface LogLine {
-  id: number
-  timestamp: string
-  text: string
-  level: 'success' | 'warn' | 'error' | 'dim'
-}
-
-let lineId = 0
-
-function classifyLine(text: string): LogLine['level'] {
-  if (/Done|joined the game/.test(text)) return 'success'
-  if (/warn|Can't keep up/i.test(text)) return 'warn'
-  if (/error|ERROR/.test(text)) return 'error'
-  return 'dim'
-}
-
-const LEVEL_CLASS: Record<LogLine['level'], string> = {
+const LEVEL_CLASS = {
   success: 'text-green-400',
   warn: 'text-yellow-400',
   error: 'text-red-400',
   dim: 'text-white/50',
-}
+} as const
 
 export function ConsoleTile({ serverId }: TileProps) {
-  const [lines, setLines] = useState<LogLine[]>([])
+  const lines = useConsoleStore((s) => s.lines)
+  const clear = useConsoleStore((s) => s.clear)
   const [input, setInput] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
-  const bottomRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handler = (data: { timestamp: string; line: string }) => {
-      setLines((prev) => [
-        ...prev.slice(-2000),
-        {
-          id: ++lineId,
-          timestamp: data.timestamp,
-          text: data.line,
-          level: classifyLine(data.line),
-        },
-      ])
-    }
-    try { EventsOn('log:line', handler) } catch { /* Wails runtime unavailable */ }
-    return () => {
-      try { EventsOff('log:line') } catch { /* */ }
-    }
-  }, [])
 
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
@@ -88,7 +55,6 @@ export function ConsoleTile({ serverId }: TileProps) {
             <span className={LEVEL_CLASS[line.level]}>{line.text}</span>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
 
       {!autoScroll && (
@@ -121,7 +87,7 @@ export function ConsoleTile({ serverId }: TileProps) {
         </button>
         <button
           type="button"
-          onClick={() => setLines([])}
+          onClick={clear}
           className="px-3 py-1 text-xs rounded border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-colors"
           title="Clear console"
         >

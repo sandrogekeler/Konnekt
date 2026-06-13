@@ -32,6 +32,8 @@ export function GetServerConfigs():Promise<Array<models.ServerConfig>>;
 
 export function GetServerStatus(arg1:string):Promise<models.ServerStatus>;
 
+export function GetStatsHistory(arg1:string):Promise<Array<models.StatsSnapshot>>;
+
 export function KickPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RestartServer(arg1:string):Promise<void>;

@@ -84,7 +84,7 @@ Do not implement Beta features during Alpha development.
   - Frontend: recharts LineChart, 3 series, colour-coded axes
   - No external data store — in-memory ring buffer only for alpha
 
-- [ ] Scheduler tile
+- [ ] Scheduler tile - Node Graph Interface
   
   - List of scheduled tasks (time, command or action, repeat/once)
   - Actions: restart server, save-all, run custom command, backup
@@ -92,10 +92,11 @@ Do not implement Beta features during Alpha development.
   - Add, edit, delete tasks
   - Tasks persist to ~/.config/konnekt/scheduler.json
 
-- [ ] Worlds tile
+- [ ] Worlds tile - 3D Space / Solar System Visualization
   
-  - List world folders found in server working directory
-  - Show folder size, last modified date
+  - List world folders found in server working directory.
+  - World visualized as planets in space, grouped into solar systems. # ADD MULTI-WORLD SERVER COMPATIBILITY PLANS
+  - Show folder size, last modified date with hover tooltip.
   - Switch active world (stop server → swap level-name in server.properties → restart)
   - Delete world (with confirmation modal)
 
@@ -154,8 +155,14 @@ Beta work begins only after all Alpha tiles are complete and stable.
   - List .jar files in /mods or /plugins directory
   - Enable / disable (move to /mods.disabled)
   - Show mod name, version (parsed from fabric.mod.json / mcmod.info)
-  - Link to Modrinth page if slug is recognisable
-  - No auto-update in beta — manual only
+  - Search and install mods from Modrinth (free, no API key) and CurseForge
+    (requires free API key from console.curseforge.com)
+  - Go: ModService downloads .jar to mods/ or plugins/, tracks installed mods
+    in ~/.config/konnekt/mods.json manifest
+  - CurseForge: resolve real download URL via /files/{fileId}/download-url
+    (CDN auth token required — do not use direct file links)
+  - Link to Modrinth/CurseForge page per installed mod
+  - No auto-update in beta — manual install and remove only
 
 - [ ] Player profiles tile
   
@@ -172,6 +179,17 @@ Beta work begins only after all Alpha tiles are complete and stable.
   - Cache skins locally, respect Mojang rate limits
 
 ### Features — beta
+
+- [ ] Public server IP via tunnel (playit.gg)
+  
+  - Launches and manages the playit-agent binary as a child process
+  - Go: TunnelService — download agent on first use, persist auth token,
+    parse stdout to extract the public address (e.g. yourserver.joinmc.link)
+  - Frontend: shows tunnel status (connecting / active / stopped) and the
+    public address with a copy button
+  - playit.gg chosen: purpose-built for game servers, free tier gives a
+    persistent address (unlike ngrok free), no account required for basic use
+  - Agent binary cached in app data dir; user can also provide their own path
 
 - [ ] Extended performance history (24h, 7-day) with persistent storage
 - [ ] OS desktop notifications (Wails runtime.EventsEmit → OS notify)

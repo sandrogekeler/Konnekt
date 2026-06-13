@@ -91,6 +91,7 @@ export function Dashboard() {
   const panelRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
   const originRectRef = useRef<DOMRect | null>(null)
+  const pendingOpenRef = useRef<{ id: string; rect: DOMRect | null } | null>(null)
   const prevCloseReqRef = useRef(closeRequest)
   // Live pointer position (viewport coords) while dragging a tile from the navbar.
   const [dragPointer, setDragPointer] = useState<{ x: number; y: number } | null>(null)
@@ -124,9 +125,19 @@ export function Dashboard() {
   // Consume maximize requests raised by the navbar
   useEffect(() => {
     if (!maximizeRequest) return
-    openMaximize(maximizeRequest.id, maximizeRequest.rect)
+    if (maximizedId && maximizeRequest.id === maximizedId) {
+      // Same tile: toggle closed
+      pendingOpenRef.current = null
+      closeMaximize()
+    } else if (maximizedId) {
+      // Different tile while one is open: close first, then open the new one
+      pendingOpenRef.current = { id: maximizeRequest.id, rect: maximizeRequest.rect }
+      if (!closing) closeMaximize()
+    } else {
+      openMaximize(maximizeRequest.id, maximizeRequest.rect)
+    }
     clearMaximizeRequest()
-  }, [maximizeRequest, openMaximize, clearMaximizeRequest])
+  }, [maximizeRequest, maximizedId, closing, openMaximize, closeMaximize, clearMaximizeRequest])
 
   // Consume close requests raised by the navbar (utility-tile click)
   useEffect(() => {
@@ -135,16 +146,21 @@ export function Dashboard() {
     closeMaximize()
   }, [closeRequest, closeMaximize])
 
-  // Unmount overlay after close animation finishes
+  // Unmount overlay after close animation finishes; open pending tile if one was queued
   useEffect(() => {
     if (!closing) return
     const timer = setTimeout(() => {
       setMaximizedId(null)
       setClosing(false)
       originRectRef.current = null
+      const pending = pendingOpenRef.current
+      if (pending) {
+        pendingOpenRef.current = null
+        openMaximize(pending.id, pending.rect)
+      }
     }, ANIM_MS + 20)
     return () => clearTimeout(timer)
-  }, [closing])
+  }, [closing, openMaximize])
 
   // Expand animation — runs synchronously after the overlay mounts
   useLayoutEffect(() => {
@@ -476,7 +492,7 @@ export function Dashboard() {
                   maximized
                   onToggleMaximize={toggleMaximize}
                 >
-                  <TileComponent serverId={serverId} />
+                  <TileComponent serverId={serverId} maximized />
                 </TileWrapper>
               </div>
             </div>

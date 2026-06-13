@@ -308,20 +308,21 @@ export function QuickCommandsTile({ serverId }: TileProps) {
 
       <div className="shrink-0 flex flex-col gap-1.5">
         {editing && (
-          <div className="flex gap-1.5">
+          <div className="relative">
             <input
               type="text"
               value={newCmd}
               onChange={(e) => setNewCmd(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCustom()}
               placeholder="Add command..."
-              className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs font-mono text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded px-2 pr-7 py-1 text-xs font-mono text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors"
             />
             <button
               onClick={addCustom}
-              className="px-2 py-1 text-xs rounded border border-white/10 text-white/60 hover:text-white hover:border-white/25 transition-colors"
+              title="Add command"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/80 transition-colors text-sm leading-none"
             >
-              Add
+              +
             </button>
           </div>
         )}

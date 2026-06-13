@@ -3,6 +3,7 @@ export type { LayoutItem } from 'react-grid-layout'
 
 export interface TileProps {
   serverId: string
+  maximized?: boolean
 }
 
 export interface TileDefinition {

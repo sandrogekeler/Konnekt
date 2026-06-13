@@ -62,6 +62,10 @@ export function GetServerStatus(arg1) {
   return window['go']['main']['App']['GetServerStatus'](arg1);
 }
 
+export function GetStatsHistory(arg1) {
+  return window['go']['main']['App']['GetStatsHistory'](arg1);
+}
+
 export function KickPlayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['KickPlayer'](arg1, arg2, arg3);
 }

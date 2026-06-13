@@ -6,6 +6,7 @@ import { LayoutPresets } from './components/LayoutPresets'
 import { ServerSelector } from './components/ServerSelector'
 import { EulaModal } from './components/EulaModal'
 import { useServerConfigStore } from './stores/useServerConfigStore'
+import { useConsoleStore } from './stores/useConsoleStore'
 import { EVENTS } from './lib/constants'
 
 function App() {
@@ -16,6 +17,16 @@ function App() {
     let cleanup: (() => void) | undefined
     try {
       cleanup = EventsOn(EVENTS.EULA_REQUIRED, () => setEulaRequired(true))
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.LOG_LINE, (data: { timestamp: string; line: string }) => {
+        useConsoleStore.getState().appendLine(data.timestamp, data.line)
+      })
     } catch { /* non-Wails context */ }
     return () => { try { cleanup?.() } catch { } }
   }, [])
