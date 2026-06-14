@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { RestartServer } from '../../../wailsjs/go/main/App'
 import { useServerStore } from '../../stores/useServerStore'
 import type { TileProps } from '../../types'
@@ -7,9 +7,40 @@ import { EditorPanel } from './EditorPanel'
 import { useConfigEditor } from './useConfigEditor'
 import { ConfigSummary } from './ConfigSummary'
 
+const SIDEBAR_MIN = 140
+const SIDEBAR_MAX = 480
+const SIDEBAR_DEFAULT = 208 // w-52
+
 export function ConfigTile({ serverId, maximized }: TileProps) {
   const { status } = useServerStore()
   const [search, setSearch] = useState('')
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT)
+  const dragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
+
+  const onHandleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    dragging.current = true
+    startX.current = e.clientX
+    startWidth.current = sidebarWidth
+
+    function onMouseMove(ev: MouseEvent) {
+      if (!dragging.current) return
+      const delta = ev.clientX - startX.current
+      const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth.current + delta))
+      setSidebarWidth(next)
+    }
+
+    function onMouseUp() {
+      dragging.current = false
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [sidebarWidth])
 
   const {
     files,
@@ -54,7 +85,10 @@ export function ConfigTile({ serverId, maximized }: TileProps) {
   return (
     <div className="flex h-full overflow-hidden">
       {/* File list panel */}
-      <div className="w-52 flex-shrink-0 flex flex-col overflow-hidden">
+      <div
+        className="flex-shrink-0 flex flex-col overflow-hidden"
+        style={{ width: sidebarWidth }}
+      >
         <FileList
           files={files}
           selectedRelPath={selectedRelPath}
@@ -67,6 +101,15 @@ export function ConfigTile({ serverId, maximized }: TileProps) {
           onRefresh={refresh}
         />
       </div>
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={onHandleMouseDown}
+        className="flex-shrink-0 w-1 cursor-col-resize transition-colors"
+        style={{ background: 'var(--border-subtle)' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'var(--accent)' }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'var(--border-subtle)' }}
+      />
 
       {/* Editor panel */}
       <EditorPanel
