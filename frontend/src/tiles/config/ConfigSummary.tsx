@@ -218,7 +218,7 @@ export function ConfigSummary({ serverId }: Props) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-3 py-1.5">
+      <div className="flex-1 overflow-y-auto pl-3 pr-5 py-1.5">
         {rows.map((key) => {
           const schema = PROPERTIES_SCHEMA[key]
           const type: FieldType = schema?.type === 'motd' ? 'string' : (schema?.type ?? 'string')
