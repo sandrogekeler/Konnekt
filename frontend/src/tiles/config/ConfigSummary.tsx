@@ -253,7 +253,7 @@ export function ConfigSummary({ serverId }: Props) {
       </div>
 
       <div
-        className="flex items-center justify-end px-3 py-1 flex-shrink-0"
+        className="flex items-center justify-start px-3 py-1 flex-shrink-0"
         style={{ borderTop: '0.5px solid var(--border-subtle)' }}
       >
         <button
