@@ -5,8 +5,9 @@ import type { TileProps } from '../../types'
 import { FileList } from './FileList'
 import { EditorPanel } from './EditorPanel'
 import { useConfigEditor } from './useConfigEditor'
+import { ConfigSummary } from './ConfigSummary'
 
-export function ConfigTile({ serverId }: TileProps) {
+export function ConfigTile({ serverId, maximized }: TileProps) {
   const { status } = useServerStore()
   const [search, setSearch] = useState('')
 
@@ -27,6 +28,11 @@ export function ConfigTile({ serverId }: TileProps) {
     save,
     revert,
   } = useConfigEditor(serverId)
+
+  // Summary view when tile is not maximized
+  if (!maximized) {
+    return <ConfigSummary serverId={serverId} />
+  }
 
   async function handleSaveAndMaybeRestart() {
     await save()
