@@ -1,101 +1,190 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ReadConfigFile } from '../../../wailsjs/go/main/App'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ReadConfigFile, WriteConfigFile } from '../../../wailsjs/go/main/App'
+import { PROPERTIES_SCHEMA } from './form/propertiesSchema'
+import { applyPropertyEdit } from './form/parseProperties'
+import type { FieldType } from './form/inferType'
+
+// Flat list of keys in relevance order — identity first, power-user settings last
+const ORDERED_KEYS: string[] = [
+  // Server identity
+  'motd', 'server-port', 'max-players',
+  // Access
+  'online-mode', 'white-list', 'enforce-whitelist', 'pvp',
+  // Gameplay
+  'gamemode', 'difficulty', 'hardcore', 'allow-flight', 'allow-nether',
+  'enable-command-block', 'spawn-animals', 'spawn-monsters', 'spawn-npcs', 'spawn-protection',
+  // World
+  'level-name', 'view-distance', 'simulation-distance', 'level-type',
+  'level-seed', 'max-world-size',
+  // Performance
+  'max-tick-time', 'network-compression-threshold', 'rate-limit', 'pause-when-empty-seconds',
+  // Network & security
+  'player-idle-timeout', 'prevent-proxy-connections',
+  'enforce-secure-profile', 'hide-online-players', 'log-ips',
+  // RCON & Query
+  'enable-rcon', 'rcon.port', 'rcon.password', 'broadcast-rcon-to-ops',
+  'enable-query', 'query.port',
+  // Resource pack
+  'resource-pack', 'require-resource-pack', 'resource-pack-prompt',
+]
 
 interface Props {
   serverId: string
 }
 
-interface Summary {
-  motd: string
-  port: string
-  gamemode: string
-  difficulty: string
-  maxPlayers: string
-  onlineMode: boolean | null
-  pvp: boolean | null
-  whitelist: boolean | null
-  viewDistance: string
-}
-
-function parseProps(raw: string): Record<string, string> {
+function parseRawProps(raw: string): Record<string, string> {
   const map: Record<string, string> = {}
   for (const line of raw.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
+    const t = line.trim()
+    if (!t || t.startsWith('#') || t.startsWith('!')) continue
+    const eq = t.indexOf('=')
     if (eq === -1) continue
-    map[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim()
+    map[t.slice(0, eq).trim()] = t.slice(eq + 1).trim()
   }
   return map
 }
 
-function stripMotd(raw: string): string {
-  // Strip §-codes and literal \n separator; keep first line only
-  const first = raw.split('\\n')[0]
-  return first.replace(/§[0-9a-fklmnor]/gi, '').trim()
+function stripCodes(raw: string): string {
+  return raw.split('\\n')[0].replace(/§[0-9a-fklmnor]/gi, '').trim()
 }
 
-function parseBool(v: string | undefined): boolean | null {
-  if (v === 'true') return true
-  if (v === 'false') return false
-  return null
+function displayValue(key: string, rawVal: string, type: FieldType): string {
+  if (key === 'motd') return stripCodes(rawVal) || rawVal
+  if (type === 'boolean') return rawVal === 'true' ? 'On' : 'Off'
+  return rawVal
 }
 
-function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1)
+function valueColor(type: FieldType, rawVal: string): string {
+  if (type === 'boolean') return rawVal === 'true' ? 'var(--accent)' : 'var(--text-muted)'
+  return 'var(--text-primary)'
 }
 
-function BoolChip({ value }: { value: boolean | null }) {
-  if (value === null) return <span style={{ color: 'var(--text-faint)' }}>—</span>
-  return (
-    <span style={{ color: value ? 'var(--accent)' : 'var(--text-muted)' }}>
-      {value ? 'On' : 'Off'}
-    </span>
-  )
+interface RowProps {
+  propKey: string
+  label: string
+  type: FieldType
+  rawVal: string
+  options?: string[]
+  editing: boolean
+  editValue: string
+  saving: boolean
+  onStartEdit: () => void
+  onEditChange: (v: string) => void
+  onEditCommit: () => void
+  onEditCancel: () => void
+  onToggle: () => void
+  onCycle: () => void
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function PropRow({
+  propKey, label, type, rawVal, options,
+  editing, editValue, saving,
+  onStartEdit, onEditChange, onEditCommit, onEditCancel,
+  onToggle, onCycle,
+}: RowProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  // prevent blur from committing when pressing Escape
+  const cancelledRef = useRef(false)
+
+  useEffect(() => {
+    if (editing) {
+      cancelledRef.current = false
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing])
+
+  const isInteractive = type === 'boolean' || (type === 'enum' && options && options.length > 0)
+  const disp = displayValue(propKey, rawVal, type)
+  const color = valueColor(type, rawVal)
+
   return (
     <div
-      className="flex items-center justify-between py-1.5"
+      className="flex items-center gap-2 py-1"
       style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
     >
-      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="text-xs font-mono font-medium text-right" style={{ color: 'var(--text-primary)' }}>
-        {children}
+      <span
+        className="text-xs flex-1 min-w-0 truncate"
+        style={{ color: 'var(--text-muted)' }}
+        title={label}
+      >
+        {label}
       </span>
+
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={editValue}
+          onChange={(e) => onEditChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { onEditCommit() }
+            if (e.key === 'Escape') { cancelledRef.current = true; onEditCancel() }
+          }}
+          onBlur={() => { if (!cancelledRef.current) onEditCommit() }}
+          className="text-xs font-mono text-right rounded px-1 outline-none min-w-0 w-28 flex-shrink-0"
+          style={{
+            background: 'var(--bg-base)',
+            border: '1px solid var(--accent)',
+            color: 'var(--text-primary)',
+          }}
+        />
+      ) : (
+        <span
+          className={`text-xs font-mono font-medium flex-shrink-0 max-w-[55%] truncate text-right transition-opacity ${
+            saving ? 'opacity-40' : 'opacity-100'
+          }`}
+          style={{
+            color,
+            cursor: isInteractive ? 'pointer' : 'default',
+          }}
+          title={isInteractive ? undefined : 'Double-click to edit'}
+          onClick={
+            type === 'boolean' ? onToggle
+            : (type === 'enum' && options?.length) ? onCycle
+            : undefined
+          }
+          onDoubleClick={!isInteractive ? onStartEdit : undefined}
+        >
+          {disp || <span style={{ color: 'var(--text-faint)' }}>—</span>}
+        </span>
+      )}
     </div>
   )
 }
 
 export function ConfigSummary({ serverId }: Props) {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const [rawContent, setRawContent] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [editingKey, setEditingKey] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
 
   const load = useCallback(async () => {
     try {
       const raw = await ReadConfigFile(serverId, 'server.properties')
-      const p = parseProps(raw)
-      setSummary({
-        motd: stripMotd(p['motd'] ?? ''),
-        port: p['server-port'] ?? '25565',
-        gamemode: titleCase(p['gamemode'] ?? 'survival'),
-        difficulty: titleCase(p['difficulty'] ?? 'normal'),
-        maxPlayers: p['max-players'] ?? '20',
-        onlineMode: parseBool(p['online-mode']),
-        pvp: parseBool(p['pvp']),
-        whitelist: parseBool(p['white-list']),
-        viewDistance: p['view-distance'] ?? '—',
-      })
+      setRawContent(raw)
       setError(null)
     } catch (e) {
       setError(String(e))
     }
   }, [serverId])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
+
+  async function commit(key: string, rawStringValue: string) {
+    if (!rawContent) return
+    const newContent = applyPropertyEdit(rawContent, key, rawStringValue)
+    setRawContent(newContent)
+    setSaving(true)
+    try {
+      await WriteConfigFile(serverId, 'server.properties', newContent)
+    } catch (e) {
+      setError(String(e))
+      load()
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (error) {
     return (
@@ -105,7 +194,7 @@ export function ConfigSummary({ serverId }: Props) {
         </span>
         <button
           onClick={load}
-          className="text-[10px] font-mono px-2 py-0.5 rounded transition-colors"
+          className="text-[10px] font-mono px-2 py-0.5 rounded"
           style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
         >
           Retry
@@ -114,7 +203,7 @@ export function ConfigSummary({ serverId }: Props) {
     )
   }
 
-  if (!summary) {
+  if (!rawContent) {
     return (
       <div className="h-full flex items-center justify-center">
         <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>Loading…</span>
@@ -122,43 +211,58 @@ export function ConfigSummary({ serverId }: Props) {
     )
   }
 
-  return (
-    <div className="h-full flex flex-col px-3 py-2 overflow-hidden">
-      {/* MOTD banner */}
-      {summary.motd && (
-        <div
-          className="text-xs font-mono truncate mb-2 pb-2"
-          style={{ color: 'var(--text-secondary)', borderBottom: '0.5px solid var(--border-subtle)' }}
-          title={summary.motd}
-        >
-          {summary.motd}
-        </div>
-      )}
+  const props = parseRawProps(rawContent)
 
-      {/* Settings rows */}
-      <div className="flex-1 overflow-hidden">
-        <Row label="Port">{summary.port}</Row>
-        <Row label="Gamemode">{summary.gamemode}</Row>
-        <Row label="Difficulty">{summary.difficulty}</Row>
-        <Row label="Max Players">{summary.maxPlayers}</Row>
-        <Row label="View Distance">{summary.viewDistance} chunks</Row>
-        <Row label="Online Mode"><BoolChip value={summary.onlineMode} /></Row>
-        <Row label="PvP"><BoolChip value={summary.pvp} /></Row>
-        <Row label="Whitelist"><BoolChip value={summary.whitelist} /></Row>
+  // Only show keys that exist in the file (don't pollute with all possible keys)
+  const rows = ORDERED_KEYS.filter((k) => k in props)
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto px-3 py-1.5">
+        {rows.map((key) => {
+          const schema = PROPERTIES_SCHEMA[key]
+          const type: FieldType = schema?.type === 'motd' ? 'string' : (schema?.type ?? 'string')
+          const label = schema?.label ?? key
+          const options = schema?.options
+          const rawVal = props[key] ?? ''
+
+          return (
+            <PropRow
+              key={key}
+              propKey={key}
+              label={label}
+              type={type}
+              rawVal={rawVal}
+              options={options}
+              editing={editingKey === key}
+              editValue={editValue}
+              saving={saving}
+              onStartEdit={() => { setEditingKey(key); setEditValue(rawVal) }}
+              onEditChange={setEditValue}
+              onEditCommit={() => { commit(key, editValue); setEditingKey(null) }}
+              onEditCancel={() => setEditingKey(null)}
+              onToggle={() => commit(key, rawVal === 'true' ? 'false' : 'true')}
+              onCycle={() => {
+                if (!options) return
+                const idx = options.indexOf(rawVal)
+                commit(key, options[(idx + 1) % options.length])
+              }}
+            />
+          )
+        })}
       </div>
 
-      {/* Footer hint */}
-      <div className="flex items-center justify-between pt-1.5 mt-1 flex-shrink-0">
-        <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
-          Double-click title to edit
-        </span>
+      <div
+        className="flex items-center justify-end px-3 py-1 flex-shrink-0"
+        style={{ borderTop: '0.5px solid var(--border-subtle)' }}
+      >
         <button
           onClick={load}
           className="text-[10px] font-mono transition-colors"
           style={{ color: 'var(--text-faint)' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
-          title="Refresh"
+          title="Reload from disk"
         >
           ↻
         </button>
