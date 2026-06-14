@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { ConfigField } from './inferType'
 import { parsePropertiesFields, applyPropertyEdit } from './parseProperties'
 import { parseYamlFields, applyYamlEdit } from './parseYaml'
+import { parseJsonFields, applyJsonEdit } from './parseJson'
+import { parseTomlFields, applyTomlEdit } from './parseToml'
 import { Toggle, NumberInput, TextInput, TextArea, Select, ChipList, MotdWidget } from './widgets'
 
 interface Props {
@@ -71,6 +73,8 @@ export function ConfigForm({ format, content, onChange }: Props) {
   try {
     if (isProperties) fields = parsePropertiesFields(content)
     else if (format === 'yaml') fields = parseYamlFields(content)
+    else if (format === 'json') fields = parseJsonFields(content)
+    else if (format === 'toml') fields = parseTomlFields(content)
   } catch {
     // leave fields empty; form shows "No fields detected"
   }
@@ -79,10 +83,15 @@ export function ConfigForm({ format, content, onChange }: Props) {
     try {
       let newContent: string
       if (isProperties) {
-        // path[0] is the key for properties
         newContent = applyPropertyEdit(content, String(path[0]), value)
-      } else {
+      } else if (format === 'yaml') {
         newContent = applyYamlEdit(content, path, value)
+      } else if (format === 'json') {
+        newContent = applyJsonEdit(content, path, value)
+      } else if (format === 'toml') {
+        newContent = applyTomlEdit(content, path, value)
+      } else {
+        return
       }
       onChange(newContent)
     } catch (e) {

@@ -7,6 +7,7 @@ import { EditorView } from '@codemirror/view'
 import type { ConfigFile } from '../../types'
 import { ConfigForm } from './form/ConfigForm'
 import { yamlIsFormSafe } from './form/parseYaml'
+import { tomlIsFormSafe } from './form/parseToml'
 
 function langExtension(format: ConfigFile['format']): Extension[] {
   switch (format) {
@@ -52,6 +53,11 @@ const FORMAT_COLORS: Record<string, string> = {
 function formSupported(format: string, content: string): boolean {
   if (format === 'properties') return true
   if (format === 'yaml') return yamlIsFormSafe(content)
+  if (format === 'json') {
+    try { const v = JSON.parse(content); return v !== null && typeof v === 'object' && !Array.isArray(v) }
+    catch { return false }
+  }
+  if (format === 'toml') return tomlIsFormSafe(content)
   return false
 }
 
@@ -67,7 +73,7 @@ function ViewToggle({ mode, supported, onChange }: ViewToggleProps) {
       <span
         className="text-[10px] font-mono flex-shrink-0"
         style={{ color: 'var(--text-faint)' }}
-        title="Form view unavailable — this file uses YAML features (anchors/aliases) that can't be safely round-tripped"
+        title="Form view unavailable — file format not supported or contains constructs that can't be safely round-tripped"
       >
         Raw only
       </span>
