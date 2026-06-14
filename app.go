@@ -19,6 +19,7 @@ type App struct {
 	configEditorService *services.ConfigEditorService
 	rconService         *services.RconService
 	statsService        *services.StatsService
+	playerService       *services.PlayerService
 	dataDir             string
 }
 
@@ -33,6 +34,7 @@ func NewApp() *App {
 		configEditorService: services.NewConfigEditorService(cfg),
 		rconService:         rcon,
 		statsService:        services.NewStatsService(srv),
+		playerService:       services.NewPlayerService(cfg, srv, rcon),
 	}
 }
 
@@ -180,7 +182,15 @@ func (a *App) GetStatsHistory(serverID string) ([]models.StatsSnapshot, error) {
 }
 
 func (a *App) GetPlayers(serverID string) ([]models.Player, error) {
-	return a.serverService.GetActivePlayers(), nil
+	return a.playerService.GetRoster(serverID)
+}
+
+func (a *App) GetPlayerRoster(serverID string) ([]models.Player, error) {
+	return a.playerService.GetRoster(serverID)
+}
+
+func (a *App) GetPlayerDetail(serverID string, name string) (models.Player, error) {
+	return a.playerService.GetDetail(serverID, name)
 }
 
 func (a *App) KickPlayer(serverID string, name string, reason string) error {
@@ -191,6 +201,10 @@ func (a *App) KickPlayer(serverID string, name string, reason string) error {
 func (a *App) BanPlayer(serverID string, name string, reason string) error {
 	cmd := fmt.Sprintf("ban %s %s", name, reason)
 	return a.serverService.SendCommand(cmd)
+}
+
+func (a *App) PardonPlayer(serverID string, name string) error {
+	return a.serverService.SendCommand(fmt.Sprintf("pardon %s", name))
 }
 
 // --- Layout presets ---

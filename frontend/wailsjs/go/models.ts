@@ -66,7 +66,16 @@ export namespace models {
 	}
 	export class Player {
 	    name: string;
-	    ping: number;
+	    uuid: string;
+	    online: boolean;
+	    ip: string;
+	    lastOnline: number;
+	    opLevel: number;
+	    whitelisted: boolean;
+	    banned: boolean;
+	    banReason: string;
+	    primaryGroup: string;
+	    groups: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Player(source);
@@ -75,7 +84,16 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
-	        this.ping = source["ping"];
+	        this.uuid = source["uuid"];
+	        this.online = source["online"];
+	        this.ip = source["ip"];
+	        this.lastOnline = source["lastOnline"];
+	        this.opLevel = source["opLevel"];
+	        this.whitelisted = source["whitelisted"];
+	        this.banned = source["banned"];
+	        this.banReason = source["banReason"];
+	        this.primaryGroup = source["primaryGroup"];
+	        this.groups = source["groups"];
 	    }
 	}
 	export class ServerConfig {

@@ -23,11 +23,19 @@ import (
 var (
 	rePlayerJoin   = regexp.MustCompile(`]: (\w+) joined the game`)
 	rePlayerLeave  = regexp.MustCompile(`]: (\w+) left the game`)
+	rePlayerUUID   = regexp.MustCompile(`]: UUID of player (\w+) is ([0-9a-f-]{36})`)
+	rePlayerLogin  = regexp.MustCompile(`]: (\w+)\[/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+\] logged in`)
 	reTPSPaper     = regexp.MustCompile(`TPS from.*?:\s*[*‡]*\s*(\d+(?:\.\d+)?)`)
 	reTPSForge     = regexp.MustCompile(`(?i)Mean TPS:\s*(\d+(?:\.\d+)?)`)
 	reTickQuery    = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*ms\s*per tick`)
 	reServerStop   = regexp.MustCompile(`(?i)Stopping the server`)
 )
+
+// playerSession holds per-session data captured from log lines.
+type playerSession struct {
+	uuid string
+	ip   string
+}
 
 type ServerService struct {
 	ctx      context.Context
@@ -39,8 +47,9 @@ type ServerService struct {
 	serverID string
 	exited   chan struct{} // closed by waitForExit when the child process exits
 
-	playersMu sync.RWMutex
-	players   map[string]struct{}
+	playersMu  sync.RWMutex
+	players    map[string]playerSession // online players
+	presession map[string]playerSession // pre-join accumulator (UUID/IP before "joined the game")
 
 	// stats fields — set on Start, read by accessors
 	maxRAMMB   int
@@ -82,7 +91,8 @@ type ServerService struct {
 
 func NewServerService() *ServerService {
 	return &ServerService{
-		players:    make(map[string]struct{}),
+		players:    make(map[string]playerSession),
+		presession: make(map[string]playerSession),
 		currentTPS: -1,
 		logTPS:     -1,
 	}
@@ -207,16 +217,32 @@ func (s *ServerService) streamOutput(r io.Reader) {
 			s.mu.Unlock()
 		}
 
-		if m := rePlayerJoin.FindStringSubmatch(line); m != nil {
+		if m := rePlayerUUID.FindStringSubmatch(line); m != nil {
+			name, uuid := m[1], m[2]
+			s.playersMu.Lock()
+			sess := s.presession[name]
+			sess.uuid = uuid
+			s.presession[name] = sess
+			s.playersMu.Unlock()
+		} else if m := rePlayerLogin.FindStringSubmatch(line); m != nil {
+			name, ip := m[1], m[2]
+			s.playersMu.Lock()
+			sess := s.presession[name]
+			sess.ip = ip
+			s.presession[name] = sess
+			s.playersMu.Unlock()
+		} else if m := rePlayerJoin.FindStringSubmatch(line); m != nil {
 			name := m[1]
 			s.playersMu.Lock()
-			s.players[name] = struct{}{}
+			s.players[name] = s.presession[name]
+			delete(s.presession, name)
 			s.playersMu.Unlock()
 			runtime.EventsEmit(s.ctx, EventPlayerJoined, name)
 		} else if m := rePlayerLeave.FindStringSubmatch(line); m != nil {
 			name := m[1]
 			s.playersMu.Lock()
 			delete(s.players, name)
+			delete(s.presession, name)
 			s.playersMu.Unlock()
 			runtime.EventsEmit(s.ctx, EventPlayerLeft, name)
 		}
@@ -237,7 +263,8 @@ func (s *ServerService) waitForExit() {
 	close(s.exited)
 
 	s.playersMu.Lock()
-	s.players = make(map[string]struct{})
+	s.players = make(map[string]playerSession)
+	s.presession = make(map[string]playerSession)
 	s.playersMu.Unlock()
 
 	s.stopTPSPoll()
@@ -396,8 +423,13 @@ func (s *ServerService) GetActivePlayers() []models.Player {
 	s.playersMu.RLock()
 	defer s.playersMu.RUnlock()
 	list := make([]models.Player, 0, len(s.players))
-	for name := range s.players {
-		list = append(list, models.Player{Name: name, Ping: 0})
+	for name, sess := range s.players {
+		list = append(list, models.Player{
+			Name:   name,
+			UUID:   sess.uuid,
+			IP:     sess.ip,
+			Online: true,
+		})
 	}
 	return list
 }

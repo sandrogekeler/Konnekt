@@ -28,6 +28,10 @@ export function GetCustomCommands():Promise<Array<string>>;
 
 export function GetLayoutPresets():Promise<Array<models.LayoutPreset>>;
 
+export function GetPlayerDetail(arg1:string,arg2:string):Promise<models.Player>;
+
+export function GetPlayerRoster(arg1:string):Promise<Array<models.Player>>;
+
 export function GetPlayers(arg1:string):Promise<Array<models.Player>>;
 
 export function GetServerConfigs():Promise<Array<models.ServerConfig>>;
@@ -41,6 +45,8 @@ export function KickPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 export function ListConfigFiles(arg1:string):Promise<Array<models.ConfigFile>>;
 
 export function OpenDataDir():Promise<void>;
+
+export function PardonPlayer(arg1:string,arg2:string):Promise<void>;
 
 export function ReadConfigFile(arg1:string,arg2:string):Promise<string>;
 

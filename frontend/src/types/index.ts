@@ -44,7 +44,16 @@ export interface ServerConfig {
 
 export interface Player {
   name: string
-  ping: number
+  uuid: string
+  online: boolean
+  ip: string
+  lastOnline: number
+  opLevel: number
+  whitelisted: boolean
+  banned: boolean
+  banReason: string
+  primaryGroup: string
+  groups: string[]
 }
 
 export interface ConfigFile {

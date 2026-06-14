@@ -54,6 +54,14 @@ export function GetLayoutPresets() {
   return window['go']['main']['App']['GetLayoutPresets']();
 }
 
+export function GetPlayerDetail(arg1, arg2) {
+  return window['go']['main']['App']['GetPlayerDetail'](arg1, arg2);
+}
+
+export function GetPlayerRoster(arg1) {
+  return window['go']['main']['App']['GetPlayerRoster'](arg1);
+}
+
 export function GetPlayers(arg1) {
   return window['go']['main']['App']['GetPlayers'](arg1);
 }
@@ -80,6 +88,10 @@ export function ListConfigFiles(arg1) {
 
 export function OpenDataDir() {
   return window['go']['main']['App']['OpenDataDir']();
+}
+
+export function PardonPlayer(arg1, arg2) {
+  return window['go']['main']['App']['PardonPlayer'](arg1, arg2);
 }
 
 export function ReadConfigFile(arg1, arg2) {
