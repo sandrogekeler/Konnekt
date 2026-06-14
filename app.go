@@ -13,23 +13,26 @@ import (
 )
 
 type App struct {
-	ctx           context.Context
-	serverService *services.ServerService
-	configService *services.ConfigService
-	rconService   *services.RconService
-	statsService  *services.StatsService
-	dataDir       string
+	ctx                 context.Context
+	serverService       *services.ServerService
+	configService       *services.ConfigService
+	configEditorService *services.ConfigEditorService
+	rconService         *services.RconService
+	statsService        *services.StatsService
+	dataDir             string
 }
 
 func NewApp() *App {
 	rcon := services.NewRconService()
 	srv := services.NewServerService()
 	srv.SetRcon(rcon)
+	cfg := services.NewConfigService()
 	return &App{
-		serverService: srv,
-		configService: services.NewConfigService(),
-		rconService:   rcon,
-		statsService:  services.NewStatsService(srv),
+		serverService:       srv,
+		configService:       cfg,
+		configEditorService: services.NewConfigEditorService(cfg),
+		rconService:         rcon,
+		statsService:        services.NewStatsService(srv),
 	}
 }
 
@@ -52,6 +55,7 @@ func (a *App) startup(ctx context.Context) {
 	a.dataDir = filepath.Join(configDir, "konnekt")
 	_ = os.MkdirAll(a.dataDir, 0755)
 	a.configService.SetDataDir(a.dataDir)
+	a.configEditorService.SetDataDir(a.dataDir)
 }
 
 // --- File dialogs ---
@@ -103,6 +107,20 @@ func (a *App) SaveAppSettings(s models.AppSettings) error {
 
 func (a *App) OpenDataDir() error {
 	return services.OpenPath(a.dataDir)
+}
+
+// --- Config editor ---
+
+func (a *App) ListConfigFiles(serverID string) ([]models.ConfigFile, error) {
+	return a.configEditorService.ListConfigFiles(serverID)
+}
+
+func (a *App) ReadConfigFile(serverID string, relPath string) (string, error) {
+	return a.configEditorService.ReadConfigFile(serverID, relPath)
+}
+
+func (a *App) WriteConfigFile(serverID string, relPath string, content string) error {
+	return a.configEditorService.WriteConfigFile(serverID, relPath, content)
 }
 
 // --- Server lifecycle ---

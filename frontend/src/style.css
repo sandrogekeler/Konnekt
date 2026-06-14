@@ -67,6 +67,13 @@ body {
   border-radius: 2px;
 }
 
+/* Hide native number input spinners — custom ▲▼ buttons used instead */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-faint);
 }

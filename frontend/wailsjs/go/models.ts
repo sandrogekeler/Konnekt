@@ -26,6 +26,30 @@ export namespace models {
 	        this.notifyOnJoin = source["notifyOnJoin"];
 	    }
 	}
+	export class ConfigFile {
+	    relPath: string;
+	    name: string;
+	    category: string;
+	    source: string;
+	    format: string;
+	    sizeBytes: number;
+	    modified: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.relPath = source["relPath"];
+	        this.name = source["name"];
+	        this.category = source["category"];
+	        this.source = source["source"];
+	        this.format = source["format"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.modified = source["modified"];
+	    }
+	}
 	export class LayoutPreset {
 	    name: string;
 	    layout: string;

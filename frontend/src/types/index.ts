@@ -47,6 +47,16 @@ export interface Player {
   ping: number
 }
 
+export interface ConfigFile {
+  relPath: string
+  name: string
+  category: 'server' | 'plugins' | 'mods'
+  source: string
+  format: 'properties' | 'yaml' | 'json' | 'json5' | 'toml' | 'text'
+  sizeBytes: number
+  modified: number
+}
+
 export interface ServerStatus {
   running: boolean
   uptime: string

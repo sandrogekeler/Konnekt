@@ -74,8 +74,16 @@ export function KickPlayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['KickPlayer'](arg1, arg2, arg3);
 }
 
+export function ListConfigFiles(arg1) {
+  return window['go']['main']['App']['ListConfigFiles'](arg1);
+}
+
 export function OpenDataDir() {
   return window['go']['main']['App']['OpenDataDir']();
+}
+
+export function ReadConfigFile(arg1, arg2) {
+  return window['go']['main']['App']['ReadConfigFile'](arg1, arg2);
 }
 
 export function RestartServer(arg1) {
@@ -124,4 +132,8 @@ export function StartServer(arg1) {
 
 export function StopServer(arg1) {
   return window['go']['main']['App']['StopServer'](arg1);
+}
+
+export function WriteConfigFile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['WriteConfigFile'](arg1, arg2, arg3);
 }

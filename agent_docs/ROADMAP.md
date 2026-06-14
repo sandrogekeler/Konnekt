@@ -58,10 +58,10 @@ Do not implement Beta features during Alpha development.
 
 - [x] Console tile (live log streaming, auto-scroll, pause on scroll up,
   command input, clear console button)
-- [~] Stats tile (status, players online, TPS with colour banding,
+- [x] Stats tile (status, players online, TPS with colour banding,
   RAM used/total with progress bar, uptime)
-  - Running state and uptime are real; TPS, RAM, and player count are
-    hardcoded placeholders (20 TPS, 0 RAM, 0 players) pending StatsService
+  - All values live: TPS via RCON (log-based fallback), RAM via gopsutil RSS,
+    player count from log-parsed in-memory map; all served by GetServerStatus()
 - [x] Quick commands tile (start, stop, restart, save-all, list, set day,
   clear weather, freeze time, kick/ban with modal, custom commands)
 
@@ -73,16 +73,12 @@ Do not implement Beta features during Alpha development.
   - Kick and ban buttons per player; colour-coded modal with optional reason
   - List clears automatically when server stops
 
-- [ ] Performance tile
+- [x] Performance tile
   
   - Time-series chart of TPS, RAM, CPU (last 1 hour)
-  - Go: StatsService — ring buffer, snapshot every 10s, emit stats:snapshot event
-    - TPS: parse "Can't keep up" log lines or derive from tick timing
-    - RAM: read process RSS via runtime.ReadMemStats or OS proc query
-    - CPU: read process CPU % via OS proc query
-  - Implementing StatsService also unblocks the Stats tile placeholders
-  - Frontend: recharts LineChart, 3 series, colour-coded axes
-  - No external data store — in-memory ring buffer only for alpha
+  - Go: StatsService ring buffer, 360 snapshots at 10s intervals, emits stats:snapshot
+  - Frontend: recharts ComposedChart, dual Y-axes, compact + expanded views with
+    sortable summary table and toggle-able series; GetStatsHistory() for initial load
 
 - [ ] Scheduler tile - Node Graph Interface
   

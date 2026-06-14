@@ -38,7 +38,11 @@ export function GetStatsHistory(arg1:string):Promise<Array<models.StatsSnapshot>
 
 export function KickPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function ListConfigFiles(arg1:string):Promise<Array<models.ConfigFile>>;
+
 export function OpenDataDir():Promise<void>;
+
+export function ReadConfigFile(arg1:string,arg2:string):Promise<string>;
 
 export function RestartServer(arg1:string):Promise<void>;
 
@@ -63,3 +67,5 @@ export function SetActiveServerID(arg1:string):Promise<void>;
 export function StartServer(arg1:string):Promise<void>;
 
 export function StopServer(arg1:string):Promise<void>;
+
+export function WriteConfigFile(arg1:string,arg2:string,arg3:string):Promise<void>;

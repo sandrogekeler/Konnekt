@@ -7,7 +7,7 @@ import { PerformanceTile } from './performance'
 import { SchedulerTile } from './scheduler'
 import { WorldsTile } from './worlds'
 import { BackupsTile } from './backups'
-import { ServerConfigTile } from './server-config'
+import { ConfigTile } from './config'
 import { NotificationsTile } from './notifications'
 
 export const TILE_REGISTRY: TileDefinition[] = [
@@ -99,14 +99,14 @@ export const TILE_REGISTRY: TileDefinition[] = [
   },
   {
     id: 'server-config',
-    label: 'Server Config',
+    label: 'Config',
     icon: '==',
     defaultW: 3,
     defaultH: 8,
     minW: 3,
     minH: 3,
     maximizable: true,
-    component: ServerConfigTile,
+    component: ConfigTile,
   },
   {
     id: 'notifications',
