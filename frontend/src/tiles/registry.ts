@@ -103,7 +103,7 @@ export const TILE_REGISTRY: TileDefinition[] = [
     icon: '==',
     defaultW: 3,
     defaultH: 8,
-    minW: 3,
+    minW: 2,
     minH: 3,
     maximizable: true,
     component: ConfigTile,
