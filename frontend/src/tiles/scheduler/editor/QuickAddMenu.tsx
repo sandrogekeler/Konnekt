@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { models } from '../../../../wailsjs/go/models'
 import { CATEGORY_COLOR, CATEGORY_ICON, orderedCategories } from './blockMeta'
 
@@ -41,7 +42,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
   const activeDefs  = activeCategory ? blockDefs.filter(d => d.category === activeCategory) : []
   const activeColor = activeCategory ? (CATEGORY_COLOR[activeCategory] ?? '#6b7280') : '#6b7280'
 
-  return (
+  return createPortal(
     <>
       {/* Dismiss backdrop */}
       <div
@@ -138,6 +139,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
           ))}
         </div>
       )}
-    </>
+    </>,
+    document.body,
   )
 }

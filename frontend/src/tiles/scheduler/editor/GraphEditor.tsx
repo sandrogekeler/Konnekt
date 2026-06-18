@@ -4,6 +4,7 @@ import {
 import {
   ReactFlow, Background, BackgroundVariant, Controls, MiniMap,
   addEdge, useNodesState, useEdgesState, useReactFlow, ReactFlowProvider,
+  useUpdateNodeInternals,
   type Connection, type Node as FlowNode, type Edge as FlowEdge,
 } from '@xyflow/react'
 import { SchedulerCtx } from './schedulerContext'
@@ -41,6 +42,7 @@ function GraphEditorInner({
   graphs, blockDefs, onSave, onDelete, onSetEnabled, onRun,
 }: GraphEditorProps) {
   const { screenToFlowPosition } = useReactFlow()
+  const updateNodeInternals = useUpdateNodeInternals()
 
   const defMap = useMemo(
     () => new Map(blockDefs.map(d => [d.id, d])),
@@ -126,6 +128,19 @@ function GraphEditorInner({
       loadGraph(graphs[0])
     }
   }, [graphs, graphId, loadGraph])
+
+  // Re-measure node handle positions after the maximize animation finishes.
+  // The editor mounts while the panel is still animating (scale < 1), so React
+  // Flow's initial handle measurements are taken on a transformed layout and
+  // connection drop targets end up offset. Waiting past ANIM_MS (120ms) ensures
+  // the panel has settled at scale(1) before we re-read the DOM.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      updateNodeInternals(nodes.map(n => n.id))
+    }, 200)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // intentionally fires once on mount only
 
   // ── Connect handler ───────────────────────────────────────────────────────
   const onConnect = useCallback((connection: Connection) => {
