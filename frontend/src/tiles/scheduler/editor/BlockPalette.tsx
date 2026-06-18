@@ -12,7 +12,7 @@ interface Props {
 
 export function BlockPalette({ blockDefs, onAdd }: Props) {
   const [collapsed, setCollapsed] = useState<boolean>(
-    () => localStorage.getItem(LS_COLLAPSED) === 'true',
+    () => localStorage.getItem(LS_COLLAPSED) !== 'false',
   )
   const [closed, setClosed] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem(LS_CLOSED) ?? '{}') } catch { return {} }

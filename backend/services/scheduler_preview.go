@@ -1,21 +1,20 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"konnekt/backend/models"
 )
 
 // PreviewNode computes a side-effect-free dry-run of a single node against the
-// current live server state. It reports the attributes the node references or
-// defines (with their evaluated values) and a console line describing what the
-// block would do — including failures such as writing a read-only attribute.
-//
-// The full graph is passed (not just an ID) so unsaved canvas edits preview
-// correctly. Custom attributes are gathered statically from the value
-// expressions of Write Attribute nodes that are control-ancestors of nodeID.
+// current live server state. Pure-data nodes (Constant, Math, Random, Read Attribute)
+// are actually executed to produce real values. Action nodes are never executed —
+// only validated and described. Custom attributes are gathered from every Write
+// Attribute node in the whole graph so a standalone node can still see them.
 func (s *SchedulerService) PreviewNode(g models.Graph, nodeID string) (models.NodePreview, error) {
 	nodeByID := make(map[string]models.Node, len(g.Nodes))
 	for _, n := range g.Nodes {
@@ -26,12 +25,16 @@ func (s *SchedulerService) PreviewNode(g models.Graph, nodeID string) (models.No
 		return models.NodePreview{}, fmt.Errorf("node %q not found", nodeID)
 	}
 
-	// Gather custom-attribute definitions from upstream Write Attribute nodes.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	outputs := make(map[string]map[string]interface{})
 	scope := newAttrScope(s.deps, s.activeServerID(), map[string]string{})
-	ancestors := controlAncestors(nodeID, g.Edges)
-	for id := range ancestors {
-		n := nodeByID[id]
-		if n.Type != "action.writeAttribute" {
+
+	// Gather custom-attribute definitions from all Write Attribute nodes in the graph.
+	// Pull their data dependencies first so wired values (e.g. Math result) are available.
+	for _, n := range g.Nodes {
+		if n.Type != "data.writeAttribute" {
 			continue
 		}
 		target := strings.TrimPrefix(asString(n.Config["attribute"]), "@")
@@ -41,12 +44,27 @@ func (s *SchedulerService) PreviewNode(g models.Graph, nodeID string) (models.No
 		if _, builtin := builtinAttrs[target]; builtin {
 			continue
 		}
-		scope.Define(target, asString(n.Config["value"]))
+		s.pullDataDependencies(ctx, n.ID, g.Edges, nodeByID, outputs, scope, make(map[string]bool))
+		dataIn := resolveDataInputs(n.ID, g.Edges, outputs)
+		if wireVal, ok2 := dataIn["value"]; ok2 && wireVal != nil {
+			// Wired value: store the computed result as a literal so Resolve returns it directly.
+			scope.Define(target, toStr(wireVal))
+		} else {
+			scope.Define(target, asString(n.Config["value"]))
+		}
+	}
+
+	// Pull data dependencies for the selected node, then resolve its config + inputs.
+	s.pullDataDependencies(ctx, nodeID, g.Edges, nodeByID, outputs, scope, make(map[string]bool))
+	resolvedCfg := resolveConfigTemplates(node.Config, outputs, scope)
+	dataIn := resolveDataInputs(nodeID, g.Edges, outputs)
+	for k, v := range dataIn {
+		resolvedCfg[k] = v
 	}
 
 	preview := models.NodePreview{NodeID: nodeID, OK: true}
 
-	// Collect attribute names referenced anywhere in the node's string config.
+	// Collect attribute names referenced anywhere in the raw config strings.
 	refNames := map[string]bool{}
 	for _, v := range node.Config {
 		sv, ok := v.(string)
@@ -58,29 +76,23 @@ func (s *SchedulerService) PreviewNode(g models.Graph, nodeID string) (models.No
 		}
 	}
 
-	// The Write Attribute target is the attribute the node defines/writes; show
-	// the value it would write.
-	if node.Type == "action.writeAttribute" {
-		target := strings.TrimPrefix(asString(node.Config["attribute"]), "@")
+	// The Write Attribute target is the attribute the node defines/writes; show its value.
+	if node.Type == "data.writeAttribute" {
+		target := strings.TrimPrefix(asString(resolvedCfg["attribute"]), "@")
 		if target != "" {
-			delete(refNames, target) // shown as a dedicated written row below
+			delete(refNames, target)
 			meta, builtin := builtinAttrs[target]
 			var row models.AttrValue
 			switch {
 			case builtin && !meta.Writable:
-				// Read-only server attribute: cannot be written.
 				row = models.AttrValue{Name: target, Type: meta.Type, Error: "read-only"}
 				preview.OK = false
 			case builtin:
-				// Writable server attribute: value is an interpolated string.
 				row = models.AttrValue{
 					Name: target, Type: meta.Type, Writable: true,
-					Value: stringifyResolved(node.Config["value"], scope),
+					Value: toStr(resolvedCfg["value"]),
 				}
 			default:
-				// Custom in-flow attribute: value is a full expression — define
-				// it, then resolve it the same way a reference would at run time.
-				scope.Define(target, asString(node.Config["value"]))
 				row = attrRow(target, scope)
 			}
 			preview.Attributes = append(preview.Attributes, row)
@@ -91,7 +103,11 @@ func (s *SchedulerService) PreviewNode(g models.Graph, nodeID string) (models.No
 		preview.Attributes = append(preview.Attributes, attrRow(name, scope))
 	}
 
-	preview.Console = s.simulateNode(node, scope)
+	lines, ok2 := s.simulateNode(ctx, node, resolvedCfg, dataIn, scope)
+	preview.Console = lines
+	if !ok2 {
+		preview.OK = false
+	}
 	return preview, nil
 }
 
@@ -114,83 +130,132 @@ func attrRow(name string, scope *AttrScope) models.AttrValue {
 	return row
 }
 
-// simulateNode renders what the block would do, without performing it.
-func (s *SchedulerService) simulateNode(node models.Node, scope *AttrScope) []string {
+// simulateNode describes what a node would do, using real resolved values.
+// Pure-data nodes (Constant, Math, Random) are executed side-effect-free to produce
+// actual output values. Action nodes are never executed — only validated and described.
+// Returns the console lines and whether the node would succeed.
+func (s *SchedulerService) simulateNode(
+	ctx context.Context,
+	node models.Node,
+	resolvedCfg map[string]interface{},
+	dataIn map[string]interface{},
+	scope *AttrScope,
+) ([]string, bool) {
 	switch node.Type {
-	case "action.writeAttribute":
-		target := strings.TrimPrefix(asString(node.Config["attribute"]), "@")
-		if meta, ok := builtinAttrs[target]; ok && !meta.Writable {
-			return []string{fmt.Sprintf("ERROR: @%s is read-only", target)}
+	case "data.writeAttribute":
+		target := strings.TrimPrefix(asString(resolvedCfg["attribute"]), "@")
+		if target == "" {
+			return []string{"would fail: no attribute name"}, false
 		}
-		if _, ok := builtinAttrs[target]; ok {
-			val := stringifyResolved(node.Config["value"], scope)
-			return []string{fmt.Sprintf("would write @%s = %s", target, val)}
+		meta, builtin := builtinAttrs[target]
+		if builtin && !meta.Writable {
+			return []string{fmt.Sprintf("ERROR: @%s is read-only", target)}, false
 		}
-		// Custom attribute: evaluate its value as an expression.
-		val := ""
-		if v, err := resolveCustomValue(asString(node.Config["value"]), scope); err == nil {
-			val = toStr(v)
+		val := toStr(resolvedCfg["value"])
+		if builtin {
+			return []string{fmt.Sprintf("would write @%s = %s", target, val)}, true
 		}
-		return []string{fmt.Sprintf("would define @%s = %s", target, val)}
+		if val == "" {
+			return []string{fmt.Sprintf("would define @%s = (value is null)", target)}, false
+		}
+		return []string{fmt.Sprintf("would define @%s = %s", target, val)}, true
+
 	case "action.notify":
-		return []string{"would notify: " + stringifyResolved(node.Config["message"], scope)}
+		return []string{"would notify: " + toStr(resolvedCfg["message"])}, true
+
 	case "action.command":
-		cmd := asString(node.Config["preset"])
+		cmd := asString(resolvedCfg["preset"])
 		if cmd == "" {
-			cmd = stringifyResolved(node.Config["command"], scope)
+			cmd = toStr(resolvedCfg["command"])
 		}
-		return []string{"would run: " + cmd}
+		if cmd == "" {
+			return []string{"would fail: command is empty"}, false
+		}
+		return []string{"would run: " + cmd}, true
+
 	case "action.rcon":
-		cmd := asString(node.Config["preset"])
+		cmd := asString(resolvedCfg["preset"])
 		if cmd == "" {
-			cmd = stringifyResolved(node.Config["command"], scope)
+			cmd = toStr(resolvedCfg["command"])
 		}
-		return []string{"would rcon: " + cmd}
+		if cmd == "" {
+			return []string{"would fail: command is empty"}, false
+		}
+		return []string{"would rcon: " + cmd}, true
+
 	case "action.httpRequest":
-		method := asString(node.Config["method"])
+		method := asString(resolvedCfg["method"])
 		if method == "" {
 			method = "POST"
 		}
-		return []string{fmt.Sprintf("would %s %s", method, stringifyResolved(node.Config["url"], scope))}
+		url := toStr(resolvedCfg["url"])
+		if url == "" {
+			return []string{"would fail: url is empty"}, false
+		}
+		return []string{fmt.Sprintf("would %s %s", method, url)}, true
+
 	case "data.serverAttribute":
-		name := strings.TrimPrefix(asString(node.Config["attribute"]), "@")
-		return []string{fmt.Sprintf("reads @%s = %s", name, attrRow(name, scope).Value)}
-	}
-	if entry, ok := s.registry.Get(node.Type); ok {
-		return []string{"would execute " + entry.def.Label}
-	}
-	return []string{"would execute " + node.Type}
-}
-
-// stringifyResolved resolves {{…}} and @attr tokens in a config value to a string.
-func stringifyResolved(v interface{}, scope *AttrScope) string {
-	resolved := resolveValue(v, map[string]map[string]interface{}{}, scope)
-	return toStr(resolved)
-}
-
-// controlAncestors returns the set of node IDs that can reach nodeID via control
-// edges (its transitive predecessors).
-func controlAncestors(nodeID string, edges []models.Edge) map[string]bool {
-	preds := map[string][]string{}
-	for _, e := range edges {
-		if e.Kind == "data" {
-			continue
+		name := strings.TrimPrefix(asString(resolvedCfg["attribute"]), "@")
+		if name == "" {
+			return []string{"would fail: no attribute name"}, false
 		}
-		preds[e.Target] = append(preds[e.Target], e.Source)
+		val, err := scope.Resolve(name)
+		if err != nil {
+			return []string{fmt.Sprintf("ERROR: @%s is undefined", name)}, false
+		}
+		if typeErr := checkAttrType(val, asString(resolvedCfg["type"])); typeErr != nil {
+			return []string{fmt.Sprintf("ERROR: @%s — %s", name, typeErr)}, false
+		}
+		return []string{fmt.Sprintf("reads @%s = %s", name, toStr(val))}, true
 	}
-	seen := map[string]bool{}
-	stack := []string{nodeID}
-	for len(stack) > 0 {
-		n := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		for _, p := range preds[n] {
-			if !seen[p] {
-				seen[p] = true
-				stack = append(stack, p)
+
+	// Generic side-effect-free execution for pure-data nodes (Constant, Math, Random, …).
+	entry, ok := s.registry.Get(node.Type)
+	if ok && isPureData(entry.def) {
+		dataOut := make(map[string]interface{})
+		nodeCtx, cancel := context.WithTimeout(ctx, nodeTimeout)
+		defer cancel()
+		ec := &ExecContext{
+			Ctx:       nodeCtx,
+			ServerID:  s.activeServerID(),
+			Config:    resolvedCfg,
+			RawConfig: node.Config,
+			DataIn:    dataIn,
+			Attrs:     scope,
+			svc:       s.deps,
+			dataOut:   dataOut,
+		}
+		result := entry.exec(ec)
+		if result.Err != nil {
+			return []string{fmt.Sprintf("would fail: %s", result.Err)}, false
+		}
+		portLabel := make(map[string]string, len(entry.def.DataOutputs))
+		for _, p := range entry.def.DataOutputs {
+			portLabel[p.ID] = p.Label
+		}
+		ports := make([]string, 0, len(dataOut))
+		for k := range dataOut {
+			ports = append(ports, k)
+		}
+		sort.Strings(ports)
+		lines := make([]string, 0, len(ports))
+		for _, p := range ports {
+			label := portLabel[p]
+			if label == "" {
+				label = p
 			}
+			lines = append(lines, fmt.Sprintf("%s = %s", label, toStr(dataOut[p])))
 		}
+		if len(lines) == 0 {
+			return []string{"(no output)"}, true
+		}
+		return lines, true
 	}
-	return seen
+
+	if ok {
+		return []string{"would execute " + entry.def.Label}, true
+	}
+	return []string{"would execute " + node.Type}, true
 }
 
 func asString(v interface{}) string {

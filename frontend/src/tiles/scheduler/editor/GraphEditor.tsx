@@ -52,7 +52,7 @@ function GraphEditorInner({
   )
 
   // ── Graph metadata ────────────────────────────────────────────────────────
-  const [graphId,      setGraphId]      = useState('')
+  const [graphId,      setGraphId]      = useState<string | null>(null)
   const [graphName,    setGraphName]    = useState('')
   const [graphEnabled, setGraphEnabled] = useState(false)
   const [createdAt,    setCreatedAt]    = useState(0)
@@ -132,7 +132,7 @@ function GraphEditorInner({
 
   // Auto-load first graph when graphs list arrives
   useEffect(() => {
-    if (graphs.length > 0 && !graphId) {
+    if (graphs.length > 0 && graphId === null) {
       loadGraph(graphs[0])
     }
   }, [graphs, graphId, loadGraph])
@@ -263,7 +263,7 @@ function GraphEditorInner({
     setSaving(true)
     try {
       const graph = flowToGraph(
-        { id: graphId, name: graphName || 'Untitled', enabled: graphEnabled, createdAt },
+        { id: graphId ?? '', name: graphName || 'Untitled', enabled: graphEnabled, createdAt },
         nodes,
         edges,
       )
@@ -365,7 +365,7 @@ function GraphEditorInner({
         >
           {/* Graph selector */}
           <select
-            value={graphId}
+            value={graphId ?? ''}
             onChange={e => {
               const g = graphs.find(x => x.id === e.target.value)
               if (g) loadGraph(g)
@@ -553,7 +553,7 @@ function GraphEditorInner({
               ) : (
                 <NodeDataPanel
                   graph={flowToGraph(
-                    { id: graphId, name: graphName, enabled: graphEnabled, createdAt },
+                    { id: graphId ?? '', name: graphName, enabled: graphEnabled, createdAt },
                     nodes,
                     edges,
                   )}

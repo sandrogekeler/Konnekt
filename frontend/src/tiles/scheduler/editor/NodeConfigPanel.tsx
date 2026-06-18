@@ -136,7 +136,7 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                   ))}
                 </datalist>
                 <span className="text-xs" style={{ color: 'var(--text-faint)', fontSize: 9 }}>
-                  A new name defines a custom in-flow attribute.
+                  Type a built-in or custom attribute name.
                 </span>
               </>
             ) : field.type === 'number' ? (

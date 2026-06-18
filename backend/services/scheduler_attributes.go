@@ -112,6 +112,49 @@ func (a *AttrScope) Resolve(name string) (interface{}, error) {
 	return readBuiltinAttribute(a.deps, a.serverID, name)
 }
 
+// checkAttrType returns an error if val does not match the declared type.
+// declaredType is one of "string", "number", "bool", or "" / "auto" (no check).
+func checkAttrType(val interface{}, declaredType string) error {
+	if declaredType == "" || declaredType == "auto" {
+		return nil
+	}
+	switch declaredType {
+	case "number":
+		switch val.(type) {
+		case float64, int, int64:
+			return nil
+		}
+	case "string":
+		if _, ok := val.(string); ok {
+			return nil
+		}
+	case "bool":
+		switch v := val.(type) {
+		case bool:
+			return nil
+		case float64:
+			if v == 0 || v == 1 {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("expected %s, got %s", declaredType, goTypeLabel(val))
+}
+
+func goTypeLabel(v interface{}) string {
+	switch v.(type) {
+	case float64, int, int64:
+		return "number"
+	case string:
+		return "string"
+	case bool:
+		return "bool"
+	case nil:
+		return "null"
+	}
+	return "unknown"
+}
+
 // resolveCustomValue evaluates a custom attribute's raw value: an @{…} or @-ref
 // expression is evaluated; a plain number becomes a float; anything else is a
 // literal string.

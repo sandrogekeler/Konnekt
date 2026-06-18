@@ -41,7 +41,16 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
   ]
   const rightPorts: PortEntry[] = [
     ...ctrlOuts.map(p => ({ id: `ctrl:${p}`,    label: p,       color: CTRL_PORT_COLOR[p] ?? '#22c55e', isData: false })),
-    ...dataOuts.map(p => ({ id: `data:${p.id}`, label: p.label, color: PORT_TYPE_COLOR[p.type] ?? '#60a5fa', isData: true })),
+    ...dataOuts.map(p => {
+      let portColor: string
+      if (p.type === 'auto') {
+        const cfgType = nd.config?.type as string | undefined
+        portColor = (cfgType && cfgType !== 'auto') ? (PORT_TYPE_COLOR[cfgType] ?? '#60a5fa') : '#6b7280'
+      } else {
+        portColor = PORT_TYPE_COLOR[p.type] ?? '#60a5fa'
+      }
+      return { id: `data:${p.id}`, label: p.label, color: portColor, isData: true }
+    }),
   ]
 
   // Show first non-empty required config value as a hint

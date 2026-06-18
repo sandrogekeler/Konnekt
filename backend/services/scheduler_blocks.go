@@ -183,7 +183,7 @@ func registerBuiltins(r *BlockRegistry) {
 	}, execBackup))
 
 	must(r.RegisterBlock(models.BlockDef{
-		ID: "action.writeAttribute", Category: "action", Label: "Write Attribute",
+		ID: "data.writeAttribute", Category: "data", Label: "Write Attribute",
 		Description:   "Writes a server attribute (e.g. @server.motd) or defines a custom in-flow attribute (@myvalue). Value may be an expression like @{ @players.count * 2 }.",
 		ControlInputs: []string{"trigger"}, ControlOutputs: []string{"onComplete", "onFailed"},
 		DataInputs:  []models.DataPort{{ID: "value", Label: "Value", Type: "string"}},
@@ -538,10 +538,10 @@ func must(err error) {
 func registerDataBuiltins(r *BlockRegistry) {
 	must(r.RegisterBlock(models.BlockDef{
 		ID: "data.serverAttribute", Category: "data", Label: "Read Attribute",
-		Description: "Reads a live server property.",
-		DataOutputs: []models.DataPort{{ID: "value", Label: "Value", Type: "number"}},
+		Description: "Reads a live server attribute or a custom in-flow attribute defined upstream.",
+		DataOutputs: []models.DataPort{{ID: "value", Label: "Value", Type: "auto"}},
 		ConfigSchema: []models.ConfigField{
-			{Key: "attribute", Label: "Attribute", Type: "select", Default: "tps", Required: true,
+			{Key: "attribute", Label: "Attribute", Type: "attribute", Default: "tps", Required: true,
 				Options: []models.FieldOption{
 					// Read-only
 					{Label: "@tps", Value: "tps"},
@@ -557,6 +557,13 @@ func registerDataBuiltins(r *BlockRegistry) {
 					{Label: "@server.gamemode", Value: "server.gamemode"},
 					{Label: "@server.motd", Value: "server.motd"},
 					{Label: "@server.world", Value: "server.world"},
+				}},
+			{Key: "type", Label: "Data type", Type: "select", Default: "auto",
+				Options: []models.FieldOption{
+					{Label: "Auto", Value: "auto"},
+					{Label: "String", Value: "string"},
+					{Label: "Number", Value: "number"},
+					{Label: "Boolean", Value: "bool"},
 				}},
 		},
 		Source: "native",
@@ -620,9 +627,15 @@ func registerDataBuiltins(r *BlockRegistry) {
 
 func execServerAttribute(e *ExecContext) ExecResult {
 	attr := strings.TrimPrefix(e.GetString("attribute"), "@")
-	val, err := readBuiltinAttribute(e.svc, e.ServerID, attr)
+	if e.Attrs == nil {
+		return ExecResult{Port: "onFailed", Err: fmt.Errorf("no attribute scope")}
+	}
+	val, err := e.Attrs.Resolve(attr)
 	if err != nil {
 		return ExecResult{Port: "onFailed", Err: err}
+	}
+	if typeErr := checkAttrType(val, e.GetString("type")); typeErr != nil {
+		return ExecResult{Port: "onFailed", Err: fmt.Errorf("@%s: %w", attr, typeErr)}
 	}
 	e.SetOutput("value", val)
 	return ExecResult{Port: "onComplete"}

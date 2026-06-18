@@ -81,7 +81,7 @@ export function NodeDataPanel({ graph, nodeId, onPreview }: Props) {
             preview.console.map((line, i) => (
               <span
                 key={i}
-                style={{ color: line.startsWith('ERROR') ? '#ef4444' : 'var(--text-secondary)' }}
+                style={{ color: (line.startsWith('ERROR') || line.startsWith('would fail')) ? '#ef4444' : 'var(--text-secondary)' }}
               >
                 {line}
               </span>
