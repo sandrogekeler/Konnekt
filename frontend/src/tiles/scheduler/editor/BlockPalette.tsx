@@ -1,7 +1,9 @@
 import type { models } from '../../../../wailsjs/go/models'
 import { CATEGORY_COLOR, CATEGORY_ICON } from './blockMeta'
 
-const CATEGORIES = ['trigger', 'action', 'control', 'notify'] as const
+// Preferred display order; any category present in blockDefs but not listed
+// here is appended at the end, so new backend categories never get dropped.
+const CATEGORY_ORDER = ['trigger', 'data', 'action', 'control', 'notify']
 
 interface Props {
   blockDefs: models.BlockDef[]
@@ -9,6 +11,12 @@ interface Props {
 }
 
 export function BlockPalette({ blockDefs, onAdd }: Props) {
+  const present = [...new Set(blockDefs.map(d => d.category))]
+  const categories = [
+    ...CATEGORY_ORDER.filter(c => present.includes(c)),
+    ...present.filter(c => !CATEGORY_ORDER.includes(c)),
+  ]
+
   return (
     <div
       className="shrink-0 overflow-y-auto"
@@ -23,11 +31,11 @@ export function BlockPalette({ blockDefs, onAdd }: Props) {
           blocks
         </div>
 
-        {CATEGORIES.map(cat => {
+        {categories.map(cat => {
           const defs = blockDefs.filter(d => d.category === cat)
           if (defs.length === 0) return null
-          const color = CATEGORY_COLOR[cat]
-          const icon  = CATEGORY_ICON[cat]
+          const color = CATEGORY_COLOR[cat] ?? '#6b7280'
+          const icon  = CATEGORY_ICON[cat] ?? '?'
 
           return (
             <div key={cat} className="mb-3">
