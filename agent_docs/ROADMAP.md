@@ -1,8 +1,13 @@
 # Konnekt — Feature Roadmap
 
-This file is the authoritative feature reference for Claude Code.
+This file is the full Alpha/Beta scope reference for Claude Code.
 When implementing any feature, check its status here first.
-Do not implement Beta features during Alpha development.
+
+For a running log of what has actually shipped recently, see the root
+`Roadmap.md` — that file tracks current status; this one defines the full scope.
+
+Note: some Beta features (Settings page, theme toggle, desktop notifications)
+were shipped early during Alpha. Their status below reflects reality.
 
 ---
 
@@ -24,11 +29,12 @@ Do not implement Beta features during Alpha development.
 - [x] JetBrains Mono + Inter fonts
 - [x] Tile layout system (react-grid-layout, drag, resize, snap)
 - [x] Tile crate (inactive tiles panel, add/remove from canvas)
-- [ ] Tile scale and maximise
-  - Per-tile zoom level (font/content scale independent of grid size)
-  - Maximise button in tile header: expands tile to fill the canvas area as an overlay
-  - Restore button returns tile to its previous grid position and size
-  - Only one tile maximised at a time; closing restores the previous layout
+- [~] Tile scale and maximise
+  - [ ] Per-tile zoom level (font/content scale independent of grid size)
+  - [x] Maximise button in tile header: expands tile to fill the canvas area as an overlay
+  - [x] Restore button returns tile to its previous grid position and size
+  - [x] Only one tile maximised at a time; closing restores the previous layout
+  - (maximise lives in tiles/TileWrapper + Dashboard animations; per-tile scale not built)
 - [x] Layout presets (save, restore, delete named layouts)
 - [x] Default presets: "Default", "Console Focus", "Compact"
 - [x] Persistence via Go JSON files (~/.config/konnekt/)
@@ -81,7 +87,7 @@ Do not implement Beta features during Alpha development.
     sortable summary table and toggle-able series; GetStatsHistory() for initial load
 
 - [ ] Scheduler tile - Node Graph Interface
-  
+  (placeholder tile registered + empty SchedulerService stub already exist — extend, don't re-scaffold)
   - List of scheduled tasks (time, command or action, repeat/once)
   - Actions: restart server, save-all, run custom command, backup
   - Go: SchedulerService using time.AfterFunc / cron-style ticker
@@ -89,37 +95,43 @@ Do not implement Beta features during Alpha development.
   - Tasks persist to ~/.config/konnekt/scheduler.json
 
 - [ ] Worlds tile - 3D Space / Solar System Visualization
-  
+  (placeholder tile registered, no backend yet — extend, don't re-scaffold)
   - List world folders found in server working directory.
   - World visualized as planets in space, grouped into solar systems. # ADD MULTI-WORLD SERVER COMPATIBILITY PLANS
   - Show folder size, last modified date with hover tooltip.
   - Switch active world (stop server → swap level-name in server.properties → restart)
   - Delete world (with confirmation modal)
 
-- [ ] Backups tile
-  
-  - Manual backup button (zip world folder → ~/.config/konnekt/backups/)
-  - Backup list with timestamp, size, restore and delete actions
-  - Scheduled backup config (interval: hourly/daily/weekly)
-  - Restore backup (stop server → unzip → restart)
-  - Go: BackupService, runs in goroutine, emits progress events
+- [x] Backups tile
+  - [x] Manual backup button (zip world folder → {dataDir}/backups/{serverID}/)
+  - [x] Save-flush coordination: issues save-off/save-all/save-on via RCON when the server is running so the zip is consistent
+  - [x] Backup list with timestamp, size, restore and delete actions; summary view when not maximised (BackupsSummary)
+  - [x] Live progress UI: backup:started/progress events drive a shared ActiveProcesses bar (useProcessesStore) + BackupRunningDialog
+  - [x] Restore backup (refuses while server running, safe extract-then-swap, rolls back on failure)
+  - [x] Notifications: backup:completed / backup:failed events + emitNotification
+  - [x] Path-traversal validation on all filename inputs
+  - [ ] Scheduled backup config (interval: hourly/daily/weekly) — defer to Scheduler tile
+  - Go: BackupService (backup.go — ListBackups, CreateBackup, RestoreBackup, DeleteBackup); models/backup.go; frontend tiles/backups/useBackups.ts
 
-- [ ] Server Config tile
+- [x] Server Config tile  *(shipped as a general config-file editor; diverged from original spec)*
   
-  - Visual editor for server.properties key/value pairs
-  - Group fields: General, Performance, World, Network, Gameplay
-  - Gamerule editor (per-world, fetched via RCON when server is running)
-  - MOTD editor with live preview
-  - Save writes directly to server.properties file
-  - Go: ConfigService reads/writes server.properties preserving comments
+  - [x] File list of editable config files (server.properties, JSON, YAML, TOML)
+  - [x] Form-based key/value editor with typed widgets (parsers in tiles/config/form/)
+  - [x] Raw text editor with dirty-tracking, save, revert; compact summary when not maximised
+  - [x] Save writes directly to the config file; offers restart when server running
+  - [ ] Grouped server.properties fields (General/Performance/World/Network/Gameplay)
+  - [ ] Gamerule editor (per-world, fetched via RCON when server is running)
+  - [ ] MOTD editor with live preview
+  - Go: backend/services/config_editor.go — ListConfigFiles / ReadConfigFile / WriteConfigFile
 
-- [ ] Notifications tile
+- [x] Notifications tile
   
-  - In-app notification feed (not OS notifications for alpha)
-  - Events: server started, server stopped/crashed, player joined,
-    player left, TPS below threshold (<14), backup completed, backup failed
-  - Go: NotificationService emits typed events, frontend subscribes
-  - Dismissable, timestamped, colour-coded by severity
+  - [x] In-app feed (reverse-chronological, timestamped, colour-coded by kind), clear-all
+  - [x] OS desktop notifications too (WebView Notification API, lib/notify.ts)
+  - [~] Events wired so far: server crashed, player joined, backup completed/failed
+    (Backups tile now emits these via emitNotification), server stopped. Not yet:
+    server started, player left, TPS below threshold (<14)
+  - Frontend: stores/useNotificationsStore.ts (emitted client-side; no Go NotificationService)
 
 ---
 
@@ -127,6 +139,19 @@ Do not implement Beta features during Alpha development.
 
 Do not scaffold or implement these during Alpha.
 Beta work begins only after all Alpha tiles are complete and stable.
+
+### Backups — beta hardening
+
+- [ ] Multi-dimension worlds: also back up `world_nether` / `world_the_end`
+  (Paper/Spigot/Bukkit split dimensions into sibling folders; `worldPath()`
+  currently zips only the single `level-name` folder — silent data loss on
+  those server types)
+- [ ] Retention / pruning policy: auto-delete backups by count, total size, or age
+- [ ] Cancel an in-progress backup
+- [ ] Full-server snapshot option (mods, configs, server.properties) vs world-only
+- [ ] Concurrency guard in `CreateBackup` to prevent overlapping scheduled + manual runs
+- [ ] Integrity check / corrupt-zip detection on restore (beyond `zip.OpenReader` error)
+- [ ] Import / restore from an external backup file (drag-in or file picker)
 
 ### Tiles — beta
 
@@ -186,14 +211,83 @@ Beta work begins only after all Alpha tiles are complete and stable.
   - playit.gg chosen: purpose-built for game servers, free tier gives a
     persistent address (unlike ngrok free), no account required for basic use
   - Agent binary cached in app data dir; user can also provide their own path
+  - Note: this exposes the Minecraft *game* port only. For remote access to the
+    Konnekt dashboard itself, see "Remote access — full dashboard over the web"
+    below (uses cloudflared for an HTTPS console URL).
 
 - [ ] Extended performance history (24h, 7-day) with persistent storage
-- [ ] OS desktop notifications (Wails runtime.EventsEmit → OS notify)
+- [~] OS desktop notifications — shipped early, via WebView Notification API
+  (lib/notify.ts), not the planned Wails runtime.EventsEmit → OS notify route
 - [ ] App auto-updater (check GitHub releases, prompt to update)
-- [ ] Dark/light theme toggle (extend CSS variables, persist preference)
+- [x] Dark/light theme toggle — shipped early: light/dark/system + accent picker,
+  CSS variable tokens, persisted (lib/theme.ts, useSettingsStore)
 - [ ] Keyboard shortcuts (configurable, stored in settings)
-- [ ] Settings page (global JVM defaults, notification preferences,
-  backup retention policy, theme)
+- [~] Settings page — shipped early: theme, accent colour, auto-start active server,
+  confirm-before-stop, console buffer/timestamps, crash/join notifications, open data dir.
+  Not yet: global JVM defaults, backup retention policy.
+
+### Remote access — full dashboard over the web
+
+Expose the entire Konnekt dashboard to a remote browser (phone/laptop) via a
+zero-config tunnel, secured with a password + session token. The remote client
+is a responsive web page served by the app itself — no native mobile app, no
+second frontend build.
+
+**Core idea:** Wails injects `window.go.main.App.*` (IPC) and `window.runtime.*`
+(events) into the local WebView. A remote browser has neither. Rather than
+rewrite every tile's IPC calls, the frontend detects plain-browser mode and
+injects a **shim** that implements those same globals against an embedded HTTP
+server. Tiles render remotely with zero per-tile changes (every generated
+binding funnels through `window['go']['main']['App'][Method]`).
+
+- [x] **Phase 0 — Event hub refactor**
+  - `EventBus` (backend/services/eventbus.go) is now the single emit path; every
+    service routes through `bus.Emit(event, data)` instead of calling
+    `runtime.EventsEmit` directly. Wired into server.go (log lines, eula, player
+    joined/left, server stopped), stats.go (snapshots), backup.go (started/
+    progress/completed/failed/restore). The remote WS fan-out seam is marked in
+    `Emit()` for Phase 1 — no service bypasses it.
+- [ ] **Phase 1 — `RemoteService` (backend/services/remote.go)**
+  - Embedded `net/http` server, off by default, started on demand, bound to
+    `127.0.0.1` (tunnel terminates TLS at the edge — see Phase 4).
+  - Serves the existing embedded `frontend/dist` (reuse `main.go`'s `embed.FS`).
+  - `POST /api/rpc` — generic reflection dispatcher over the bound `App`; body
+    `{method, args}` → invoke → `(result, error)` JSON. One dispatcher covers
+    all ~40 methods and stays correct as new ones are added.
+  - `GET /ws` — WebSocket subscribed to the EventBus; carries a replay buffer
+    (reuse the console buffer cap) so a reconnecting mobile client catches up.
+- [ ] **Phase 2 — Frontend remote runtime (lib/remoteRuntime.ts, loaded first)**
+  - Detect `window.go == null` → remote mode.
+  - Inject `window.go.main.App` proxy → POSTs to `/api/rpc`.
+  - Inject `window.runtime.EventsOn/Off/Emit` → backed by the WebSocket.
+  - Login gate renders before the dashboard mounts.
+  - **Highest-risk phase — build and prove on LAN first.**
+- [ ] **Phase 3 — Auth (password + token)**
+  - Password set in Settings → Remote Access; stored only as an argon2/bcrypt
+    hash in `~/.config/konnekt/remote.json` (never plaintext).
+  - `POST /api/login` verifies password → signed, expiring session token;
+    required on all `/api/rpc` and `/ws`. Rate-limit login with lockout/backoff.
+  - Recommended extra: desktop-side "approve new device" prompt on first
+    connection from an unknown client.
+- [ ] **Phase 4 — Tunnel transport (cloudflared)**
+  - `TunnelService` launches the cloudflared binary (download/cache on first
+    use), parses stdout for the public `https://<random>.trycloudflare.com` URL,
+    surfaces status + copy button. TLS handled at the Cloudflare edge.
+  - **Note:** distinct from the playit.gg item below — playit exposes the raw
+    Minecraft *game* TCP port; cloudflared exposes the *web console* (HTTPS).
+- [ ] **Phase 5 — Remote-mode adaptations**
+  - Disable/hide native-only methods that target the host machine
+    (`BrowseJarFile`, `BrowseDirectory`, `OpenDataDir`, `OpenBackupDir` →
+    `runtime.OpenFileDialog`/folder open), or replace with a server-side path
+    browser.
+  - WS auto-reconnect + token refresh + buffer replay for flaky mobile links.
+  - Multi-client behaviour (desktop + remote at once): state already lives in
+    Go; ensure every event broadcasts to all clients via the EventBus.
+  - Settings UI to enable remote access, set password, start/stop tunnel.
+
+Open questions to resolve before build: single app-wide password vs per-user
+accounts (default: single); whether remote needs per-server sessions or just
+mirrors the one active server like the desktop does (default: mirror).
 
 ---
 

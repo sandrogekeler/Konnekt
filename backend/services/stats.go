@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"konnekt/backend/models"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const snapshotCap = 360 // 1 hour at 10s intervals
@@ -15,6 +13,7 @@ const snapshotCap = 360 // 1 hour at 10s intervals
 type StatsService struct {
 	ctx    context.Context
 	server *ServerService
+	bus    *EventBus
 
 	mu      sync.Mutex
 	history []models.StatsSnapshot
@@ -25,6 +24,10 @@ func NewStatsService(server *ServerService) *StatsService {
 		server:  server,
 		history: make([]models.StatsSnapshot, 0, snapshotCap),
 	}
+}
+
+func (s *StatsService) SetBus(b *EventBus) {
+	s.bus = b
 }
 
 func (s *StatsService) SetContext(ctx context.Context) {
@@ -56,7 +59,7 @@ func (s *StatsService) run() {
 		s.history = append(s.history, snap)
 		s.mu.Unlock()
 
-		runtime.EventsEmit(s.ctx, EventStatsSnapshot, snap)
+		s.bus.Emit(EventStatsSnapshot, snap)
 	}
 }
 

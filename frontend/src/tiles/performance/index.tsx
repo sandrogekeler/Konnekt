@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -177,21 +177,63 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
   const anchor = history.length > 0 ? history[history.length - 1].timestamp : Date.now()
   const cutoff = anchor - range * 60 * 1000
 
+  // Animated cutoff — drives the XAxis domain and chart data filter.
+  // Tweens smoothly when the range changes; tracks anchor silently otherwise.
+  const [animCutoff, setAnimCutoffRaw] = useState(cutoff)
+  const animCutoffRef = useRef(animCutoff)
+  const rafRef = useRef<number | null>(null)
+  const isAnimatingRef = useRef(false)
+
+  // Keep animCutoff current when new data arrives and no animation is running.
+  useEffect(() => {
+    if (!isAnimatingRef.current) {
+      animCutoffRef.current = cutoff
+      setAnimCutoffRaw(cutoff)
+    }
+  }, [cutoff])
+
+  // Cleanup on unmount.
+  useEffect(() => () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }, [])
+
+  const changeRange = useCallback((newRange: TimeRange) => {
+    if (newRange === range) return
+    setRange(newRange)
+    if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    const from = animCutoffRef.current
+    const to = anchor - newRange * 60 * 1000
+    const start = performance.now()
+    isAnimatingRef.current = true
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / 380, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const v = from + (to - from) * eased
+      animCutoffRef.current = v
+      setAnimCutoffRaw(v)
+      if (t < 1) { rafRef.current = requestAnimationFrame(tick) }
+      else { rafRef.current = null; isAnimatingRef.current = false }
+    }
+    rafRef.current = requestAnimationFrame(tick)
+  }, [range, anchor])
+
+  // filtered is non-animated — used for the table and summary stats.
   const filtered = useMemo(
     () => history.filter((s) => s.timestamp >= cutoff),
     [history, cutoff],
   )
 
+  // chartData is animated — filtered by the tweening animCutoff.
   const chartData = useMemo(
     () =>
-      filtered.map((s) => ({
-        ts: s.timestamp,
-        tps: hidden.has('tps') ? null : (s.tps < 0 ? null : s.tps),
-        ramPct: hidden.has('ramPct') ? null : (s.ramTotalMB > 0 ? Math.round((s.ramUsedMB / s.ramTotalMB) * 100) : null),
-        cpu: hidden.has('cpu') ? null : Math.round(s.cpuPercent),
-        players: hidden.has('players') ? null : s.players,
-      })),
-    [filtered, hidden],
+      history
+        .filter((s) => s.timestamp >= animCutoff)
+        .map((s) => ({
+          ts: s.timestamp,
+          tps: hidden.has('tps') ? null : (s.tps < 0 ? null : s.tps),
+          ramPct: hidden.has('ramPct') ? null : (s.ramTotalMB > 0 ? Math.round((s.ramUsedMB / s.ramTotalMB) * 100) : null),
+          cpu: hidden.has('cpu') ? null : Math.round(s.cpuPercent),
+          players: hidden.has('players') ? null : s.players,
+        })),
+    [history, animCutoff, hidden],
   )
 
   const tableRows = useMemo(() => {
@@ -253,7 +295,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
         {TIME_RANGES.map(({ label, minutes }) => (
           <button
             key={label}
-            onClick={() => setRange(minutes)}
+            onClick={() => changeRange(minutes)}
             className={`px-2 py-0.5 text-xs rounded border transition-colors ${
               range === minutes
                 ? 'border-accent/60 text-accent bg-accent/10'
@@ -276,7 +318,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
                 dataKey="ts"
                 type="number"
                 scale="time"
-                domain={[cutoff, anchor]}
+                domain={[animCutoff, anchor]}
                 tickFormatter={(v) => fmtTime(v)}
                 tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
                 axisLine={false}

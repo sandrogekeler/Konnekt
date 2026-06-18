@@ -17,18 +17,19 @@ import (
 	"konnekt/backend/models"
 
 	"github.com/shirou/gopsutil/v4/process"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+const consoleCap = 2000
+
 var (
-	rePlayerJoin   = regexp.MustCompile(`]: (\w+) joined the game`)
-	rePlayerLeave  = regexp.MustCompile(`]: (\w+) left the game`)
-	rePlayerUUID   = regexp.MustCompile(`]: UUID of player (\w+) is ([0-9a-f-]{36})`)
-	rePlayerLogin  = regexp.MustCompile(`]: (\w+)\[/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+\] logged in`)
-	reTPSPaper     = regexp.MustCompile(`TPS from.*?:\s*[*‡]*\s*(\d+(?:\.\d+)?)`)
-	reTPSForge     = regexp.MustCompile(`(?i)Mean TPS:\s*(\d+(?:\.\d+)?)`)
-	reTickQuery    = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*ms\s*per tick`)
-	reServerStop   = regexp.MustCompile(`(?i)Stopping the server`)
+	rePlayerJoin  = regexp.MustCompile(`]: (\w+) joined the game`)
+	rePlayerLeave = regexp.MustCompile(`]: (\w+) left the game`)
+	rePlayerUUID  = regexp.MustCompile(`]: UUID of player (\w+) is ([0-9a-f-]{36})`)
+	rePlayerLogin = regexp.MustCompile(`]: (\w+)\[/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+\] logged in`)
+	reTPSPaper    = regexp.MustCompile(`TPS from.*?:\s*[*‡]*\s*(\d+(?:\.\d+)?)`)
+	reTPSForge    = regexp.MustCompile(`(?i)Mean TPS:\s*(\d+(?:\.\d+)?)`)
+	reTickQuery   = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*ms\s*per tick`)
+	reServerStop  = regexp.MustCompile(`(?i)Stopping the server`)
 )
 
 // playerSession holds per-session data captured from log lines.
@@ -78,6 +79,14 @@ type ServerService struct {
 	// cached gopsutil process handle — set on Start, cleared on exit
 	cachedProc *process.Process
 
+	// console ring buffer for remote-client backfill on connect (GetConsoleHistory).
+	// Cap is fixed (consoleCap), independent of the frontend's consoleBufferLines
+	// setting; loadHistory re-clamps on display. Cleared on each Start.
+	logBuf   []models.ConsoleLine
+	logBufMu sync.RWMutex
+
+	bus *EventBus
+
 	// Windows Job Object handle (uintptr so server.go compiles cross-platform).
 	// When non-zero, the OS kills the entire Java process tree automatically
 	// if Konnekt exits for any reason (crash, SIGKILL, etc.).
@@ -104,6 +113,10 @@ func (s *ServerService) SetContext(ctx context.Context) {
 
 func (s *ServerService) SetRcon(r *RconService) {
 	s.rcon = r
+}
+
+func (s *ServerService) SetBus(b *EventBus) {
+	s.bus = b
 }
 
 func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string, workingDir string) error {
@@ -154,6 +167,10 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	s.serverID = serverID
 	s.expectedStop = false
 
+	s.logBufMu.Lock()
+	s.logBuf = s.logBuf[:0]
+	s.logBufMu.Unlock()
+
 	// Parse RAM total from JVM args
 	s.maxRAMMB = parseXmx(jvmArgs)
 
@@ -202,13 +219,19 @@ func (s *ServerService) streamOutput(r io.Reader) {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		runtime.EventsEmit(s.ctx, EventLogLine, map[string]string{
-			"timestamp": time.Now().Format("15:04:05"),
-			"line":      line,
-		})
+		ts := time.Now().Format("15:04:05")
+		// NB: emit precedes buffer append. A remote client that snapshots
+		// GetConsoleHistory then subscribes must dedup/order the seam line.
+		s.bus.Emit(EventLogLine, map[string]string{"timestamp": ts, "line": line})
+		s.logBufMu.Lock()
+		if len(s.logBuf) >= consoleCap {
+			s.logBuf = s.logBuf[1:]
+		}
+		s.logBuf = append(s.logBuf, models.ConsoleLine{Timestamp: ts, Line: line})
+		s.logBufMu.Unlock()
 
 		if strings.Contains(strings.ToLower(line), "eula.txt") {
-			runtime.EventsEmit(s.ctx, EventEulaRequired, nil)
+			s.bus.Emit(EventEulaRequired, nil)
 		}
 
 		if reServerStop.MatchString(line) {
@@ -237,14 +260,14 @@ func (s *ServerService) streamOutput(r io.Reader) {
 			s.players[name] = s.presession[name]
 			delete(s.presession, name)
 			s.playersMu.Unlock()
-			runtime.EventsEmit(s.ctx, EventPlayerJoined, name)
+			s.bus.Emit(EventPlayerJoined, name)
 		} else if m := rePlayerLeave.FindStringSubmatch(line); m != nil {
 			name := m[1]
 			s.playersMu.Lock()
 			delete(s.players, name)
 			delete(s.presession, name)
 			s.playersMu.Unlock()
-			runtime.EventsEmit(s.ctx, EventPlayerLeft, name)
+			s.bus.Emit(EventPlayerLeft, name)
 		}
 		if strings.Contains(line, "Can't keep up") {
 			s.logTPSMu.Lock()
@@ -274,7 +297,7 @@ func (s *ServerService) waitForExit() {
 	s.running = false
 	s.cachedProc = nil
 	s.mu.Unlock()
-	runtime.EventsEmit(s.ctx, EventServerStopped, map[string]bool{"expected": expected})
+	s.bus.Emit(EventServerStopped, map[string]bool{"expected": expected})
 }
 
 func (s *ServerService) Stop() error {
@@ -402,6 +425,54 @@ func (s *ServerService) IsRunning() bool {
 	return s.running
 }
 
+// PrepareForBackup flushes pending chunk writes to disk and disables auto-save
+// so a file-level world copy captures a consistent snapshot. Prefers RCON
+// (save-all flush blocks until the save completes); falls back to stdin with a
+// fixed grace period when RCON is unavailable. Returns true if saving was paused
+// — the caller must then call ResumeSaves once the copy is done. No-op (returns
+// false) when the server is not running.
+func (s *ServerService) PrepareForBackup() bool {
+	s.mu.Lock()
+	running := s.running
+	rconOK := s.rconEnabled && s.rconPassword != "" && s.rcon != nil
+	addr, pw := s.rconAddr, s.rconPassword
+	s.mu.Unlock()
+
+	if !running {
+		return false
+	}
+
+	if rconOK {
+		_, _ = s.rcon.Execute(addr, pw, "save-off")
+		_, _ = s.rcon.Execute(addr, pw, "save-all flush")
+		return true
+	}
+
+	_ = s.SendCommand("save-off")
+	_ = s.SendCommand("save-all flush")
+	time.Sleep(3 * time.Second)
+	return true
+}
+
+// ResumeSaves re-enables auto-save after a backup. Safe to call when the server
+// is no longer running (no-op).
+func (s *ServerService) ResumeSaves() {
+	s.mu.Lock()
+	running := s.running
+	rconOK := s.rconEnabled && s.rconPassword != "" && s.rcon != nil
+	addr, pw := s.rconAddr, s.rconPassword
+	s.mu.Unlock()
+
+	if !running {
+		return
+	}
+	if rconOK {
+		_, _ = s.rcon.Execute(addr, pw, "save-on")
+		return
+	}
+	_ = s.SendCommand("save-on")
+}
+
 func (s *ServerService) Uptime() string {
 	if !s.running {
 		return "0s"
@@ -521,6 +592,26 @@ func (s *ServerService) CPUPercent() float64 {
 		return 0
 	}
 	return pct
+}
+
+// RconConfig returns the RCON address and password parsed from server.properties
+// when the server last started. ok is false when RCON is not enabled or the
+// server has never been started. Used by the scheduler's rcon primitive.
+func (s *ServerService) RconConfig() (addr, password string, ok bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.rconEnabled || s.rconPassword == "" {
+		return "", "", false
+	}
+	return s.rconAddr, s.rconPassword, true
+}
+
+func (s *ServerService) GetConsoleHistory() []models.ConsoleLine {
+	s.logBufMu.RLock()
+	defer s.logBufMu.RUnlock()
+	out := make([]models.ConsoleLine, len(s.logBuf))
+	copy(out, s.logBuf)
+	return out
 }
 
 // parseXmx extracts the -Xmx value from JVM args and returns megabytes.

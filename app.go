@@ -20,6 +20,9 @@ type App struct {
 	rconService         *services.RconService
 	statsService        *services.StatsService
 	playerService       *services.PlayerService
+	backupService       *services.BackupService
+	schedulerService    *services.SchedulerService
+	bus                 *services.EventBus
 	dataDir             string
 }
 
@@ -28,17 +31,29 @@ func NewApp() *App {
 	srv := services.NewServerService()
 	srv.SetRcon(rcon)
 	cfg := services.NewConfigService()
+	bus := services.NewEventBus()
+	srv.SetBus(bus)
+	stats := services.NewStatsService(srv)
+	stats.SetBus(bus)
+	backup := services.NewBackupService(cfg, srv)
+	backup.SetBus(bus)
+	sched := services.NewSchedulerService(srv, backup, rcon, cfg)
+	sched.SetBus(bus)
 	return &App{
 		serverService:       srv,
 		configService:       cfg,
 		configEditorService: services.NewConfigEditorService(cfg),
 		rconService:         rcon,
-		statsService:        services.NewStatsService(srv),
+		statsService:        stats,
 		playerService:       services.NewPlayerService(cfg, srv, rcon),
+		backupService:       backup,
+		schedulerService:    sched,
+		bus:                 bus,
 	}
 }
 
 func (a *App) beforeClose(ctx context.Context) bool {
+	a.schedulerService.StopScheduler()
 	if a.serverService.IsRunning() {
 		_ = a.serverService.Stop()
 	}
@@ -47,8 +62,10 @@ func (a *App) beforeClose(ctx context.Context) bool {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.bus.SetContext(ctx)
 	a.serverService.SetContext(ctx)
 	a.statsService.SetContext(ctx)
+	a.backupService.SetContext(ctx)
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -58,6 +75,9 @@ func (a *App) startup(ctx context.Context) {
 	_ = os.MkdirAll(a.dataDir, 0755)
 	a.configService.SetDataDir(a.dataDir)
 	a.configEditorService.SetDataDir(a.dataDir)
+	a.backupService.SetDataDir(a.dataDir)
+	a.schedulerService.SetDataDir(a.dataDir)
+	a.schedulerService.SetContext(ctx)
 }
 
 // --- File dialogs ---
@@ -179,6 +199,13 @@ func (a *App) GetServerStatus(serverID string) (models.ServerStatus, error) {
 
 func (a *App) GetStatsHistory(serverID string) ([]models.StatsSnapshot, error) {
 	return a.statsService.GetStatsHistory(), nil
+}
+
+// GetConsoleHistory backfills the console for a client that connected mid-session
+// (remote-access seam). serverID is ignored — single active server, like
+// GetStatsHistory. No desktop caller yet; pair with useConsoleStore.loadHistory.
+func (a *App) GetConsoleHistory(serverID string) ([]models.ConsoleLine, error) {
+	return a.serverService.GetConsoleHistory(), nil
 }
 
 func (a *App) GetPlayers(serverID string) ([]models.Player, error) {
@@ -305,6 +332,32 @@ func (a *App) SaveActiveLayout(layout string) error {
 	return os.WriteFile(filepath.Join(a.dataDir, "active_layout.json"), []byte(layout), 0644)
 }
 
+// --- Backups ---
+
+func (a *App) ListBackups(serverID string) ([]models.Backup, error) {
+	return a.backupService.ListBackups(serverID)
+}
+
+func (a *App) CreateBackup(serverID string) (models.Backup, error) {
+	return a.backupService.CreateBackup(serverID)
+}
+
+func (a *App) RestoreBackup(serverID string, filename string) error {
+	return a.backupService.RestoreBackup(serverID, filename)
+}
+
+func (a *App) DeleteBackup(serverID string, filename string) error {
+	return a.backupService.DeleteBackup(serverID, filename)
+}
+
+func (a *App) UpdateBackupMeta(serverID string, filename string, displayName string, tags []string) (models.Backup, error) {
+	return a.backupService.UpdateBackupMeta(serverID, filename, displayName, tags)
+}
+
+func (a *App) OpenBackupDir(serverID string) error {
+	return a.backupService.OpenBackupDir(serverID)
+}
+
 // --- Custom commands ---
 
 func (a *App) GetCustomCommands() ([]string, error) {
@@ -345,4 +398,38 @@ func (a *App) GetCommandButtons() (string, error) {
 
 func (a *App) SaveCommandButtons(data string) error {
 	return os.WriteFile(filepath.Join(a.dataDir, "command_buttons.json"), []byte(data), 0644)
+}
+
+// --- Scheduler ---
+
+func (a *App) GetScheduleGraphs() ([]models.Graph, error) {
+	return a.schedulerService.GetGraphs()
+}
+
+func (a *App) SaveScheduleGraph(g models.Graph) (models.Graph, error) {
+	return a.schedulerService.SaveGraph(g)
+}
+
+func (a *App) DeleteScheduleGraph(id string) error {
+	return a.schedulerService.DeleteGraph(id)
+}
+
+func (a *App) SetScheduleGraphEnabled(id string, enabled bool) error {
+	return a.schedulerService.SetGraphEnabled(id, enabled)
+}
+
+func (a *App) GetScheduleBlockDefs() ([]models.BlockDef, error) {
+	return a.schedulerService.GetBlockDefs()
+}
+
+func (a *App) RunScheduleGraphNow(id string) (models.RunRecord, error) {
+	return a.schedulerService.RunGraphNow(id)
+}
+
+func (a *App) GetScheduleRunHistory() ([]models.RunRecord, error) {
+	return a.schedulerService.GetRunHistory()
+}
+
+func (a *App) ImportScheduleGraphJSON(raw string) (models.Graph, error) {
+	return a.schedulerService.ImportGraphJSON(raw)
 }
