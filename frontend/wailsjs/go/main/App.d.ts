@@ -10,7 +10,13 @@ export function BrowseDirectory():Promise<string>;
 
 export function BrowseJarFile():Promise<string>;
 
+export function CreateBackup(arg1:string):Promise<models.Backup>;
+
+export function DeleteBackup(arg1:string,arg2:string):Promise<void>;
+
 export function DeleteLayoutPreset(arg1:string):Promise<void>;
+
+export function DeleteScheduleGraph(arg1:string):Promise<void>;
 
 export function DeleteServerConfig(arg1:string):Promise<void>;
 
@@ -24,6 +30,8 @@ export function GetAppSettings():Promise<models.AppSettings>;
 
 export function GetCommandButtons():Promise<string>;
 
+export function GetConsoleHistory(arg1:string):Promise<Array<models.ConsoleLine>>;
+
 export function GetCustomCommands():Promise<Array<string>>;
 
 export function GetLayoutPresets():Promise<Array<models.LayoutPreset>>;
@@ -34,15 +42,27 @@ export function GetPlayerRoster(arg1:string):Promise<Array<models.Player>>;
 
 export function GetPlayers(arg1:string):Promise<Array<models.Player>>;
 
+export function GetScheduleBlockDefs():Promise<Array<models.BlockDef>>;
+
+export function GetScheduleGraphs():Promise<Array<models.Graph>>;
+
+export function GetScheduleRunHistory():Promise<Array<models.RunRecord>>;
+
 export function GetServerConfigs():Promise<Array<models.ServerConfig>>;
 
 export function GetServerStatus(arg1:string):Promise<models.ServerStatus>;
 
 export function GetStatsHistory(arg1:string):Promise<Array<models.StatsSnapshot>>;
 
+export function ImportScheduleGraphJSON(arg1:string):Promise<models.Graph>;
+
 export function KickPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function ListBackups(arg1:string):Promise<Array<models.Backup>>;
+
 export function ListConfigFiles(arg1:string):Promise<Array<models.ConfigFile>>;
+
+export function OpenBackupDir(arg1:string):Promise<void>;
 
 export function OpenDataDir():Promise<void>;
 
@@ -51,6 +71,10 @@ export function PardonPlayer(arg1:string,arg2:string):Promise<void>;
 export function ReadConfigFile(arg1:string,arg2:string):Promise<string>;
 
 export function RestartServer(arg1:string):Promise<void>;
+
+export function RestoreBackup(arg1:string,arg2:string):Promise<void>;
+
+export function RunScheduleGraphNow(arg1:string):Promise<models.RunRecord>;
 
 export function SaveActiveLayout(arg1:string):Promise<void>;
 
@@ -64,14 +88,20 @@ export function SaveCustomCommands(arg1:Array<string>):Promise<void>;
 
 export function SaveLayoutPreset(arg1:string,arg2:string):Promise<void>;
 
+export function SaveScheduleGraph(arg1:models.Graph):Promise<models.Graph>;
+
 export function SaveServerConfig(arg1:models.ServerConfig):Promise<void>;
 
 export function SendCommand(arg1:string,arg2:string):Promise<void>;
 
 export function SetActiveServerID(arg1:string):Promise<void>;
 
+export function SetScheduleGraphEnabled(arg1:string,arg2:boolean):Promise<void>;
+
 export function StartServer(arg1:string):Promise<void>;
 
 export function StopServer(arg1:string):Promise<void>;
+
+export function UpdateBackupMeta(arg1:string,arg2:string,arg3:string,arg4:Array<string>):Promise<models.Backup>;
 
 export function WriteConfigFile(arg1:string,arg2:string,arg3:string):Promise<void>;

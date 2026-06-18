@@ -1,12 +1,22 @@
 export const DEFAULT_SERVER_ID = 'default'
 
 export const EVENTS = {
-  LOG_LINE:       'log:line',
-  SERVER_STOPPED: 'server:stopped',
-  EULA_REQUIRED:  'server:eula-required',
-  STATS_SNAPSHOT: 'stats:snapshot',
-  PLAYER_JOINED:  'player:joined',
-  PLAYER_LEFT:    'player:left',
+  LOG_LINE:         'log:line',
+  SERVER_STOPPED:   'server:stopped',
+  EULA_REQUIRED:    'server:eula-required',
+  STATS_SNAPSHOT:   'stats:snapshot',
+  PLAYER_JOINED:    'player:joined',
+  PLAYER_LEFT:      'player:left',
+  BACKUP_STARTED:    'backup:started',
+  BACKUP_PROGRESS:   'backup:progress',
+  BACKUP_COMPLETED:  'backup:completed',
+  BACKUP_FAILED:     'backup:failed',
+  RESTORE_COMPLETED: 'backup:restore-completed',
+  SCHEDULE_RUN_STARTED:   'schedule:run-started',
+  SCHEDULE_NODE_STARTED:  'schedule:node-started',
+  SCHEDULE_NODE_FINISHED: 'schedule:node-finished',
+  SCHEDULE_RUN_FINISHED:  'schedule:run-finished',
+  SCHEDULE_NOTIFY:        'schedule:notify',
 } as const
 
 export const DEFAULT_LAYOUT_PRESETS = [

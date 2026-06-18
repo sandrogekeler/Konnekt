@@ -4,12 +4,14 @@ import { StartServer } from '../wailsjs/go/main/App'
 import { Dashboard } from './components/Dashboard'
 import { TileCrate } from './components/TileCrate'
 import { LayoutPresets } from './components/LayoutPresets'
+import { ActiveProcesses } from './components/ActiveProcesses'
 import { ServerSelector } from './components/ServerSelector'
 import { EulaModal } from './components/EulaModal'
 import { SettingsModal } from './components/SettingsModal'
 import { useServerConfigStore } from './stores/useServerConfigStore'
 import { useConsoleStore } from './stores/useConsoleStore'
 import { useSettingsStore } from './stores/useSettingsStore'
+import { useProcessesStore } from './stores/useProcessesStore'
 import { emitNotification } from './lib/notify'
 import { EVENTS } from './lib/constants'
 
@@ -79,6 +81,39 @@ function App() {
     return () => { try { cleanup?.() } catch { } }
   }, [])
 
+  // Backup / restore notifications + sidebar progress tracking
+  useEffect(() => {
+    let c1: (() => void) | undefined
+    let c2: (() => void) | undefined
+    let c3: (() => void) | undefined
+    let c4: (() => void) | undefined
+    let c5: (() => void) | undefined
+    try {
+      c1 = EventsOn(EVENTS.BACKUP_STARTED, (data?: { serverID?: string }) => {
+        useProcessesStore.getState().start(data?.serverID ?? 'backup', 'Backing up world…')
+      })
+      c2 = EventsOn(EVENTS.BACKUP_PROGRESS, (data?: { serverID?: string; percent?: number }) => {
+        useProcessesStore.getState().updateProgress(data?.serverID ?? 'backup', data?.percent ?? 0)
+      })
+      c3 = EventsOn(EVENTS.BACKUP_COMPLETED, (data?: { serverID?: string }) => {
+        useProcessesStore.getState().finish(data?.serverID ?? 'backup', 'done')
+        emitNotification('info', 'Backup completed')
+      })
+      c4 = EventsOn(EVENTS.RESTORE_COMPLETED, () => { emitNotification('info', 'Restore completed') })
+      c5 = EventsOn(EVENTS.BACKUP_FAILED, (data?: { serverID?: string; error?: string }) => {
+        useProcessesStore.getState().finish(data?.serverID ?? 'backup', 'failed')
+        emitNotification('crash', `Backup failed${data?.error ? ': ' + data.error : ''}`)
+      })
+    } catch { /* non-Wails context */ }
+    return () => {
+      try { c1?.() } catch { }
+      try { c2?.() } catch { }
+      try { c3?.() } catch { }
+      try { c4?.() } catch { }
+      try { c5?.() } catch { }
+    }
+  }, [])
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       <aside
@@ -109,6 +144,7 @@ function App() {
         <div className="flex-1 overflow-y-auto">
           <TileCrate />
         </div>
+        <ActiveProcesses />
         <div style={{ borderTop: '0.5px solid var(--border-subtle)' }}>
           <LayoutPresets />
         </div>

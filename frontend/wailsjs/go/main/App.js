@@ -18,8 +18,20 @@ export function BrowseJarFile() {
   return window['go']['main']['App']['BrowseJarFile']();
 }
 
+export function CreateBackup(arg1) {
+  return window['go']['main']['App']['CreateBackup'](arg1);
+}
+
+export function DeleteBackup(arg1, arg2) {
+  return window['go']['main']['App']['DeleteBackup'](arg1, arg2);
+}
+
 export function DeleteLayoutPreset(arg1) {
   return window['go']['main']['App']['DeleteLayoutPreset'](arg1);
+}
+
+export function DeleteScheduleGraph(arg1) {
+  return window['go']['main']['App']['DeleteScheduleGraph'](arg1);
 }
 
 export function DeleteServerConfig(arg1) {
@@ -46,6 +58,10 @@ export function GetCommandButtons() {
   return window['go']['main']['App']['GetCommandButtons']();
 }
 
+export function GetConsoleHistory(arg1) {
+  return window['go']['main']['App']['GetConsoleHistory'](arg1);
+}
+
 export function GetCustomCommands() {
   return window['go']['main']['App']['GetCustomCommands']();
 }
@@ -66,6 +82,18 @@ export function GetPlayers(arg1) {
   return window['go']['main']['App']['GetPlayers'](arg1);
 }
 
+export function GetScheduleBlockDefs() {
+  return window['go']['main']['App']['GetScheduleBlockDefs']();
+}
+
+export function GetScheduleGraphs() {
+  return window['go']['main']['App']['GetScheduleGraphs']();
+}
+
+export function GetScheduleRunHistory() {
+  return window['go']['main']['App']['GetScheduleRunHistory']();
+}
+
 export function GetServerConfigs() {
   return window['go']['main']['App']['GetServerConfigs']();
 }
@@ -78,12 +106,24 @@ export function GetStatsHistory(arg1) {
   return window['go']['main']['App']['GetStatsHistory'](arg1);
 }
 
+export function ImportScheduleGraphJSON(arg1) {
+  return window['go']['main']['App']['ImportScheduleGraphJSON'](arg1);
+}
+
 export function KickPlayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['KickPlayer'](arg1, arg2, arg3);
 }
 
+export function ListBackups(arg1) {
+  return window['go']['main']['App']['ListBackups'](arg1);
+}
+
 export function ListConfigFiles(arg1) {
   return window['go']['main']['App']['ListConfigFiles'](arg1);
+}
+
+export function OpenBackupDir(arg1) {
+  return window['go']['main']['App']['OpenBackupDir'](arg1);
 }
 
 export function OpenDataDir() {
@@ -100,6 +140,14 @@ export function ReadConfigFile(arg1, arg2) {
 
 export function RestartServer(arg1) {
   return window['go']['main']['App']['RestartServer'](arg1);
+}
+
+export function RestoreBackup(arg1, arg2) {
+  return window['go']['main']['App']['RestoreBackup'](arg1, arg2);
+}
+
+export function RunScheduleGraphNow(arg1) {
+  return window['go']['main']['App']['RunScheduleGraphNow'](arg1);
 }
 
 export function SaveActiveLayout(arg1) {
@@ -126,6 +174,10 @@ export function SaveLayoutPreset(arg1, arg2) {
   return window['go']['main']['App']['SaveLayoutPreset'](arg1, arg2);
 }
 
+export function SaveScheduleGraph(arg1) {
+  return window['go']['main']['App']['SaveScheduleGraph'](arg1);
+}
+
 export function SaveServerConfig(arg1) {
   return window['go']['main']['App']['SaveServerConfig'](arg1);
 }
@@ -138,12 +190,20 @@ export function SetActiveServerID(arg1) {
   return window['go']['main']['App']['SetActiveServerID'](arg1);
 }
 
+export function SetScheduleGraphEnabled(arg1, arg2) {
+  return window['go']['main']['App']['SetScheduleGraphEnabled'](arg1, arg2);
+}
+
 export function StartServer(arg1) {
   return window['go']['main']['App']['StartServer'](arg1);
 }
 
 export function StopServer(arg1) {
   return window['go']['main']['App']['StopServer'](arg1);
+}
+
+export function UpdateBackupMeta(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['UpdateBackupMeta'](arg1, arg2, arg3, arg4);
 }
 
 export function WriteConfigFile(arg1, arg2, arg3) {

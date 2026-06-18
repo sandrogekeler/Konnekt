@@ -26,6 +26,149 @@ export namespace models {
 	        this.notifyOnJoin = source["notifyOnJoin"];
 	    }
 	}
+	export class Backup {
+	    filename: string;
+	    createdAt: number;
+	    sizeBytes: number;
+	    displayName: string;
+	    tags: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Backup(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.filename = source["filename"];
+	        this.createdAt = source["createdAt"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.displayName = source["displayName"];
+	        this.tags = source["tags"];
+	    }
+	}
+	export class FieldOption {
+	    label: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FieldOption(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.label = source["label"];
+	        this.value = source["value"];
+	    }
+	}
+	export class ConfigField {
+	    key: string;
+	    label: string;
+	    type: string;
+	    default?: any;
+	    required?: boolean;
+	    options?: FieldOption[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigField(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.label = source["label"];
+	        this.type = source["type"];
+	        this.default = source["default"];
+	        this.required = source["required"];
+	        this.options = this.convertValues(source["options"], FieldOption);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DataPort {
+	    id: string;
+	    label: string;
+	    type: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DataPort(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.type = source["type"];
+	    }
+	}
+	export class BlockDef {
+	    id: string;
+	    category: string;
+	    label: string;
+	    description: string;
+	    isTrigger: boolean;
+	    controlInputs: string[];
+	    controlOutputs: string[];
+	    dataInputs: DataPort[];
+	    dataOutputs: DataPort[];
+	    configSchema: ConfigField[];
+	    source: string;
+	    primitive?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlockDef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.category = source["category"];
+	        this.label = source["label"];
+	        this.description = source["description"];
+	        this.isTrigger = source["isTrigger"];
+	        this.controlInputs = source["controlInputs"];
+	        this.controlOutputs = source["controlOutputs"];
+	        this.dataInputs = this.convertValues(source["dataInputs"], DataPort);
+	        this.dataOutputs = this.convertValues(source["dataOutputs"], DataPort);
+	        this.configSchema = this.convertValues(source["configSchema"], ConfigField);
+	        this.source = source["source"];
+	        this.primitive = source["primitive"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class ConfigFile {
 	    relPath: string;
 	    name: string;
@@ -50,6 +193,136 @@ export namespace models {
 	        this.modified = source["modified"];
 	    }
 	}
+	export class ConsoleLine {
+	    timestamp: string;
+	    line: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConsoleLine(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timestamp = source["timestamp"];
+	        this.line = source["line"];
+	    }
+	}
+	
+	export class Edge {
+	    id: string;
+	    kind: string;
+	    source: string;
+	    sourcePort: string;
+	    target: string;
+	    targetPort: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Edge(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.kind = source["kind"];
+	        this.source = source["source"];
+	        this.sourcePort = source["sourcePort"];
+	        this.target = source["target"];
+	        this.targetPort = source["targetPort"];
+	    }
+	}
+	
+	export class Position {
+	    x: number;
+	    y: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Position(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.x = source["x"];
+	        this.y = source["y"];
+	    }
+	}
+	export class Node {
+	    id: string;
+	    type: string;
+	    config: Record<string, any>;
+	    position: Position;
+	
+	    static createFrom(source: any = {}) {
+	        return new Node(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.config = source["config"];
+	        this.position = this.convertValues(source["position"], Position);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Graph {
+	    id: string;
+	    name: string;
+	    enabled: boolean;
+	    nodes: Node[];
+	    edges: Edge[];
+	    createdAt: number;
+	    updatedAt: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Graph(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.enabled = source["enabled"];
+	        this.nodes = this.convertValues(source["nodes"], Node);
+	        this.edges = this.convertValues(source["edges"], Edge);
+	        this.createdAt = source["createdAt"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class LayoutPreset {
 	    name: string;
 	    layout: string;
@@ -62,6 +335,31 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.layout = source["layout"];
+	    }
+	}
+	
+	export class NodeRunRecord {
+	    nodeId: string;
+	    type: string;
+	    status: string;
+	    firedPort: string;
+	    startedAt: number;
+	    finishedAt: number;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NodeRunRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.nodeId = source["nodeId"];
+	        this.type = source["type"];
+	        this.status = source["status"];
+	        this.firedPort = source["firedPort"];
+	        this.startedAt = source["startedAt"];
+	        this.finishedAt = source["finishedAt"];
+	        this.error = source["error"];
 	    }
 	}
 	export class Player {
@@ -95,6 +393,53 @@ export namespace models {
 	        this.primaryGroup = source["primaryGroup"];
 	        this.groups = source["groups"];
 	    }
+	}
+	
+	export class RunRecord {
+	    id: string;
+	    graphId: string;
+	    graphName: string;
+	    trigger: string;
+	    startedAt: number;
+	    finishedAt: number;
+	    status: string;
+	    error?: string;
+	    nodes: NodeRunRecord[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RunRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.graphId = source["graphId"];
+	        this.graphName = source["graphName"];
+	        this.trigger = source["trigger"];
+	        this.startedAt = source["startedAt"];
+	        this.finishedAt = source["finishedAt"];
+	        this.status = source["status"];
+	        this.error = source["error"];
+	        this.nodes = this.convertValues(source["nodes"], NodeRunRecord);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ServerConfig {
 	    id: string;

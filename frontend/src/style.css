@@ -119,7 +119,10 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .tile-flash-ring {
   position: absolute;
-  inset: -1.5px;
+  /* inset must be an integer and concentric with the panel below it:
+     ring radius (11) = panel radius (10) + inset (1). A half-pixel inset
+     rasterizes unevenly top vs bottom (the "thinner top" artifact). */
+  inset: -1px;
   border-radius: 11px;
   overflow: hidden;
   pointer-events: none;
