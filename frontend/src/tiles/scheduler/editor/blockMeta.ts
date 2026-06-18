@@ -1,3 +1,13 @@
+export const CATEGORY_ORDER = ['trigger', 'data', 'action', 'control', 'notify']
+
+export function orderedCategories(defs: { category: string }[]): string[] {
+  const present = [...new Set(defs.map(d => d.category))]
+  return [
+    ...CATEGORY_ORDER.filter(c => present.includes(c)),
+    ...present.filter(c => !CATEGORY_ORDER.includes(c)),
+  ]
+}
+
 export const CATEGORY_COLOR: Record<string, string> = {
   trigger: '#7c3aed',
   action:  '#0369a1',

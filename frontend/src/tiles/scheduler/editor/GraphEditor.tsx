@@ -10,6 +10,7 @@ import { SchedulerCtx } from './schedulerContext'
 import { BlockNode } from './BlockNode'
 import { BlockPalette } from './BlockPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
+import { QuickAddMenu } from './QuickAddMenu'
 import {
   graphToFlow, flowToGraph, isValidConnection, randId, defaultConfig,
   type NodeData, type BlockFlowNode,
@@ -63,11 +64,49 @@ function GraphEditorInner({
   const [saving, setSaving]         = useState(false)
   const runStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [quickAdd, setQuickAdd] = useState<{
+    screen: { x: number; y: number }
+    flow:   { x: number; y: number }
+  } | null>(null)
+  const canvasWrapperRef = useRef<HTMLDivElement>(null)
+
   const showRunStatus = useCallback((msg: string) => {
     setRunStatus(msg)
     if (runStatusTimer.current) clearTimeout(runStatusTimer.current)
     runStatusTimer.current = setTimeout(() => setRunStatus(null), 4000)
   }, [])
+
+  // ── Right-click on canvas → open quick-add ───────────────────────────────
+  // Capture-phase native listener fires before WebView2 can show its native menu.
+  useEffect(() => {
+    const el = canvasWrapperRef.current
+    if (!el) return
+    const handler = (e: MouseEvent) => {
+      e.preventDefault()
+      const flow = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      setQuickAdd({ screen: { x: e.clientX, y: e.clientY }, flow })
+    }
+    el.addEventListener('contextmenu', handler, true)
+    return () => el.removeEventListener('contextmenu', handler, true)
+  }, [screenToFlowPosition])
+
+  // ── Tab key → open quick-add at canvas center ─────────────────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return
+      const tag = (document.activeElement as HTMLElement | null)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return
+      e.preventDefault()
+      const rect = canvasWrapperRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const sx = rect.left + rect.width  / 2
+      const sy = rect.top  + rect.height / 2
+      const flow = screenToFlowPosition({ x: sx, y: sy })
+      setQuickAdd({ screen: { x: sx, y: sy }, flow })
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [screenToFlowPosition])
 
   // ── Load graph into canvas ────────────────────────────────────────────────
   const loadGraph = useCallback((g: models.Graph) => {
@@ -104,10 +143,12 @@ function GraphEditorInner({
   // ── Node selection ────────────────────────────────────────────────────────
   const onNodeClick = useCallback((_: React.MouseEvent, node: FlowNode) => {
     setSelectedNodeId(node.id)
+    setQuickAdd(null)
   }, [])
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
+    setQuickAdd(null)
   }, [])
 
   // ── Config editing ────────────────────────────────────────────────────────
@@ -362,7 +403,7 @@ function GraphEditorInner({
           <BlockPalette blockDefs={blockDefs} onAdd={def => addBlock(def)} />
 
           {/* ReactFlow canvas */}
-          <div className="flex-1" onDrop={onDrop} onDragOver={onDragOver}>
+          <div ref={canvasWrapperRef} className="flex-1" onDrop={onDrop} onDragOver={onDragOver}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -417,6 +458,15 @@ function GraphEditorInner({
           )}
         </div>
       </div>
+
+      {quickAdd && (
+        <QuickAddMenu
+          blockDefs={blockDefs}
+          screenPos={quickAdd.screen}
+          onPick={def => { addBlock(def, quickAdd.flow); setQuickAdd(null) }}
+          onClose={() => setQuickAdd(null)}
+        />
+      )}
     </SchedulerCtx.Provider>
   )
 }
