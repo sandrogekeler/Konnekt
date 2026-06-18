@@ -49,6 +49,7 @@ func NewSchedulerService(server *ServerService, backup *BackupService, rcon *Rco
 	}
 	s.registry = NewBlockRegistry()
 	registerBuiltins(s.registry)
+	registerDataBuiltins(s.registry)
 	return s
 }
 

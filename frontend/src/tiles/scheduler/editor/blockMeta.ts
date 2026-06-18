@@ -3,13 +3,16 @@ export const CATEGORY_COLOR: Record<string, string> = {
   action:  '#0369a1',
   control: '#b45309',
   notify:  '#047857',
+  data:    '#0e7490',
 }
 
+// ASCII icons — no emoji
 export const CATEGORY_ICON: Record<string, string> = {
-  trigger: '⚡',
-  action:  '▶',
-  control: '◈',
-  notify:  '✉',
+  trigger: '!',
+  action:  '>',
+  control: '?',
+  notify:  '#',
+  data:    '*',
 }
 
 // Rounded circle handles for control ports

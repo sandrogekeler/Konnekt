@@ -186,13 +186,24 @@ function GraphEditorInner({
     const id = await handleSave()
     const rec = await onRun(id)
     if (rec.status === 'skipped') {
-      showRunStatus('⚠ Graph is already running')
+      showRunStatus('already running')
     } else if (rec.status === 'failed') {
-      showRunStatus(`✕ Run failed: ${rec.error || 'unknown error'}`)
+      showRunStatus(`failed: ${rec.error || 'unknown error'}`)
     } else {
-      showRunStatus(`✓ Run completed (${rec.nodes?.length ?? 0} nodes)`)
+      showRunStatus(`done (${rec.nodes?.length ?? 0} nodes)`)
     }
   }, [handleSave, onRun, showRunStatus])
+
+  // ── Delete selected nodes + their edges ───────────────────────────────────
+  const handleDeleteSelected = useCallback(() => {
+    const selectedIds = new Set(nodes.filter(n => n.selected).map(n => n.id))
+    if (selectedIds.size === 0) return
+    setNodes(ns => ns.filter(n => !n.selected))
+    setEdges(es => es.filter(e =>
+      !e.selected && !selectedIds.has(e.source) && !selectedIds.has(e.target),
+    ))
+    setSelectedNodeId(null)
+  }, [nodes, setNodes, setEdges])
 
   // ── Toggle enabled ────────────────────────────────────────────────────────
   const handleToggleEnabled = useCallback(async () => {
@@ -300,27 +311,33 @@ function GraphEditorInner({
 
           <div style={{ height: 16, width: 0.5, background: 'var(--border-subtle)' }} />
 
-          <button style={btn()} onClick={handleNew}>+ New</button>
+          <button style={btn()} onClick={handleNew}>new</button>
 
           {graphId && (
-            <button
-              style={btn(graphEnabled)}
-              onClick={handleToggleEnabled}
-            >
-              {graphEnabled ? '● Active' : '○ Inactive'}
+            <button style={btn(graphEnabled)} onClick={handleToggleEnabled}>
+              {graphEnabled ? '[on]' : '[off]'}
             </button>
           )}
 
           <div style={{ flex: 1 }} />
 
           {runStatus && (
-            <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-faint)' }}>
               {runStatus}
             </span>
           )}
 
+          {(() => {
+            const selCount = nodes.filter(n => n.selected).length
+            return selCount > 0 ? (
+              <button style={btn(false, true)} onClick={handleDeleteSelected}>
+                del {selCount}
+              </button>
+            ) : null
+          })()}
+
           {graphId && (
-            <button style={btn()} onClick={handleRun}>▶ Run now</button>
+            <button style={btn()} onClick={handleRun}>run</button>
           )}
 
           <button
@@ -328,12 +345,12 @@ function GraphEditorInner({
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? '…' : '💾 Save'}
+            {saving ? '...' : 'save'}
           </button>
 
           {graphId && (
             <button style={btn(false, true)} onClick={handleDelete}>
-              ✕ Delete
+              del graph
             </button>
           )}
         </div>
@@ -370,6 +387,7 @@ function GraphEditorInner({
                   if (bt.startsWith('trigger.')) return '#7c3aed'
                   if (bt.startsWith('action.'))  return '#0369a1'
                   if (bt.startsWith('control.')) return '#b45309'
+                  if (bt.startsWith('data.'))    return '#0e7490'
                   return '#047857'
                 }}
               />

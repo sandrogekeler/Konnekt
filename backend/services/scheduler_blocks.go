@@ -3,6 +3,7 @@
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -413,5 +414,142 @@ func must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// ── Data / attribute blocks ──────────────────────────────────────────────────
+// These nodes produce data outputs that can be wired into condition.left/right
+// or any other wirable config field. They fit into control flow like actions.
+
+func registerDataBuiltins(r *BlockRegistry) {
+	// data.serverAttribute — reads a live server property
+	must(r.RegisterBlock(models.BlockDef{
+		ID: "data.serverAttribute", Category: "data", Label: "Server Attribute",
+		Description:    "Reads a live server property (TPS, players, RAM…).",
+		ControlInputs:  []string{"in"}, ControlOutputs: []string{"onComplete", "onFailed"},
+		DataOutputs:    []models.DataPort{{ID: "value", Label: "Value", Type: "number"}},
+		ConfigSchema: []models.ConfigField{
+			{Key: "attribute", Label: "Attribute", Type: "select", Default: "tps", Required: true,
+				Options: []models.FieldOption{
+					{Label: "TPS", Value: "tps"},
+					{Label: "Player count", Value: "playerCount"},
+					{Label: "RAM used (MB)", Value: "ramUsedMB"},
+					{Label: "Server running (1/0)", Value: "running"},
+				}},
+		},
+		Source: "native",
+	}, execServerAttribute))
+
+	// data.randomNumber — uniform random float in [min, max]
+	must(r.RegisterBlock(models.BlockDef{
+		ID: "data.randomNumber", Category: "data", Label: "Random Number",
+		Description:    "Outputs a random number between min and max.",
+		ControlInputs:  []string{"in"}, ControlOutputs: []string{"onComplete"},
+		DataOutputs:    []models.DataPort{{ID: "value", Label: "Value", Type: "number"}},
+		ConfigSchema: []models.ConfigField{
+			{Key: "min", Label: "Min", Type: "number", Default: 1},
+			{Key: "max", Label: "Max", Type: "number", Default: 100},
+		},
+		Source: "native",
+	}, execRandomNumber))
+
+	// data.constValue — pass a literal string/number as a wired value
+	must(r.RegisterBlock(models.BlockDef{
+		ID: "data.constValue", Category: "data", Label: "Constant",
+		Description:    "Outputs a fixed value; useful for wiring literals into comparisons.",
+		ControlInputs:  []string{"in"}, ControlOutputs: []string{"onComplete"},
+		DataOutputs:    []models.DataPort{{ID: "value", Label: "Value", Type: "string"}},
+		ConfigSchema: []models.ConfigField{
+			{Key: "value", Label: "Value", Type: "string", Required: true},
+		},
+		Source: "native",
+	}, execConstValue))
+
+	// data.mathOp — arithmetic on two wired numbers
+	must(r.RegisterBlock(models.BlockDef{
+		ID: "data.mathOp", Category: "data", Label: "Math",
+		Description:    "Performs arithmetic on two values (from config or wired data).",
+		ControlInputs:  []string{"in"}, ControlOutputs: []string{"onComplete", "onFailed"},
+		DataInputs: []models.DataPort{
+			{ID: "a", Label: "A (wired)", Type: "number"},
+			{ID: "b", Label: "B (wired)", Type: "number"},
+		},
+		DataOutputs: []models.DataPort{{ID: "result", Label: "Result", Type: "number"}},
+		ConfigSchema: []models.ConfigField{
+			{Key: "a", Label: "A", Type: "number", Default: 0},
+			{Key: "op", Label: "Operator", Type: "select", Default: "add",
+				Options: []models.FieldOption{
+					{Label: "+ add", Value: "add"}, {Label: "- sub", Value: "sub"},
+					{Label: "* mul", Value: "mul"}, {Label: "/ div", Value: "div"},
+					{Label: "% mod", Value: "mod"},
+				}},
+			{Key: "b", Label: "B", Type: "number", Default: 0},
+		},
+		Source: "native",
+	}, execMathOp))
+}
+
+// ── Data executors ────────────────────────────────────────────────────────────
+
+func execServerAttribute(e *ExecContext) ExecResult {
+	switch e.GetString("attribute") {
+	case "tps":
+		e.SetOutput("value", e.Server().CurrentTPS())
+	case "playerCount":
+		e.SetOutput("value", float64(e.Server().PlayerCount()))
+	case "ramUsedMB":
+		e.SetOutput("value", float64(e.Server().RAMUsedMB()))
+	case "running":
+		if e.Server().IsRunning() {
+			e.SetOutput("value", float64(1))
+		} else {
+			e.SetOutput("value", float64(0))
+		}
+	default:
+		return ExecResult{Port: "onFailed", Err: fmt.Errorf("unknown attribute %q", e.GetString("attribute"))}
+	}
+	return ExecResult{Port: "onComplete"}
+}
+
+func execRandomNumber(e *ExecContext) ExecResult {
+	min := e.GetFloat("min", 1)
+	max := e.GetFloat("max", 100)
+	if max < min {
+		max = min
+	}
+	e.SetOutput("value", min+rand.Float64()*(max-min))
+	return ExecResult{Port: "onComplete"}
+}
+
+func execConstValue(e *ExecContext) ExecResult {
+	e.SetOutput("value", e.GetString("value"))
+	return ExecResult{Port: "onComplete"}
+}
+
+func execMathOp(e *ExecContext) ExecResult {
+	a := e.GetFloat("a", 0)
+	b := e.GetFloat("b", 0)
+	var result float64
+	switch e.GetString("op") {
+	case "add":
+		result = a + b
+	case "sub":
+		result = a - b
+	case "mul":
+		result = a * b
+	case "div":
+		if b == 0 {
+			return ExecResult{Port: "onFailed", Err: fmt.Errorf("division by zero")}
+		}
+		result = a / b
+	case "mod":
+		if b == 0 {
+			return ExecResult{Port: "onFailed", Err: fmt.Errorf("modulo by zero")}
+		}
+		result = float64(int(a) % int(b))
+	default:
+		result = a + b
+	}
+	e.SetOutput("result", result)
+	return ExecResult{Port: "onComplete"}
 }
 
