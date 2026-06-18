@@ -27,6 +27,7 @@ were shipped early during Alpha. Their status below reflects reality.
 - [x] Tailwind CSS v3 design system (dark, #05060a base, #4ade80 accent)
 - [x] Custom scrollbar (4px, dark minimal, matches design scheme)
 - [x] JetBrains Mono + Inter fonts
+- [x] Startup splash screen (Satoshi Black "Konnekt" in accent green, 1s fade+glow animation)
 - [x] Tile layout system (react-grid-layout, drag, resize, snap)
 - [x] Tile crate (inactive tiles panel, add/remove from canvas)
 - [~] Tile scale and maximise
@@ -34,9 +35,10 @@ were shipped early during Alpha. Their status below reflects reality.
   - [x] Maximise button in tile header: expands tile to fill the canvas area as an overlay
   - [x] Restore button returns tile to its previous grid position and size
   - [x] Only one tile maximised at a time; closing restores the previous layout
+  - [x] Smooth open/close animations: opacity fade on both flip-transform and fallback paths
   - (maximise lives in tiles/TileWrapper + Dashboard animations; per-tile scale not built)
 - [x] Layout presets (save, restore, delete named layouts)
-- [x] Default presets: "Default", "Console Focus", "Compact"
+- [x] Default presets: "Default", "Console Focus", "Compact", "Essentials"
 - [x] Persistence via Go JSON files (~/.config/konnekt/)
 - [x] All IPC bindings generated via wails generate module
 - [x] useWailsCall() hook for typed IPC error handling
@@ -97,10 +99,14 @@ were shipped early during Alpha. Their status below reflects reality.
     interval, timeOfDay, cron
   - Actions: consoleCommand, rcon, serverStart/Stop/Restart, backup, httpRequest, delay
   - Control: condition (onTrue/onFalse)
-  - Notify: notify (in-app notification)
+  - Notify: notify block fully wired — backend emits schedule:notify, frontend listener
+    routes to emitNotification with info/warn/error kinds
   - Data category: serverAttribute (TPS/playerCount/RAM/running), randomNumber, constValue,
     mathOp (+/-/*/div/mod) — all wire into condition.left/right or any wirable field
   - Persistence to ~/.config/konnekt/scheduler.json; run history (200 records in-memory)
+  - [x] Graph entrance animation on maximize: nodes stagger-fade in, edges draw in
+    via AnimatedEdge (SVG pathLength stroke-dashoffset technique); handle re-measurement
+    deferred until after animations so connections land at correct positions
   - [ ] Phase 2b: live node highlighting via schedule:* events, run history to disk,
     cycle visualization, next-run in compact summary
 
@@ -138,8 +144,9 @@ were shipped early during Alpha. Their status below reflects reality.
   
   - [x] In-app feed (reverse-chronological, timestamped, colour-coded by kind), clear-all
   - [x] OS desktop notifications too (WebView Notification API, lib/notify.ts)
-  - [~] Events wired so far: server crashed, player joined, backup completed/failed
-    (Backups tile now emits these via emitNotification), server stopped. Not yet:
+  - [x] Notification kinds: crash, join, info, warn, error — each with distinct icon + colour
+  - [~] Events wired so far: server crashed, player joined, backup completed/failed,
+    server stopped, scheduler notify block (info/warn/error). Not yet:
     server started, player left, TPS below threshold (<14)
   - Frontend: stores/useNotificationsStore.ts (emitted client-side; no Go NotificationService)
 
