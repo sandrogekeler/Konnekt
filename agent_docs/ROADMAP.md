@@ -86,13 +86,23 @@ were shipped early during Alpha. Their status below reflects reality.
   - Frontend: recharts ComposedChart, dual Y-axes, compact + expanded views with
     sortable summary table and toggle-able series; GetStatsHistory() for initial load
 
-- [ ] Scheduler tile - Node Graph Interface
-  (placeholder tile registered + empty SchedulerService stub already exist — extend, don't re-scaffold)
-  - List of scheduled tasks (time, command or action, repeat/once)
-  - Actions: restart server, save-all, run custom command, backup
-  - Go: SchedulerService using time.AfterFunc / cron-style ticker
-  - Add, edit, delete tasks
-  - Tasks persist to ~/.config/konnekt/scheduler.json
+- [x] Scheduler tile - Node Graph Interface
+  - React Flow visual editor (Phase 2a): drag/drop palette, generic BlockNode renderer,
+    control edges (solid) + data edges (dashed), isValidConnection rejects cross-kind wiring,
+    NodeConfigPanel with per-type widgets + "wired" badge, multi-select (left-drag box),
+    pan on middle mouse, delete selected, graph CRUD + enable toggle + Run now
+  - Backend engine: BFS execution, concurrency guard (one run per graph), resolveDataInputs
+    overlays wired edge values onto config; 17 native blocks + JSON manifest loader
+  - Triggers: playerJoined/Left, serverStopped, backupCompleted/Failed, tpsThreshold,
+    interval, timeOfDay, cron
+  - Actions: consoleCommand, rcon, serverStart/Stop/Restart, backup, httpRequest, delay
+  - Control: condition (onTrue/onFalse)
+  - Notify: notify (in-app notification)
+  - Data category: serverAttribute (TPS/playerCount/RAM/running), randomNumber, constValue,
+    mathOp (+/-/*/div/mod) — all wire into condition.left/right or any wirable field
+  - Persistence to ~/.config/konnekt/scheduler.json; run history (200 records in-memory)
+  - [ ] Phase 2b: live node highlighting via schedule:* events, run history to disk,
+    cycle visualization, next-run in compact summary
 
 - [ ] Worlds tile - 3D Space / Solar System Visualization
   (placeholder tile registered, no backend yet — extend, don't re-scaffold)

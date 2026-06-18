@@ -376,6 +376,8 @@ function GraphEditorInner({
               fitView
               fitViewOptions={{ padding: 0.2 }}
               deleteKeyCode="Delete"
+              panOnDrag={[1, 2]}
+              selectionOnDrag
               style={{ background: 'var(--bg-base)' }}
             >
               <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
