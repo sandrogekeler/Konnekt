@@ -9,6 +9,7 @@ import {
 } from '@xyflow/react'
 import { SchedulerCtx } from './schedulerContext'
 import { BlockNode } from './BlockNode'
+import { AnimatedEdge } from './AnimatedEdge'
 import { BlockPalette } from './BlockPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
 import { NodeDataPanel } from './NodeDataPanel'
@@ -20,6 +21,12 @@ import {
 import type { models } from '../../../../wailsjs/go/models'
 
 const nodeTypes = { block: BlockNode }
+const edgeTypes = { smoothstep: AnimatedEdge }
+
+const NODE_BASE_MS = 80
+const NODE_STAGGER = 25
+const EDGE_BASE_MS = 280
+const EDGE_STAGGER = 20
 
 interface GraphEditorProps {
   graphs: models.Graph[]
@@ -121,14 +128,31 @@ function GraphEditorInner({
   // ── Load graph into canvas ────────────────────────────────────────────────
   const loadGraph = useCallback((g: models.Graph) => {
     const { nodes: ns, edges: es } = graphToFlow(g, defMap)
-    setNodes(ns)
-    setEdges(es)
+    const animNodes = ns.map((n, i) => ({
+      ...n,
+      data: {
+        ...n.data,
+        _animDelay: NODE_BASE_MS + i * NODE_STAGGER + Math.floor(Math.random() * 25),
+      } as NodeData,
+    }))
+    const animEdges = es.map((e, i) => ({
+      ...e,
+      data: { ...(e.data as object), _animDelay: EDGE_BASE_MS + i * EDGE_STAGGER },
+    }))
+    setNodes(animNodes)
+    setEdges(animEdges)
     setGraphId(g.id)
     setGraphName(g.name)
     setGraphEnabled(g.enabled)
     setCreatedAt(g.createdAt)
     setSelectedNodeId(null)
-  }, [defMap, setNodes, setEdges])
+    // Re-measure handle positions after the maximize animation (panel animates
+    // for 180ms). ReactFlow's initial measurement runs while the panel ancestor
+    // may still have scale < 1, producing stale edge endpoints. Waiting 220ms
+    // ensures getBoundingClientRect returns settled coordinates.
+    const ids = ns.map(n => n.id)
+    setTimeout(() => updateNodeInternals(ids), 220)
+  }, [defMap, setNodes, setEdges, updateNodeInternals])
 
   // Auto-load first graph when graphs list arrives
   useEffect(() => {
@@ -136,19 +160,6 @@ function GraphEditorInner({
       loadGraph(graphs[0])
     }
   }, [graphs, graphId, loadGraph])
-
-  // Re-measure node handle positions after the maximize animation finishes.
-  // The editor mounts while the panel is still animating (scale < 1), so React
-  // Flow's initial handle measurements are taken on a transformed layout and
-  // connection drop targets end up offset. Waiting past ANIM_MS (120ms) ensures
-  // the panel has settled at scale(1) before we re-read the DOM.
-  useEffect(() => {
-    const t = setTimeout(() => {
-      updateNodeInternals(nodes.map(n => n.id))
-    }, 200)
-    return () => clearTimeout(t)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // intentionally fires once on mount only
 
   // ── Connect handler ───────────────────────────────────────────────────────
   const onConnect = useCallback((connection: Connection) => {
@@ -483,6 +494,7 @@ function GraphEditorInner({
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}

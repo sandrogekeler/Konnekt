@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type NotifKind = 'crash' | 'join' | 'info'
+export type NotifKind = 'crash' | 'join' | 'info' | 'warn' | 'error'
 
 export interface NotifItem {
   id: number

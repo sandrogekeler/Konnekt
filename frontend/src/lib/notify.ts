@@ -5,6 +5,8 @@ const TITLES: Record<NotifKind, string> = {
   crash: 'Server Crashed',
   join:  'Player Joined',
   info:  'Konnekt',
+  warn:  'Konnekt',
+  error: 'Konnekt',
 }
 
 export function emitNotification(kind: NotifKind, text: string): void {

@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Satoshi';
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url('./assets/fonts/Satoshi-Black.woff2') format('woff2');
+}
+
 :root,
 [data-theme="dark"] {
   --bg-base: #05060a;
@@ -176,4 +184,40 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .react-resizable-handle-se:hover {
   border-color: var(--text-secondary);
+}
+
+/* Startup splash animation */
+@keyframes splash-overlay-fade {
+  0%   { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes splash-word-in {
+  0%   { opacity: 0; transform: scale(0.97); text-shadow: none; }
+  25%  { opacity: 1; transform: scale(1);
+         text-shadow: 0 0 32px rgb(var(--accent-rgb) / 0.5); }
+  75%  { opacity: 1; text-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.35); }
+  100% { opacity: 1; text-shadow: 0 0 16px rgb(var(--accent-rgb) / 0.2); }
+}
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  animation: splash-overlay-fade 1s ease forwards;
+  pointer-events: none;
+}
+
+.splash-word {
+  font-family: 'Satoshi', 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: clamp(48px, 9vw, 112px);
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  animation: splash-word-in 1s ease forwards;
 }

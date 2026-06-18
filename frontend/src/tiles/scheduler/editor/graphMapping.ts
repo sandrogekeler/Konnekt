@@ -5,6 +5,7 @@ export interface NodeData extends Record<string, unknown> {
   blockType: string
   config: Record<string, unknown>
   label: string
+  _animDelay?: number
 }
 
 export type BlockFlowNode = FlowNode<NodeData, 'block'>

@@ -114,6 +114,18 @@ function App() {
     }
   }, [])
 
+  // Scheduler notify block → in-app notification
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.SCHEDULE_NOTIFY, (data: { kind: string; message: string }) => {
+        const kind = (['info', 'warn', 'error'].includes(data.kind) ? data.kind : 'info') as 'info' | 'warn' | 'error'
+        emitNotification(kind, data.message)
+      })
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       <aside

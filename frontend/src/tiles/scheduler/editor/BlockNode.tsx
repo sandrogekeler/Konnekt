@@ -1,4 +1,4 @@
-import { memo, useContext } from 'react'
+import React, { memo, useContext } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { SchedulerCtx } from './schedulerContext'
 import { CATEGORY_COLOR, CATEGORY_ICON, CTRL_PORT_COLOR, PORT_TYPE_COLOR } from './blockMeta'
@@ -78,7 +78,9 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
 
   return (
     <div
+      className="node-entrance"
       style={{
+        '--node-anim-delay': `${data._animDelay ?? 0}ms`,
         background: 'var(--bg-surface)',
         border: `${borderWidth}px solid ${borderColor}`,
         borderRadius: 4,
@@ -86,7 +88,7 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
         height: totalH,
         position: 'relative',
         overflow: 'hidden',
-      }}
+      } as React.CSSProperties}
     >
       {/* Header */}
       <div style={{

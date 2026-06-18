@@ -6,12 +6,16 @@ const KIND_ICON: Record<NotifKind, string> = {
   crash: '⚠',
   join:  '●',
   info:  '·',
+  warn:  '⚠',
+  error: '✕',
 }
 
 const KIND_COLOR: Record<NotifKind, string> = {
   crash: '#f87171',
   join:  'var(--accent)',
   info:  'var(--text-muted)',
+  warn:  '#fb923c',
+  error: '#f87171',
 }
 
 export function NotificationsTile(_props: TileProps) {
