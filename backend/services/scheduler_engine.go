@@ -29,6 +29,24 @@ func (s *SchedulerService) runGraph(
 	triggerLabel string,
 	seed map[string]map[string]interface{},
 ) models.RunRecord {
+	// Concurrency guard: one active run per graph.
+	s.runningMu.Lock()
+	if s.running[g.ID] {
+		s.runningMu.Unlock()
+		return models.RunRecord{
+			ID: newID(), GraphID: g.ID, GraphName: g.Name,
+			Trigger: triggerLabel, StartedAt: time.Now().UnixMilli(),
+			FinishedAt: time.Now().UnixMilli(), Status: "skipped",
+		}
+	}
+	s.running[g.ID] = true
+	s.runningMu.Unlock()
+	defer func() {
+		s.runningMu.Lock()
+		delete(s.running, g.ID)
+		s.runningMu.Unlock()
+	}()
+
 	runID := newID()
 	now := time.Now()
 	rec := models.RunRecord{
@@ -95,7 +113,7 @@ func (s *SchedulerService) runGraph(
 			"runId": runID, "graphId": g.ID, "nodeId": node.ID, "type": node.Type,
 		})
 
-		result := s.executeNode(runCtx, node, outputs)
+		result := s.executeNode(runCtx, node, g.Edges, outputs)
 
 		firedPort := result.Port
 		status := "success"
@@ -174,6 +192,7 @@ done:
 func (s *SchedulerService) executeNode(
 	runCtx context.Context,
 	node models.Node,
+	edges []models.Edge,
 	outputs map[string]map[string]interface{},
 ) ExecResult {
 	entry, ok := s.registry.Get(node.Type)
@@ -190,7 +209,14 @@ func (s *SchedulerService) executeNode(
 	defer cancel()
 
 	resolvedConfig := resolveConfigTemplates(node.Config, outputs)
-	dataIn := resolveDataInputs(node.ID, entry.def.DataInputs, outputs, node, s.registry)
+	dataIn := resolveDataInputs(node.ID, edges, outputs)
+
+	// Overlay model: wired data values take precedence over literal config.
+	// Port id == config key by convention, so executors call e.GetString("command")
+	// and transparently receive the wired value without knowing the source.
+	for k, v := range dataIn {
+		resolvedConfig[k] = v
+	}
 
 	dataOut := make(map[string]interface{})
 	ec := &ExecContext{
@@ -256,18 +282,24 @@ func lookupOutput(nodeID, port string, outputs map[string]map[string]interface{}
 	return ports[port]
 }
 
-// resolveDataInputs builds the DataIn map for a node from its incoming data edges.
-// Since we need the graph's edges, the engine passes them via a graph-scoped lookup.
-// Here we look up the graph edges stored on the SchedulerService during runGraph.
+// resolveDataInputs builds the DataIn map for a node by walking data edges
+// targeting it. For each matching edge, it looks up the source node's output
+// value from the outputs accumulator (honoring the "trigger" alias).
+// Port id == config key by convention; the caller overlays these onto resolvedConfig.
 func resolveDataInputs(
 	nodeID string,
-	dataPorts []models.DataPort,
+	edges []models.Edge,
 	outputs map[string]map[string]interface{},
-	node models.Node,
-	reg *BlockRegistry,
 ) map[string]interface{} {
-	// Data inputs already resolved from node.Config defaults; data-edge resolution
-	// happens in executeNode by reading the config after template substitution.
-	// The DataIn map carries explicit data-edge resolved values for clarity.
-	return make(map[string]interface{})
+	dataIn := make(map[string]interface{})
+	for _, e := range edges {
+		if e.Kind != "data" || e.Target != nodeID {
+			continue
+		}
+		v := lookupOutput(e.Source, e.SourcePort, outputs)
+		if v != nil {
+			dataIn[e.TargetPort] = v
+		}
+	}
+	return dataIn
 }

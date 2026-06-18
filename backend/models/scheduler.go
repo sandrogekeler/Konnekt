@@ -81,7 +81,7 @@ type RunRecord struct {
 	Trigger    string          `json:"trigger"`    // "manual" | "time" | "event:player:joined" etc
 	StartedAt  int64           `json:"startedAt"`
 	FinishedAt int64           `json:"finishedAt"`
-	Status     string          `json:"status"`     // "running" | "success" | "failed"
+	Status     string          `json:"status"`     // "running" | "success" | "failed" | "skipped"
 	Error      string          `json:"error,omitempty"`
 	Nodes      []NodeRunRecord `json:"nodes"`
 }

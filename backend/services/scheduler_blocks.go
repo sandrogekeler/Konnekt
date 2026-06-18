@@ -117,6 +117,7 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "action.consoleCommand", Category: "action", Label: "Console Command",
 		Description:    "Sends a command to the server via stdin.",
 		ControlInputs:  []string{"in"}, ControlOutputs: []string{"onComplete", "onFailed"},
+		DataInputs:  []models.DataPort{{ID: "command", Label: "Command (wired)", Type: "string"}},
 		ConfigSchema: []models.ConfigField{
 			{Key: "command", Label: "Command", Type: "command", Required: true},
 		},
@@ -127,7 +128,8 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "action.rcon", Category: "action", Label: "RCON Command",
 		Description:    "Sends a command via RCON and captures the response.",
 		ControlInputs:  []string{"in"}, ControlOutputs: []string{"onComplete", "onFailed"},
-		DataOutputs:    []models.DataPort{{ID: "response", Label: "Response", Type: "string"}},
+		DataInputs:  []models.DataPort{{ID: "command", Label: "Command (wired)", Type: "string"}},
+		DataOutputs: []models.DataPort{{ID: "response", Label: "Response", Type: "string"}},
 		ConfigSchema: []models.ConfigField{
 			{Key: "command", Label: "Command", Type: "command", Required: true},
 		},
@@ -167,6 +169,10 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "action.httpRequest", Category: "action", Label: "HTTP Request",
 		Description:   "Sends an HTTP request (webhooks, APIs, playit, etc.).",
 		ControlInputs: []string{"in"}, ControlOutputs: []string{"onComplete", "onFailed"},
+		DataInputs: []models.DataPort{
+			{ID: "url", Label: "URL (wired)", Type: "string"},
+			{ID: "body", Label: "Request body (wired)", Type: "string"},
+		},
 		DataOutputs: []models.DataPort{
 			{ID: "status", Label: "HTTP status", Type: "number"},
 			{ID: "body", Label: "Response body", Type: "string"},
@@ -199,6 +205,7 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "action.notify", Category: "notify", Label: "Notify",
 		Description:   "Sends an in-app notification.",
 		ControlInputs: []string{"in"}, ControlOutputs: []string{"onComplete"},
+		DataInputs:  []models.DataPort{{ID: "message", Label: "Message (wired)", Type: "string"}},
 		ConfigSchema: []models.ConfigField{
 			{Key: "kind", Label: "Kind", Type: "select", Default: "info",
 				Options: []models.FieldOption{
@@ -216,6 +223,10 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "control.condition", Category: "control", Label: "Condition",
 		Description:   "Branches based on a comparison.",
 		ControlInputs: []string{"in"}, ControlOutputs: []string{"onTrue", "onFalse"},
+		DataInputs: []models.DataPort{
+			{ID: "left", Label: "Left value (wired)", Type: "string"},
+			{ID: "right", Label: "Right value (wired)", Type: "string"},
+		},
 		ConfigSchema: []models.ConfigField{
 			{Key: "left", Label: "Left value", Type: "string", Required: true},
 			{Key: "op", Label: "Operator", Type: "select", Default: "eq",

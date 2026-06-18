@@ -1,0 +1,70 @@
+@import '@xyflow/react/dist/style.css';
+
+/* Canvas */
+.react-flow {
+  background: var(--bg-base);
+}
+.react-flow__background pattern circle,
+.react-flow__background pattern path {
+  fill: var(--border-subtle) !important;
+  stroke: var(--border-subtle) !important;
+}
+
+/* Edges */
+.react-flow__edge-path {
+  stroke: var(--text-faint);
+  stroke-width: 1.5;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--accent);
+}
+.react-flow__connectionline {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+/* Controls */
+.react-flow__controls {
+  background: var(--bg-surface);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 4px;
+  box-shadow: none;
+}
+.react-flow__controls-button {
+  background: transparent;
+  border-bottom: 0.5px solid var(--border-subtle);
+  fill: var(--text-muted);
+}
+.react-flow__controls-button:hover {
+  background: var(--border-subtle);
+}
+.react-flow__controls-button svg {
+  fill: var(--text-muted);
+}
+
+/* Mini map */
+.react-flow__minimap {
+  background: var(--bg-surface) !important;
+  border: 0.5px solid var(--border-subtle) !important;
+  border-radius: 4px !important;
+}
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.3);
+}
+
+/* Handle border matches canvas bg so they look clean */
+.react-flow__handle {
+  border: 2px solid var(--bg-base) !important;
+}
+
+/* Selection */
+.react-flow__selection {
+  border: 1px solid var(--accent);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Hide attribution */
+.react-flow__attribution {
+  display: none !important;
+}
