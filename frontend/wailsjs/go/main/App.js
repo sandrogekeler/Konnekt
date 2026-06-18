@@ -134,6 +134,10 @@ export function PardonPlayer(arg1, arg2) {
   return window['go']['main']['App']['PardonPlayer'](arg1, arg2);
 }
 
+export function PreviewScheduleNode(arg1, arg2) {
+  return window['go']['main']['App']['PreviewScheduleNode'](arg1, arg2);
+}
+
 export function ReadConfigFile(arg1, arg2) {
   return window['go']['main']['App']['ReadConfigFile'](arg1, arg2);
 }

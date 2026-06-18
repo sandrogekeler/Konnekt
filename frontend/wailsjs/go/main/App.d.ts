@@ -68,6 +68,8 @@ export function OpenDataDir():Promise<void>;
 
 export function PardonPlayer(arg1:string,arg2:string):Promise<void>;
 
+export function PreviewScheduleNode(arg1:models.Graph,arg2:string):Promise<models.NodePreview>;
+
 export function ReadConfigFile(arg1:string,arg2:string):Promise<string>;
 
 export function RestartServer(arg1:string):Promise<void>;

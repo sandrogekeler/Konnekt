@@ -27,7 +27,7 @@ export const CATEGORY_ICON: Record<string, string> = {
 
 // Rounded circle handles for control ports
 export const CTRL_PORT_COLOR: Record<string, string> = {
-  in:         '#94a3b8',
+  trigger:    '#7c3aed',
   onComplete: '#22c55e',
   onFailed:   '#ef4444',
   onTrue:     '#22c55e',

@@ -5,7 +5,7 @@ import { GraphEditor } from './editor/GraphEditor'
 import type { TileProps } from '../../types'
 
 export function SchedulerTile({ maximized }: TileProps) {
-  const { graphs, blockDefs, saveGraph, deleteGraph, setEnabled, runGraph } = useScheduler()
+  const { graphs, blockDefs, saveGraph, deleteGraph, setEnabled, runGraph, previewNode } = useScheduler()
 
   if (!maximized) {
     return <SchedulerSummary graphs={graphs} />
@@ -19,6 +19,7 @@ export function SchedulerTile({ maximized }: TileProps) {
       onDelete={deleteGraph}
       onSetEnabled={setEnabled}
       onRun={runGraph}
+      onPreviewNode={previewNode}
     />
   )
 }

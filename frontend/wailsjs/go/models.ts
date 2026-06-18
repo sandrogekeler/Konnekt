@@ -26,6 +26,26 @@ export namespace models {
 	        this.notifyOnJoin = source["notifyOnJoin"];
 	    }
 	}
+	export class AttrValue {
+	    name: string;
+	    value: string;
+	    type: string;
+	    writable: boolean;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AttrValue(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.value = source["value"];
+	        this.type = source["type"];
+	        this.writable = source["writable"];
+	        this.error = source["error"];
+	    }
+	}
 	export class Backup {
 	    filename: string;
 	    createdAt: number;
@@ -338,6 +358,42 @@ export namespace models {
 	    }
 	}
 	
+	export class NodePreview {
+	    nodeId: string;
+	    attributes: AttrValue[];
+	    console: string[];
+	    ok: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new NodePreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.nodeId = source["nodeId"];
+	        this.attributes = this.convertValues(source["attributes"], AttrValue);
+	        this.console = source["console"];
+	        this.ok = source["ok"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class NodeRunRecord {
 	    nodeId: string;
 	    type: string;

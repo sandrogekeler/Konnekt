@@ -7,6 +7,7 @@ import {
   GetScheduleBlockDefs,
   RunScheduleGraphNow,
   GetScheduleRunHistory,
+  PreviewScheduleNode,
 } from '../../../wailsjs/go/main/App'
 import type { models } from '../../../wailsjs/go/models'
 
@@ -66,9 +67,15 @@ export function useScheduler() {
     }
   }, [refreshHistory])
 
+  const previewNode = useCallback(
+    (graph: models.Graph, nodeId: string): Promise<models.NodePreview> =>
+      PreviewScheduleNode(graph, nodeId),
+    [],
+  )
+
   return {
     graphs, blockDefs, history, loading,
-    saveGraph, deleteGraph, setEnabled, runGraph,
+    saveGraph, deleteGraph, setEnabled, runGraph, previewNode,
     refreshGraphs, refreshHistory,
   }
 }

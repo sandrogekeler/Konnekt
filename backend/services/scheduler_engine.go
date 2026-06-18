@@ -18,6 +18,10 @@ const (
 
 var reTemplate = regexp.MustCompile(`\{\{\s*([\w-]+)\.([\w-]+)\s*\}\}`)
 
+// @{ … } inline expression and @a.b.c bare attribute reference.
+var reAttrExpr = regexp.MustCompile(`@\{([^}]*)\}`)
+var reAttrRef = regexp.MustCompile(`@([A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*)`)
+
 // runGraph executes a graph from the given trigger node, seeding data outputs
 // with the provided seed values. It runs synchronously (caller may goroutine it)
 // and returns the final RunRecord when complete.
@@ -88,6 +92,10 @@ func (s *SchedulerService) runGraph(
 	runCtx, cancel := context.WithTimeout(context.Background(), maxRunDuration)
 	defer cancel()
 
+	// Run-scoped custom attributes: defined by Write Attribute nodes as raw
+	// expressions, evaluated lazily on each reference. Fresh per run.
+	scope := newAttrScope(s.deps, s.activeServerID(), map[string]string{})
+
 	// BFS/queue of (nodeID, firedPort-that-led-here).
 	type work struct {
 		nodeID    string
@@ -113,7 +121,7 @@ func (s *SchedulerService) runGraph(
 			"runId": runID, "graphId": g.ID, "nodeId": node.ID, "type": node.Type,
 		})
 
-		result := s.executeNode(runCtx, node, g.Edges, outputs)
+		result := s.executeNode(runCtx, node, g.Edges, nodeByID, outputs, scope)
 
 		firedPort := result.Port
 		status := "success"
@@ -193,7 +201,9 @@ func (s *SchedulerService) executeNode(
 	runCtx context.Context,
 	node models.Node,
 	edges []models.Edge,
+	nodeByID map[string]models.Node,
 	outputs map[string]map[string]interface{},
+	scope *AttrScope,
 ) ExecResult {
 	entry, ok := s.registry.Get(node.Type)
 	if !ok {
@@ -205,10 +215,14 @@ func (s *SchedulerService) executeNode(
 		return ExecResult{Port: "onComplete"}
 	}
 
+	// Pull-evaluate any pure-data nodes that feed data inputs to this node
+	// before we resolve inputs — ensures their outputs are available.
+	s.pullDataDependencies(runCtx, node.ID, edges, nodeByID, outputs, scope, make(map[string]bool))
+
 	nodeCtx, cancel := context.WithTimeout(runCtx, nodeTimeout)
 	defer cancel()
 
-	resolvedConfig := resolveConfigTemplates(node.Config, outputs)
+	resolvedConfig := resolveConfigTemplates(node.Config, outputs, scope)
 	dataIn := resolveDataInputs(node.ID, edges, outputs)
 
 	// Overlay model: wired data values take precedence over literal config.
@@ -220,12 +234,14 @@ func (s *SchedulerService) executeNode(
 
 	dataOut := make(map[string]interface{})
 	ec := &ExecContext{
-		Ctx:      nodeCtx,
-		ServerID: s.activeServerID(),
-		Config:   resolvedConfig,
-		DataIn:   dataIn,
-		svc:      s.deps,
-		dataOut:  dataOut,
+		Ctx:       nodeCtx,
+		ServerID:  s.activeServerID(),
+		Config:    resolvedConfig,
+		RawConfig: node.Config,
+		DataIn:    dataIn,
+		Attrs:     scope,
+		svc:       s.deps,
+		dataOut:   dataOut,
 	}
 
 	result := entry.exec(ec)
@@ -242,16 +258,101 @@ func (s *SchedulerService) executeNode(
 	return result
 }
 
-// resolveConfigTemplates walks config values substituting {{nodeId.port}} tokens.
-func resolveConfigTemplates(config map[string]interface{}, outputs map[string]map[string]interface{}) map[string]interface{} {
+// isPureData returns true for blocks that are pull-evaluated value nodes:
+// no control inputs and no control outputs.
+func isPureData(def models.BlockDef) bool {
+	return len(def.ControlInputs) == 0 && len(def.ControlOutputs) == 0
+}
+
+// pullDataDependencies recursively ensures pure-data source nodes for nodeID
+// have been evaluated and their outputs stored before the caller resolves its
+// own data inputs. visiting prevents infinite recursion on data cycles.
+func (s *SchedulerService) pullDataDependencies(
+	runCtx context.Context,
+	nodeID string,
+	edges []models.Edge,
+	nodeByID map[string]models.Node,
+	outputs map[string]map[string]interface{},
+	scope *AttrScope,
+	visiting map[string]bool,
+) {
+	for _, e := range edges {
+		if e.Kind != "data" || e.Target != nodeID {
+			continue
+		}
+		s.ensureDataOutputs(runCtx, e.Source, edges, nodeByID, outputs, scope, visiting)
+	}
+}
+
+// ensureDataOutputs evaluates a pure-data node if its outputs are not yet
+// populated. Callers guard with visiting to detect cycles.
+func (s *SchedulerService) ensureDataOutputs(
+	runCtx context.Context,
+	nodeID string,
+	edges []models.Edge,
+	nodeByID map[string]models.Node,
+	outputs map[string]map[string]interface{},
+	scope *AttrScope,
+	visiting map[string]bool,
+) {
+	if _, done := outputs[nodeID]; done {
+		return
+	}
+	if visiting[nodeID] {
+		return // data cycle — leave output absent
+	}
+	node, ok := nodeByID[nodeID]
+	if !ok {
+		return
+	}
+	entry, ok := s.registry.Get(node.Type)
+	if !ok || !isPureData(entry.def) {
+		return
+	}
+
+	visiting[nodeID] = true
+	defer delete(visiting, nodeID)
+
+	// Recursively pull upstream data dependencies first.
+	s.pullDataDependencies(runCtx, nodeID, edges, nodeByID, outputs, scope, visiting)
+
+	resolvedConfig := resolveConfigTemplates(node.Config, outputs, scope)
+	dataIn := resolveDataInputs(nodeID, edges, outputs)
+	for k, v := range dataIn {
+		resolvedConfig[k] = v
+	}
+
+	dataOut := make(map[string]interface{})
+	nodeCtx, cancel := context.WithTimeout(runCtx, nodeTimeout)
+	defer cancel()
+	ec := &ExecContext{
+		Ctx:       nodeCtx,
+		ServerID:  s.activeServerID(),
+		Config:    resolvedConfig,
+		RawConfig: node.Config,
+		DataIn:    dataIn,
+		Attrs:     scope,
+		svc:       s.deps,
+		dataOut:   dataOut,
+	}
+	_ = entry.exec(ec) // ignore ExecResult — pure data nodes have no control branches
+
+	if len(dataOut) > 0 {
+		outputs[nodeID] = dataOut
+	}
+}
+
+// resolveConfigTemplates walks config values substituting {{nodeId.port}} tokens
+// and @attribute references.
+func resolveConfigTemplates(config map[string]interface{}, outputs map[string]map[string]interface{}, scope *AttrScope) map[string]interface{} {
 	out := make(map[string]interface{}, len(config))
 	for k, v := range config {
-		out[k] = resolveValue(v, outputs)
+		out[k] = resolveValue(v, outputs, scope)
 	}
 	return out
 }
 
-func resolveValue(v interface{}, outputs map[string]map[string]interface{}) interface{} {
+func resolveValue(v interface{}, outputs map[string]map[string]interface{}, scope *AttrScope) interface{} {
 	s, ok := v.(string)
 	if !ok {
 		return v
@@ -260,8 +361,8 @@ func resolveValue(v interface{}, outputs map[string]map[string]interface{}) inte
 	if matches := reTemplate.FindStringSubmatch(s); matches != nil && matches[0] == strings.TrimSpace(s) {
 		return lookupOutput(matches[1], matches[2], outputs)
 	}
-	// Mixed string with embedded tokens: substitute as strings.
-	return reTemplate.ReplaceAllStringFunc(s, func(m string) string {
+	// Mixed string with embedded {{…}} tokens: substitute as strings.
+	s = reTemplate.ReplaceAllStringFunc(s, func(m string) string {
 		parts := reTemplate.FindStringSubmatch(m)
 		if parts == nil {
 			return m
@@ -272,6 +373,51 @@ func resolveValue(v interface{}, outputs map[string]map[string]interface{}) inte
 		}
 		return fmt.Sprintf("%v", val)
 	})
+	return resolveAttrTokens(s, scope)
+}
+
+// resolveAttrTokens substitutes @{ expr } and @a.b.c references in a string.
+// A whole-string token preserves its native (number/string) type; embedded
+// tokens stringify. Resolution failures substitute empty (mirrors {{…}}).
+func resolveAttrTokens(s string, scope *AttrScope) interface{} {
+	if scope == nil || !strings.Contains(s, "@") {
+		return s
+	}
+	trimmed := strings.TrimSpace(s)
+
+	// Whole-string @{ expr } — preserve type.
+	if m := reAttrExpr.FindStringSubmatch(trimmed); m != nil && m[0] == trimmed {
+		if val, err := evalExpr(m[1], scope); err == nil {
+			return val
+		}
+		return ""
+	}
+	// Whole-string @ref — preserve type.
+	if m := reAttrRef.FindStringSubmatch(trimmed); m != nil && m[0] == trimmed {
+		if val, err := scope.Resolve(m[1]); err == nil {
+			return val
+		}
+		return ""
+	}
+
+	// Embedded: @{…} first, then bare @refs — stringify each.
+	out := reAttrExpr.ReplaceAllStringFunc(s, func(tok string) string {
+		m := reAttrExpr.FindStringSubmatch(tok)
+		val, err := evalExpr(m[1], scope)
+		if err != nil {
+			return ""
+		}
+		return toStr(val)
+	})
+	out = reAttrRef.ReplaceAllStringFunc(out, func(tok string) string {
+		m := reAttrRef.FindStringSubmatch(tok)
+		val, err := scope.Resolve(m[1])
+		if err != nil {
+			return ""
+		}
+		return toStr(val)
+	})
+	return out
 }
 
 func lookupOutput(nodeID, port string, outputs map[string]map[string]interface{}) interface{} {

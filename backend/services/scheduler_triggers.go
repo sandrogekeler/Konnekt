@@ -11,26 +11,56 @@ import (
 // startTriggers subscribes to EventBus events and launches the time-trigger
 // ticker. Called from SetContext after graphs are loaded.
 func (s *SchedulerService) startTriggers() {
-	// Event-based triggers.
+	// Player events — single trigger.player block filtered by type config.
 	s.bus.Subscribe(EventPlayerJoined, func(data any) {
-		name, _ := data.(string)
-		s.fireEventTriggers("trigger.playerJoined", map[string]interface{}{"player": name}, "event:player:joined")
+		payload, _ := data.(map[string]string)
+		seed := map[string]interface{}{
+			"playerName": payload["name"],
+			"playerIP":   payload["ip"],
+		}
+		s.fireTypedEventTriggers("trigger.player", "Joined", seed, "event:player:joined")
 	})
 	s.bus.Subscribe(EventPlayerLeft, func(data any) {
-		name, _ := data.(string)
-		s.fireEventTriggers("trigger.playerLeft", map[string]interface{}{"player": name}, "event:player:left")
+		payload, _ := data.(map[string]string)
+		seed := map[string]interface{}{
+			"playerName": payload["name"],
+			"playerIP":   "",
+		}
+		s.fireTypedEventTriggers("trigger.player", "Left", seed, "event:player:left")
+	})
+
+	// Server lifecycle events — single trigger.server block filtered by type config.
+	s.bus.Subscribe(EventServerStarted, func(data any) {
+		s.fireTypedEventTriggers("trigger.server", "Started", map[string]interface{}{}, "event:server:started")
 	})
 	s.bus.Subscribe(EventServerStopped, func(data any) {
-		s.fireEventTriggers("trigger.serverStopped", map[string]interface{}{}, "event:server:stopped")
+		payload, _ := data.(map[string]bool)
+		t := "Stopped"
+		label := "event:server:stopped"
+		if !payload["expected"] {
+			t = "Crashed"
+			label = "event:server:crashed"
+		}
+		s.fireTypedEventTriggers("trigger.server", t, map[string]interface{}{}, label)
 	})
+
+	// Backup events — single trigger.backup block routed by _route seed key.
 	s.bus.Subscribe(EventBackupCompleted, func(data any) {
 		payload, _ := data.(map[string]interface{})
-		s.fireEventTriggers("trigger.backupCompleted", payload, "event:backup:completed")
+		filename, _ := payload["filename"].(string)
+		seed := map[string]interface{}{
+			"_route":   "onComplete",
+			"filename": filename,
+		}
+		s.fireRoutedEventTriggers("trigger.backup", seed, "event:backup:completed")
 	})
 	s.bus.Subscribe(EventBackupFailed, func(data any) {
-		payload, _ := data.(map[string]interface{})
-		s.fireEventTriggers("trigger.backupFailed", payload, "event:backup:failed")
+		seed := map[string]interface{}{
+			"_route": "onFailed",
+		}
+		s.fireRoutedEventTriggers("trigger.backup", seed, "event:backup:failed")
 	})
+
 	s.bus.Subscribe(EventStatsSnapshot, func(data any) {
 		snap, ok := data.(models.StatsSnapshot)
 		if !ok {
@@ -64,7 +94,75 @@ func (s *SchedulerService) fireEventTriggers(triggerType string, seedData map[st
 				continue
 			}
 			seed := map[string]map[string]interface{}{
-				node.ID: seedData,
+				node.ID:   seedData,
+				"trigger": seedData,
+			}
+			gCopy, nID := g, node.ID
+			go func() {
+				s.runGraph(gCopy, nID, label, seed)
+			}()
+		}
+	}
+}
+
+// fireTypedEventTriggers is like fireEventTriggers but also requires
+// node.Config["type"] == configType, enabling merged parametric trigger blocks.
+func (s *SchedulerService) fireTypedEventTriggers(triggerType, configType string, seedData map[string]interface{}, label string) {
+	s.mu.RLock()
+	graphs := make([]models.Graph, len(s.graphs))
+	copy(graphs, s.graphs)
+	s.mu.RUnlock()
+
+	for _, g := range graphs {
+		if !g.Enabled {
+			continue
+		}
+		for _, node := range g.Nodes {
+			if node.Type != triggerType {
+				continue
+			}
+			t, _ := node.Config["type"].(string)
+			if t != configType {
+				continue
+			}
+			cooldownKey := g.ID + ":" + node.ID
+			if !s.cooldownAllows(cooldownKey, node.Config) {
+				continue
+			}
+			seed := map[string]map[string]interface{}{
+				node.ID:   seedData,
+				"trigger": seedData,
+			}
+			gCopy, nID := g, node.ID
+			go func() {
+				s.runGraph(gCopy, nID, label, seed)
+			}()
+		}
+	}
+}
+
+// fireRoutedEventTriggers fires all trigger nodes of the given type, seeding
+// _route so triggerRouted can pick the appropriate control output port.
+func (s *SchedulerService) fireRoutedEventTriggers(triggerType string, seedData map[string]interface{}, label string) {
+	s.mu.RLock()
+	graphs := make([]models.Graph, len(s.graphs))
+	copy(graphs, s.graphs)
+	s.mu.RUnlock()
+
+	for _, g := range graphs {
+		if !g.Enabled {
+			continue
+		}
+		for _, node := range g.Nodes {
+			if node.Type != triggerType {
+				continue
+			}
+			cooldownKey := g.ID + ":" + node.ID
+			if !s.cooldownAllows(cooldownKey, node.Config) {
+				continue
+			}
+			seed := map[string]map[string]interface{}{
+				node.ID:   seedData,
 				"trigger": seedData,
 			}
 			gCopy, nID := g, node.ID
@@ -109,7 +207,7 @@ func (s *SchedulerService) fireTPSTriggers(snap models.StatsSnapshot) {
 				continue
 			}
 			seed := map[string]map[string]interface{}{
-				node.ID: {"tps": snap.TPS},
+				node.ID:   {"tps": snap.TPS},
 				"trigger": {"tps": snap.TPS},
 			}
 			gCopy, nID := g, node.ID
@@ -254,7 +352,6 @@ func (s *SchedulerService) maybeFireTimeOfDay(g models.Graph, node models.Node, 
 }
 
 // maybeFireCron evaluates a "m h dom mon dow" cron expression at minute resolution.
-// Supported: * literals, comma lists, ranges (a-b), and step */n.
 func (s *SchedulerService) maybeFireCron(g models.Graph, node models.Node, now time.Time) {
 	expr, _ := node.Config["cron"].(string)
 	if expr == "" {

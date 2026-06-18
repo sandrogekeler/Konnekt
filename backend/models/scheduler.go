@@ -86,6 +86,23 @@ type RunRecord struct {
 	Nodes      []NodeRunRecord `json:"nodes"`
 }
 
+// ─── Per-node dry-run preview (data spreadsheet) ────────────────────────────────
+
+type NodePreview struct {
+	NodeID     string      `json:"nodeId"`
+	Attributes []AttrValue `json:"attributes"`
+	Console    []string    `json:"console"`
+	OK         bool        `json:"ok"`
+}
+
+type AttrValue struct {
+	Name     string `json:"name"`
+	Value    string `json:"value"`
+	Type     string `json:"type"`
+	Writable bool   `json:"writable"`
+	Error    string `json:"error,omitempty"`
+}
+
 type NodeRunRecord struct {
 	NodeID     string `json:"nodeId"`
 	Type       string `json:"type"`

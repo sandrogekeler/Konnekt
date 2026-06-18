@@ -31,7 +31,7 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
     )
   }
 
-  const fields = def.configSchema ?? []
+  const fields = (def.configSchema ?? []).filter(f => f.key !== '_collapsed')
 
   if (fields.length === 0) {
     return (
@@ -104,7 +104,7 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                 onChange={e => onChange(field.key, e.target.value)}
                 className="px-2 py-1 rounded text-xs font-mono"
                 style={{
-                  background: 'var(--bg-surface)',
+                  background: 'var(--bg-base)',
                   border: '0.5px solid var(--border-subtle)',
                   color: 'var(--text-primary)',
                   outline: 'none',
@@ -114,6 +114,31 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
+            ) : field.type === 'attribute' ? (
+              <>
+                <input
+                  type="text"
+                  list={`attrs-${nodeId}-${field.key}`}
+                  value={String(val)}
+                  placeholder="@server.motd or @myValue"
+                  onChange={e => onChange(field.key, e.target.value)}
+                  className="px-2 py-1 rounded text-xs font-mono"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '0.5px solid var(--border-subtle)',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                  }}
+                />
+                <datalist id={`attrs-${nodeId}-${field.key}`}>
+                  {field.options?.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </datalist>
+                <span className="text-xs" style={{ color: 'var(--text-faint)', fontSize: 9 }}>
+                  A new name defines a custom in-flow attribute.
+                </span>
+              </>
             ) : field.type === 'number' ? (
               <input
                 type="number"

@@ -11,6 +11,7 @@ import { SchedulerCtx } from './schedulerContext'
 import { BlockNode } from './BlockNode'
 import { BlockPalette } from './BlockPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
+import { NodeDataPanel } from './NodeDataPanel'
 import { QuickAddMenu } from './QuickAddMenu'
 import {
   graphToFlow, flowToGraph, isValidConnection, randId, defaultConfig,
@@ -27,6 +28,7 @@ interface GraphEditorProps {
   onDelete: (id: string) => Promise<void>
   onSetEnabled: (id: string, enabled: boolean) => Promise<void>
   onRun: (id: string) => Promise<models.RunRecord>
+  onPreviewNode: (graph: models.Graph, nodeId: string) => Promise<models.NodePreview>
 }
 
 // Outer wrapper provides ReactFlowProvider so useReactFlow() works inside.
@@ -39,7 +41,7 @@ export function GraphEditor(props: GraphEditorProps) {
 }
 
 function GraphEditorInner({
-  graphs, blockDefs, onSave, onDelete, onSetEnabled, onRun,
+  graphs, blockDefs, onSave, onDelete, onSetEnabled, onRun, onPreviewNode,
 }: GraphEditorProps) {
   const { screenToFlowPosition } = useReactFlow()
   const updateNodeInternals = useUpdateNodeInternals()
@@ -60,6 +62,7 @@ function GraphEditorInner({
   const [nodes, setNodes, onNodesChange] = useNodesState<BlockFlowNode>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [panelTab, setPanelTab] = useState<'config' | 'data'>('config')
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [runStatus, setRunStatus]   = useState<string | null>(null)
@@ -71,6 +74,14 @@ function GraphEditorInner({
     flow:   { x: number; y: number }
   } | null>(null)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
+  const mousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  // Track cursor so Tab opens the quick-add menu at the pointer, not canvas center.
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { mousePos.current = { x: e.clientX, y: e.clientY } }
+    window.addEventListener('mousemove', handler)
+    return () => window.removeEventListener('mousemove', handler)
+  }, [])
 
   const showRunStatus = useCallback((msg: string) => {
     setRunStatus(msg)
@@ -92,17 +103,14 @@ function GraphEditorInner({
     return () => el.removeEventListener('contextmenu', handler, true)
   }, [screenToFlowPosition])
 
-  // ── Tab key → open quick-add at canvas center ─────────────────────────────
+  // ── Tab key → open quick-add at cursor position ──────────────────────────
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Tab') return
       const tag = (document.activeElement as HTMLElement | null)?.tagName?.toLowerCase()
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return
       e.preventDefault()
-      const rect = canvasWrapperRef.current?.getBoundingClientRect()
-      if (!rect) return
-      const sx = rect.left + rect.width  / 2
-      const sy = rect.top  + rect.height / 2
+      const { x: sx, y: sy } = mousePos.current
       const flow = screenToFlowPosition({ x: sx, y: sy })
       setQuickAdd({ screen: { x: sx, y: sy }, flow })
     }
@@ -154,6 +162,37 @@ function GraphEditorInner({
       data: { kind: isData ? 'data' : 'control' } as Record<string, unknown>,
     }, es))
   }, [setEdges])
+
+  // ── Alt+drag → duplicate node at its original position ───────────────────
+  const onNodeDragStart = useCallback((e: MouseEvent | TouchEvent, node: FlowNode) => {
+    if (!('altKey' in e) || !e.altKey) return
+    const newId = randId()
+    setNodes(ns => [
+      ...ns,
+      {
+        ...(node as BlockFlowNode),
+        id: newId,
+        position: { ...node.position },
+        selected: false,
+        data: {
+          ...(node.data as NodeData),
+          config: { ...(node.data as NodeData).config },
+        },
+      },
+    ])
+    // Duplicate edges that target the original node so the copy is wired the same way.
+    setEdges(es => {
+      const duped = es
+        .filter(e => e.target === node.id || e.source === node.id)
+        .map(e => ({
+          ...e,
+          id: randId(),
+          source: e.source === node.id ? newId : e.source,
+          target: e.target === node.id ? newId : e.target,
+        }))
+      return [...es, ...duped]
+    })
+  }, [setNodes, setEdges])
 
   // ── Node selection ────────────────────────────────────────────────────────
   const onNodeClick = useCallback((_: React.MouseEvent, node: FlowNode) => {
@@ -280,7 +319,28 @@ function GraphEditorInner({
   const selectedNode = nodes.find(n => n.id === selectedNodeId)
   const selectedDef  = selectedNode ? defMap.get((selectedNode.data as NodeData).blockType) : undefined
 
-  const ctxValue = useMemo(() => ({ blockDefs: defMap, edges }), [defMap, edges])
+  // Derive collapsed set from node configs so BlockNode can read it.
+  const collapsed = useMemo(() => {
+    const s = new Set<string>()
+    for (const n of nodes) {
+      if ((n.data as NodeData).config?._collapsed !== false) s.add(n.id)
+    }
+    return s
+  }, [nodes])
+
+  const onToggleCollapse = useCallback((nodeId: string) => {
+    setNodes(ns => ns.map(n => {
+      if (n.id !== nodeId) return n
+      const cur = (n.data as NodeData).config?._collapsed !== false
+      return { ...n, data: { ...n.data, config: { ...(n.data as NodeData).config, _collapsed: !cur } } }
+    }))
+    updateNodeInternals(nodeId)
+  }, [setNodes, updateNodeInternals])
+
+  const ctxValue = useMemo(
+    () => ({ blockDefs: defMap, edges, collapsed, onToggleCollapse }),
+    [defMap, edges, collapsed, onToggleCollapse],
+  )
 
   // ── Toolbar button style helper ───────────────────────────────────────────
   const btn = (active = false, danger = false): React.CSSProperties => ({
@@ -427,6 +487,7 @@ function GraphEditorInner({
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onNodeClick={onNodeClick}
+              onNodeDragStart={onNodeDragStart}
               onPaneClick={onPaneClick}
               isValidConnection={isValidConnection}
               fitView
@@ -452,23 +513,54 @@ function GraphEditorInner({
             </ReactFlow>
           </div>
 
-          {/* Node config panel */}
+          {/* Node config / data panel */}
           {selectedNode && (
             <div
-              className="shrink-0 overflow-y-auto"
+              className="shrink-0 overflow-y-auto flex flex-col"
               style={{
                 width: 224,
                 borderLeft: '0.5px solid var(--border-subtle)',
                 background: 'var(--bg-base)',
               }}
             >
-              <NodeConfigPanel
-                nodeId={selectedNode.id}
-                data={selectedNode.data as NodeData}
-                def={selectedDef}
-                edges={edges as FlowEdge[]}
-                onChange={updateNodeConfig}
-              />
+              {/* Tabs */}
+              <div className="flex shrink-0" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+                {(['config', 'data'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setPanelTab(tab)}
+                    className="flex-1 py-1.5 text-xs font-mono"
+                    style={{
+                      background: panelTab === tab ? 'var(--bg-surface)' : 'transparent',
+                      color: panelTab === tab ? 'var(--text-primary)' : 'var(--text-faint)',
+                      borderBottom: panelTab === tab ? '1px solid var(--accent)' : '1px solid transparent',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {panelTab === 'config' ? (
+                <NodeConfigPanel
+                  nodeId={selectedNode.id}
+                  data={selectedNode.data as NodeData}
+                  def={selectedDef}
+                  edges={edges as FlowEdge[]}
+                  onChange={updateNodeConfig}
+                />
+              ) : (
+                <NodeDataPanel
+                  graph={flowToGraph(
+                    { id: graphId, name: graphName, enabled: graphEnabled, createdAt },
+                    nodes,
+                    edges,
+                  )}
+                  nodeId={selectedNode.id}
+                  onPreview={onPreviewNode}
+                />
+              )}
             </div>
           )}
         </div>

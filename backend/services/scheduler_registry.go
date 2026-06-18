@@ -29,17 +29,32 @@ type serviceDeps struct {
 
 // ExecContext is the per-node execution surface handed to a block executor.
 type ExecContext struct {
-	Ctx      context.Context        // per-run context (carries timeout + cancellation)
-	ServerID string                 // active server id for this run
-	Config   map[string]interface{} // node config with {{...}} templates already resolved
-	DataIn   map[string]interface{} // resolved data inputs from connected edges
+	Ctx       context.Context        // per-run context (carries timeout + cancellation)
+	ServerID  string                 // active server id for this run
+	Config    map[string]interface{} // node config with {{...}} and @attr templates resolved
+	RawConfig map[string]interface{} // unresolved node config (raw expressions preserved)
+	DataIn    map[string]interface{} // resolved data inputs from connected edges
+	Attrs     *AttrScope             // run-scoped attribute resolver (built-in + custom)
 
-	svc    serviceDeps
+	svc     serviceDeps
 	dataOut map[string]interface{} // written by SetOutput, read by engine after exec
 }
 
 func (e *ExecContext) SetOutput(port string, v interface{}) {
 	e.dataOut[port] = v
+}
+
+// RawString returns an unresolved config value as a string (used to preserve a
+// custom attribute's value as a lazy expression rather than its resolved value).
+func (e *ExecContext) RawString(key string) string {
+	if e.RawConfig == nil {
+		return ""
+	}
+	v, ok := e.RawConfig[key]
+	if !ok || v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 func (e *ExecContext) GetString(key string) string {

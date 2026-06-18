@@ -211,6 +211,7 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	go s.streamOutput(stderr)
 	go s.waitForExit()
 
+	s.bus.Emit(EventServerStarted, nil)
 	return nil
 }
 
@@ -258,16 +259,17 @@ func (s *ServerService) streamOutput(r io.Reader) {
 			name := m[1]
 			s.playersMu.Lock()
 			s.players[name] = s.presession[name]
+			ip := s.presession[name].ip
 			delete(s.presession, name)
 			s.playersMu.Unlock()
-			s.bus.Emit(EventPlayerJoined, name)
+			s.bus.Emit(EventPlayerJoined, map[string]string{"name": name, "ip": ip})
 		} else if m := rePlayerLeave.FindStringSubmatch(line); m != nil {
 			name := m[1]
 			s.playersMu.Lock()
 			delete(s.players, name)
 			delete(s.presession, name)
 			s.playersMu.Unlock()
-			s.bus.Emit(EventPlayerLeft, name)
+			s.bus.Emit(EventPlayerLeft, map[string]string{"name": name})
 		}
 		if strings.Contains(line, "Can't keep up") {
 			s.logTPSMu.Lock()

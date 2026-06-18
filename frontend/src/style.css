@@ -30,6 +30,20 @@
   /* --accent-rgb is set dynamically via JS */
 }
 
+/* Native select option popup — background must be solid (transparent falls back to white).
+   CSS variables work in Chromium/WebView2 but rgba surfaces do not, so we use the
+   base color directly. */
+:root option,
+[data-theme="dark"] option {
+  background: #0d0f14;
+  color: #ffffff;
+}
+
+[data-theme="light"] option {
+  background: #f5f6fa;
+  color: #0b0d12;
+}
+
 html {
   background-color: var(--bg-base);
   color: var(--text-primary);

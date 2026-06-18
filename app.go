@@ -433,3 +433,7 @@ func (a *App) GetScheduleRunHistory() ([]models.RunRecord, error) {
 func (a *App) ImportScheduleGraphJSON(raw string) (models.Graph, error) {
 	return a.schedulerService.ImportGraphJSON(raw)
 }
+
+func (a *App) PreviewScheduleNode(g models.Graph, nodeID string) (models.NodePreview, error) {
+	return a.schedulerService.PreviewNode(g, nodeID)
+}

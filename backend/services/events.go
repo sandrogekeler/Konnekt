@@ -2,6 +2,7 @@ package services
 
 const (
 	EventLogLine          = "log:line"
+	EventServerStarted    = "server:started"
 	EventServerStopped    = "server:stopped"
 	EventEulaRequired     = "server:eula-required"
 	EventStatsSnapshot    = "stats:snapshot"
