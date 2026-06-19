@@ -192,7 +192,7 @@ export function WorldsScene({
   function selectWorld(name: string) {
     focusNameRef.current = name
     setFocusName(name)
-    setSelectedDimension('overworld')  // open HUD immediately on planet click
+    setSelectedDimension(null)  // zoom in only; HUD opens on explicit body click
   }
 
   function goBack() {
