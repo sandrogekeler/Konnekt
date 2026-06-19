@@ -76,14 +76,15 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
 }
 
 interface ControllerProps {
-  focusNameRef: React.MutableRefObject<string | null>
-  positionsRef: React.MutableRefObject<Map<string, THREE.Vector3>>
-  zoomRef:      React.MutableRefObject<number>
-  camRef:       React.RefObject<CameraControls | null>
-  hudOpenRef:   React.MutableRefObject<boolean>
+  focusNameRef:          React.MutableRefObject<string | null>
+  positionsRef:          React.MutableRefObject<Map<string, THREE.Vector3>>
+  zoomRef:               React.MutableRefObject<number>
+  camRef:                React.RefObject<CameraControls | null>
+  hudOpenRef:            React.MutableRefObject<boolean>
+  selectedDimensionRef:  React.MutableRefObject<string | null>
 }
 
-function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef }: ControllerProps) {
+function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef, selectedDimensionRef }: ControllerProps) {
   const lastFocusNameRef = useRef<string | null>(null)
   const dofRef           = useRef<DepthOfFieldEffect>(null)
   const hudOffsetRef     = useRef(0)
@@ -107,7 +108,11 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
 
     if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
     const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
-    const focusPos   = nameForPos ? positionsRef.current.get(nameForPos) : undefined
+    const dim = selectedDimensionRef.current
+    const posKey = nameForPos && dim && dim !== 'overworld'
+      ? `${nameForPos}/${dim}`
+      : nameForPos
+    const focusPos = posKey ? positionsRef.current.get(posKey) : undefined
 
     const cam = camRef.current
     if (cam) {
@@ -190,13 +195,15 @@ export function WorldsScene({
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
 
   const focusNameRef = useRef<string | null>(null)
-  const positionsRef = useRef(new Map<string, THREE.Vector3>())
-  const zoomRef      = useRef(0)
-  const camRef       = useRef<CameraControls>(null)
-  const hudOpenRef   = useRef(false)
+  const positionsRef          = useRef(new Map<string, THREE.Vector3>())
+  const zoomRef               = useRef(0)
+  const camRef                = useRef<CameraControls>(null)
+  const hudOpenRef            = useRef(false)
+  const selectedDimensionRef  = useRef<string | null>(null)
 
-  // Keep ref in sync each render so SceneController reads the latest value each frame
-  hudOpenRef.current = !!(focusName && selectedDimension)
+  // Keep refs in sync each render so SceneController reads the latest value each frame
+  hudOpenRef.current           = !!(focusName && selectedDimension)
+  selectedDimensionRef.current = selectedDimension
 
   function selectWorld(name: string) {
     focusNameRef.current = name
@@ -253,6 +260,7 @@ export function WorldsScene({
             zoomRef={zoomRef}
             camRef={camRef}
             hudOpenRef={hudOpenRef}
+            selectedDimensionRef={selectedDimensionRef}
           />
         </Suspense>
 

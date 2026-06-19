@@ -41,12 +41,15 @@ interface MoonBodyProps {
   selected: boolean
   onSelect: () => void
   world:   WorldSystemData
+  worldName?:   string
+  positionsRef?: React.MutableRefObject<Map<string, THREE.Vector3>>
 }
 
-function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, world }: MoonBodyProps) {
-  const groupRef = useRef<THREE.Group>(null)
-  const meshRef  = useRef<THREE.Mesh>(null)
-  const angleRef = useRef(offset)
+function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, world, worldName, positionsRef }: MoonBodyProps) {
+  const groupRef    = useRef<THREE.Group>(null)
+  const meshRef     = useRef<THREE.Mesh>(null)
+  const angleRef    = useRef(offset)
+  const worldPosRef = useRef(new THREE.Vector3())
   const [hovered, setHovered] = useState(false)
 
   const color = KIND_COLOR[kind] ?? '#60a5fa'
@@ -56,7 +59,13 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
     angleRef.current += speed * delta
     const x = Math.cos(angleRef.current) * orbitRX
     const z = Math.sin(angleRef.current) * orbitRZ
-    if (groupRef.current) groupRef.current.position.set(x, 0, z)
+    if (groupRef.current) {
+      groupRef.current.position.set(x, 0, z)
+      if (positionsRef && worldName) {
+        groupRef.current.getWorldPosition(worldPosRef.current)
+        positionsRef.current.set(`${worldName}/${kind}`, worldPosRef.current)
+      }
+    }
     if (meshRef.current) meshRef.current.rotation.y += delta * 0.3
   })
 
@@ -286,6 +295,8 @@ export function Planet({
                   selected={selectedDimension === moon.kind}
                   onSelect={() => onSelectDimension?.(moon.kind)}
                   world={world}
+                  worldName={worldName}
+                  positionsRef={positionsRef}
                 />
               )}
             </group>
