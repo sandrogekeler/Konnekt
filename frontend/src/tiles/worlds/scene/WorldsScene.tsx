@@ -22,8 +22,9 @@ interface Props {
 // Fixed scene-space offset from the focused planet (not sun-axis-relative)
 const FOCUS_ELEV   = 4.5  // units above the orbital plane
 const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
-const FOCUS_DIST   = Math.sqrt(FOCUS_ELEV * FOCUS_ELEV + FOCUS_BACK * FOCUS_BACK)  // ≈ 4.92
-const CLOSE_DIST   = 1.2  // camera distance from planet when HUD split-view is open
+const FOCUS_DIST         = Math.sqrt(FOCUS_ELEV * FOCUS_ELEV + FOCUS_BACK * FOCUS_BACK)  // ≈ 4.92
+const CLOSE_DIST_MOON    = 1.2  // camera distance when a moon is the HUD focus
+const CLOSE_DIST_PLANET  = 2.5  // camera distance when the main planet is the HUD focus
 const ZOOM_LAMBDA  = 3.5
 const MAX_BOKEH = 8.0
 // CoC shader: smoothstep(0, focusRange, |dist − focusDist|) × bokehScale = blur px.
@@ -142,9 +143,12 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
         )
         if (dofRef.current) dofRef.current.bokehScale = 0
       } else {
-        // Eye distance lerps from FOCUS_DIST (planetary view) toward CLOSE_DIST
-        // (close-up fill) as the HUD panel opens. Direction stays constant.
-        const eyeScale = THREE.MathUtils.lerp(1, CLOSE_DIST / FOCUS_DIST, t)
+        // Eye distance lerps from FOCUS_DIST (planetary view) toward the close-up
+        // distance as the HUD panel opens. Moons are small so zoom in tighter;
+        // the main planet is larger so stay further back.
+        const isMoonFocus = lastSelectedDimRef.current !== null && lastSelectedDimRef.current !== 'overworld'
+        const closeDist   = isMoonFocus ? CLOSE_DIST_MOON : CLOSE_DIST_PLANET
+        const eyeScale    = THREE.MathUtils.lerp(1, closeDist / FOCUS_DIST, t)
         focusEye.current.set(
           focusPos.x,
           focusPos.y + FOCUS_ELEV * eyeScale,
