@@ -18,10 +18,11 @@ interface Props {
   onRefresh: () => void
 }
 
-const FOLLOW_DIST  = 7
-const FOLLOW_ELEV  = 3.5
+// Fixed scene-space offset from the focused planet (not sun-axis-relative)
+const FOCUS_ELEV   = 4.5  // units above the orbital plane
+const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
 const ZOOM_LAMBDA  = 3.5
-const MAX_BOKEH    = 4.5
+const MAX_BOKEH    = 2.0
 
 function SlowStars() {
   const ref = useRef<THREE.Group>(null)
@@ -52,7 +53,6 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
   const blendedEye     = useRef(new THREE.Vector3())
   const blendedTarget  = useRef(new THREE.Vector3())
   const focusEye       = useRef(new THREE.Vector3())
-  const outward        = useRef(new THREE.Vector3())
 
   useFrame((_, delta) => {
     const targetP = focusNameRef.current ? 1 : 0
@@ -75,12 +75,9 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
       return
     }
 
-    // Outward direction from the sun, so the sun sits behind the planet in frame
-    outward.current.set(focusPos.x, 0, focusPos.z).normalize()
-    focusEye.current
-      .copy(focusPos)
-      .addScaledVector(outward.current, FOLLOW_DIST)
-    focusEye.current.y += FOLLOW_ELEV
+    // Fixed scene-space offset: mostly above + slight +Z tilt.
+    // Not tied to the sun direction so the camera doesn't rotate with the orbit.
+    focusEye.current.set(focusPos.x, focusPos.y + FOCUS_ELEV, focusPos.z + FOCUS_BACK)
 
     const ease = p * p * (3 - 2 * p) // smoothstep
     blendedEye.current.lerpVectors(overviewEye.current, focusEye.current, ease)
@@ -94,12 +91,10 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
 
     if (dofRef.current) {
       dofRef.current.bokehScale = ease * MAX_BOKEH
-      // Mutate target in-place so the effect picks it up without re-render
-      if ((dofRef.current as any).target) {
-        (dofRef.current as any).target.copy(focusPos)
-      } else {
-        (dofRef.current as any).target = focusPos.clone()
-      }
+      // Always re-assign through the setter so DepthOfFieldEffect recalculates the
+      // focus-distance uniform. Mutating .target in-place via .copy() bypasses the
+      // setter and the uniform never updates, blurring everything uniformly.
+      ;(dofRef.current as any).target = focusPos.clone()
     }
   })
 
@@ -107,7 +102,7 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
     <EffectComposer>
       <DepthOfField
         ref={dofRef}
-        focalLength={0.05}
+        focalLength={0.15}
         bokehScale={0}
       />
     </EffectComposer>
