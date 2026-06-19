@@ -22,12 +22,22 @@ interface Props {
 const FOCUS_ELEV   = 4.5  // units above the orbital plane
 const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
 const ZOOM_LAMBDA  = 3.5
-const MAX_BOKEH    = 2.0
+const MAX_BOKEH    = 4.0
+// Camera is ~4.9 world units from the focused planet (sqrt(FOCUS_ELEV²+FOCUS_BACK²)).
+// The default r3f Canvas far plane is 1000.
+const CAMERA_FAR   = 1000
+// In-focus band: ±4 world units around the focal plane keeps the planet AND all moon
+// orbits (max 3.2 units from planet) sharp. The sun, 10+ units behind the planet, falls
+// well outside this range and gets blurred.
+const FOCUS_RANGE_WORLD = 8
 
-function SlowStars() {
+function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Group>(null)
   useFrame((_, delta) => {
-    if (ref.current) ref.current.rotation.y += delta * 0.001
+    if (!ref.current) return
+    ref.current.rotation.y += delta * 0.001
+    // Hide stars when zoomed into a planet — they don't belong in system view
+    ref.current.visible = zoomRef.current < 0.35
   })
   return (
     <group ref={ref}>
@@ -91,10 +101,16 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
 
     if (dofRef.current) {
       dofRef.current.bokehScale = ease * MAX_BOKEH
-      // Always re-assign through the setter so DepthOfFieldEffect recalculates the
-      // focus-distance uniform. Mutating .target in-place via .copy() bypasses the
-      // setter and the uniform never updates, blurring everything uniformly.
-      ;(dofRef.current as any).target = focusPos.clone()
+      // Drive focus distance from the actual blended camera-to-planet distance so
+      // the focal plane always sits exactly on the planet regardless of zoom progress.
+      // The target setter and .copy() both fail to update cocMaterial uniforms in
+      // postprocessing v6 — direct uniform mutation is the only reliable path.
+      const camDist = blendedEye.current.distanceTo(focusPos)
+      const coc = (dofRef.current as any).cocMaterial?.uniforms
+      if (coc) {
+        coc.focusDistance.value = camDist / CAMERA_FAR
+        coc.focusRange.value    = FOCUS_RANGE_WORLD / CAMERA_FAR
+      }
     }
   })
 
@@ -102,7 +118,9 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
     <EffectComposer>
       <DepthOfField
         ref={dofRef}
-        focalLength={0.15}
+        focusDistance={0}
+        focusRange={0}
+        focalLength={0.05}
         bokehScale={0}
       />
     </EffectComposer>
@@ -155,7 +173,7 @@ export function WorldsScene({
         style={{ position: 'absolute', inset: 0, background: '#050608' }}
       >
         <Suspense fallback={null}>
-          <SlowStars />
+          <SlowStars zoomRef={zoomRef} />
 
           <Galaxy
             worlds={worlds}
