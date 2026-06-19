@@ -1,4 +1,4 @@
-import { useState, useRef, Suspense } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls, Stars } from '@react-three/drei'
 import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
@@ -22,25 +22,50 @@ interface Props {
 const FOCUS_ELEV   = 4.5  // units above the orbital plane
 const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
 const ZOOM_LAMBDA  = 3.5
-const MAX_BOKEH    = 4.0
-// Camera is ~4.9 world units from the focused planet (sqrt(FOCUS_ELEV²+FOCUS_BACK²)).
-// The default r3f Canvas far plane is 1000.
-const CAMERA_FAR   = 1000
-// In-focus band: ±4 world units around the focal plane keeps the planet AND all moon
-// orbits (max 3.2 units from planet) sharp. The sun, 10+ units behind the planet, falls
-// well outside this range and gets blurred.
-const FOCUS_RANGE_WORLD = 8
+const MAX_BOKEH = 4.0
+// CoC shader uses length(viewPosition) — actual world-space distance from camera.
+// focusDistance = camera-to-planet distance (world units, ~4.9 when fully zoomed).
+// focusRange = transition width in world units: smoothstep(0, focusRange, |dist-focus|).
+// 12 world units means: planet/moons (within ±3 units) have <15% coc, sun (10+ units
+// behind planet ≈ 15 units from camera) is 93% blurred.
+const FOCUS_RANGE_WORLD = 12
 
 function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
-  const ref = useRef<THREE.Group>(null)
+  const groupRef    = useRef<THREE.Group>(null)
+  const fadeUniform = useRef<{ value: number } | null>(null)
+
+  // Patch the Stars ShaderMaterial once it mounts so we can drive a uFade uniform.
+  // drei's Stars uses AdditiveBlending + custom GLSL — material.opacity alone has no
+  // effect; we must multiply alpha inside the fragment shader.
+  useEffect(() => {
+    if (!groupRef.current) return
+    groupRef.current.traverse(obj => {
+      const points = obj as THREE.Points
+      if (!points.isPoints) return
+      const old = points.material as THREE.ShaderMaterial
+      const fade = { value: 1 }
+      const patched = old.clone()
+      patched.uniforms = { ...old.uniforms, uFade: fade }
+      patched.fragmentShader = old.fragmentShader.replace(
+        'gl_FragColor = vec4(vColor, opacity);',
+        'gl_FragColor = vec4(vColor, opacity * uFade);',
+      )
+      points.material = patched
+      fadeUniform.current = fade
+    })
+  }, [])
+
   useFrame((_, delta) => {
-    if (!ref.current) return
-    ref.current.rotation.y += delta * 0.001
-    // Hide stars when zoomed into a planet — they don't belong in system view
-    ref.current.visible = zoomRef.current < 0.35
+    if (!groupRef.current) return
+    groupRef.current.rotation.y += delta * 0.001
+    if (fadeUniform.current) {
+      // Fade to 0 over the first 40% of the zoom-in transition
+      fadeUniform.current.value = Math.max(0, 1 - zoomRef.current / 0.4)
+    }
   })
+
   return (
-    <group ref={ref}>
+    <group ref={groupRef}>
       <Stars radius={60} depth={40} count={1400} factor={3} fade />
     </group>
   )
@@ -105,11 +130,12 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
       // the focal plane always sits exactly on the planet regardless of zoom progress.
       // The target setter and .copy() both fail to update cocMaterial uniforms in
       // postprocessing v6 — direct uniform mutation is the only reliable path.
+      // CoC shader uses actual world-space distance — pass raw units, not normalised
       const camDist = blendedEye.current.distanceTo(focusPos)
       const coc = (dofRef.current as any).cocMaterial?.uniforms
       if (coc) {
-        coc.focusDistance.value = camDist / CAMERA_FAR
-        coc.focusRange.value    = FOCUS_RANGE_WORLD / CAMERA_FAR
+        coc.focusDistance.value = camDist
+        coc.focusRange.value    = FOCUS_RANGE_WORLD
       }
     }
   })
