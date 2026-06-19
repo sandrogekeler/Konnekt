@@ -110,10 +110,14 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
     if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
     const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
 
-    // Retain last non-null dimension so the camera keeps tracking the moon
-    // during the zoom-out animation (t damping back to 0) rather than snapping
-    // back to the planet the moment selectedDimension becomes null.
-    if (selectedDimensionRef.current) lastSelectedDimRef.current = selectedDimensionRef.current
+    // Keep tracking the moon while t is still animating back to 0 (zoom-out).
+    // Once the animation settles (t ≤ 0.001), clear the stale dim so the camera
+    // re-centres on the planet rather than staying locked on the last moon.
+    if (selectedDimensionRef.current) {
+      lastSelectedDimRef.current = selectedDimensionRef.current
+    } else if (t <= 0.001) {
+      lastSelectedDimRef.current = null
+    }
     const dimForPos = selectedDimensionRef.current ?? lastSelectedDimRef.current
 
     const posKey = nameForPos && dimForPos && dimForPos !== 'overworld'
