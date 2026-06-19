@@ -22,6 +22,8 @@ interface Props {
 // Fixed scene-space offset from the focused planet (not sun-axis-relative)
 const FOCUS_ELEV   = 4.5  // units above the orbital plane
 const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
+const FOCUS_DIST   = Math.sqrt(FOCUS_ELEV * FOCUS_ELEV + FOCUS_BACK * FOCUS_BACK)  // ≈ 4.92
+const CLOSE_DIST   = 1.2  // camera distance from planet when HUD split-view is open
 const ZOOM_LAMBDA  = 3.5
 const MAX_BOKEH = 8.0
 // CoC shader: smoothstep(0, focusRange, |dist − focusDist|) × bokehScale = blur px.
@@ -98,6 +100,11 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
     zoomRef.current = THREE.MathUtils.damp(zoomRef.current, targetP, ZOOM_LAMBDA, delta)
     const p = zoomRef.current
 
+    // Damp HUD offset first so t is available for the eye-distance calc below.
+    const hudTarget = hudOpenRef.current ? 1 : 0
+    hudOffsetRef.current = THREE.MathUtils.damp(hudOffsetRef.current, hudTarget, 5, delta)
+    const t = hudOffsetRef.current
+
     if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
     const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
     const focusPos   = nameForPos ? positionsRef.current.get(nameForPos) : undefined
@@ -111,9 +118,14 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
         )
         if (dofRef.current) dofRef.current.bokehScale = 0
       } else {
-        // Fixed scene-space offset: mostly above + slight +Z tilt.
-        // Not tied to the sun direction so the camera doesn't rotate with the orbit.
-        focusEye.current.set(focusPos.x, focusPos.y + FOCUS_ELEV, focusPos.z + FOCUS_BACK)
+        // Eye distance lerps from FOCUS_DIST (planetary view) toward CLOSE_DIST
+        // (close-up fill) as the HUD panel opens. Direction stays constant.
+        const eyeScale = THREE.MathUtils.lerp(1, CLOSE_DIST / FOCUS_DIST, t)
+        focusEye.current.set(
+          focusPos.x,
+          focusPos.y + FOCUS_ELEV * eyeScale,
+          focusPos.z + FOCUS_BACK * eyeScale,
+        )
 
         const ease = p * p * (3 - 2 * p) // smoothstep
         blendedEye.current.lerpVectors(overviewEye.current, focusEye.current, ease)
@@ -148,9 +160,6 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
     // further right in the rendered output without changing the view direction.
     // Formula (t = 0→1): xOff = 0, fullW = W*(1+0.5*t)
     //   → planet position = (fullW/2) / W = 0.5 + 0.25*t → 0.75 at t=1.
-    const hudTarget = hudOpenRef.current ? 1 : 0
-    hudOffsetRef.current = THREE.MathUtils.damp(hudOffsetRef.current, hudTarget, 5, delta)
-    const t = hudOffsetRef.current
     const perspCam = state.camera as unknown as THREE.PerspectiveCamera
     if (t > 0.001) {
       const W = state.gl.domElement.width
