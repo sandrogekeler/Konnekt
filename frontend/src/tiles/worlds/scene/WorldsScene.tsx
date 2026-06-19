@@ -85,9 +85,10 @@ interface ControllerProps {
 }
 
 function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef, selectedDimensionRef }: ControllerProps) {
-  const lastFocusNameRef = useRef<string | null>(null)
-  const dofRef           = useRef<DepthOfFieldEffect>(null)
-  const hudOffsetRef     = useRef(0)
+  const lastFocusNameRef      = useRef<string | null>(null)
+  const lastSelectedDimRef    = useRef<string | null>(null)
+  const dofRef                = useRef<DepthOfFieldEffect>(null)
+  const hudOffsetRef          = useRef(0)
 
   // Reuse vectors across frames to avoid GC pressure
   const overviewEye    = useRef(new THREE.Vector3(0, 14, 5))
@@ -108,9 +109,15 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
 
     if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
     const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
-    const dim = selectedDimensionRef.current
-    const posKey = nameForPos && dim && dim !== 'overworld'
-      ? `${nameForPos}/${dim}`
+
+    // Retain last non-null dimension so the camera keeps tracking the moon
+    // during the zoom-out animation (t damping back to 0) rather than snapping
+    // back to the planet the moment selectedDimension becomes null.
+    if (selectedDimensionRef.current) lastSelectedDimRef.current = selectedDimensionRef.current
+    const dimForPos = selectedDimensionRef.current ?? lastSelectedDimRef.current
+
+    const posKey = nameForPos && dimForPos && dimForPos !== 'overworld'
+      ? `${nameForPos}/${dimForPos}`
       : nameForPos
     const focusPos = posKey ? positionsRef.current.get(posKey) : undefined
 
