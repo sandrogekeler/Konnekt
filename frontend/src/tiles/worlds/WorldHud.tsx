@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Html } from '@react-three/drei'
 import { StopServer, StartServer } from '../../../wailsjs/go/main/App'
 import { useServerConfigStore } from '../../stores/useServerConfigStore'
 import { useServerStore } from '../../stores/useServerStore'
@@ -39,18 +38,11 @@ function fmtRelative(ms: number): string {
 type SwitchStep = 'idle' | 'confirm' | 'working' | 'delete-confirm' | 'rename' | 'duplicate'
 
 const CARD: React.CSSProperties = {
-  background: 'var(--bg-surface)',
-  border: '0.5px solid var(--border-subtle)',
-  borderRadius: 6,
-  padding: '10px 12px',
-  minWidth: 200,
-  maxWidth: 240,
+  width: '100%',
   fontFamily: 'monospace',
   fontSize: 11,
   color: 'var(--text-primary)',
-  pointerEvents: 'all',
   userSelect: 'none',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
 }
 
 const ROW: React.CSSProperties = {
@@ -126,14 +118,8 @@ export function WorldHud({
   }
 
   return (
-    <Html
-      position={[0, 0, 0]}
-      style={{ transform: 'translate(20px, -50%)' }}
-      distanceFactor={8}
-      zIndexRange={[100, 200]}
-    >
-      <div style={CARD} onClick={e => e.stopPropagation()}>
-        {/* Header */}
+    <div style={CARD}>
+      {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '0.5px solid var(--border-subtle)', paddingBottom: 6 }}>
           <span style={{ fontWeight: 700, color: world.active ? 'var(--accent)' : 'var(--text-primary)' }}>
             {world.name}{dimension !== 'overworld' ? ` / ${dimLabel}` : ''}
@@ -259,7 +245,6 @@ export function WorldHud({
             <button style={BTN(true)} onClick={() => setStep('idle')}>cancel</button>
           </div>
         )}
-      </div>
-    </Html>
+    </div>
   )
 }

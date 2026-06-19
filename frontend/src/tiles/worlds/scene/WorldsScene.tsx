@@ -5,6 +5,7 @@ import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
 import type { DepthOfFieldEffect } from 'postprocessing'
 import * as THREE from 'three'
 import { Galaxy } from './Galaxy'
+import { WorldHud } from '../WorldHud'
 import type { WorldSystem as WorldSystemData } from '../useWorlds'
 
 interface Props {
@@ -77,11 +78,13 @@ interface ControllerProps {
   positionsRef: React.MutableRefObject<Map<string, THREE.Vector3>>
   zoomRef:      React.MutableRefObject<number>
   camRef:       React.RefObject<CameraControls | null>
+  hudOpenRef:   React.MutableRefObject<boolean>
 }
 
-function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: ControllerProps) {
+function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef }: ControllerProps) {
   const lastFocusNameRef = useRef<string | null>(null)
   const dofRef           = useRef<DepthOfFieldEffect>(null)
+  const hudOffsetRef     = useRef(0)
 
   // Reuse vectors across frames to avoid GC pressure
   const overviewEye    = useRef(new THREE.Vector3(0, 14, 5))
@@ -90,7 +93,7 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
   const blendedTarget  = useRef(new THREE.Vector3())
   const focusEye       = useRef(new THREE.Vector3())
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const targetP = focusNameRef.current ? 1 : 0
     zoomRef.current = THREE.MathUtils.damp(zoomRef.current, targetP, ZOOM_LAMBDA, delta)
     const p = zoomRef.current
@@ -100,44 +103,61 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: Contro
     const focusPos   = nameForPos ? positionsRef.current.get(nameForPos) : undefined
 
     const cam = camRef.current
-    if (!cam) return
+    if (cam) {
+      if (!focusPos || p < 0.001) {
+        cam.setLookAt(
+          overviewEye.current.x, overviewEye.current.y, overviewEye.current.z,
+          0, 0, 0, false,
+        )
+        if (dofRef.current) dofRef.current.bokehScale = 0
+      } else {
+        // Fixed scene-space offset: mostly above + slight +Z tilt.
+        // Not tied to the sun direction so the camera doesn't rotate with the orbit.
+        focusEye.current.set(focusPos.x, focusPos.y + FOCUS_ELEV, focusPos.z + FOCUS_BACK)
 
-    if (!focusPos || p < 0.001) {
-      cam.setLookAt(
-        overviewEye.current.x, overviewEye.current.y, overviewEye.current.z,
-        0, 0, 0, false,
-      )
-      if (dofRef.current) dofRef.current.bokehScale = 0
-      return
+        const ease = p * p * (3 - 2 * p) // smoothstep
+        blendedEye.current.lerpVectors(overviewEye.current, focusEye.current, ease)
+        blendedTarget.current.lerpVectors(overviewTarget.current, focusPos, ease)
+
+        cam.setLookAt(
+          blendedEye.current.x, blendedEye.current.y, blendedEye.current.z,
+          blendedTarget.current.x, blendedTarget.current.y, blendedTarget.current.z,
+          false,
+        )
+
+        if (dofRef.current) {
+          dofRef.current.bokehScale = ease * MAX_BOKEH
+          // Drive focus distance from the actual blended camera-to-planet distance so
+          // the focal plane always sits exactly on the planet regardless of zoom progress.
+          // The target setter and .copy() both fail to update cocMaterial uniforms in
+          // postprocessing v6 — direct uniform mutation is the only reliable path.
+          // CoC shader uses actual world-space distance — pass raw units, not normalised
+          const camDist = blendedEye.current.distanceTo(focusPos)
+          const coc = (dofRef.current as any).cocMaterial?.uniforms
+          if (coc) {
+            coc.focusDistance.value = camDist
+            coc.focusRange.value    = FOCUS_RANGE_WORLD
+          }
+        }
+      }
     }
 
-    // Fixed scene-space offset: mostly above + slight +Z tilt.
-    // Not tied to the sun direction so the camera doesn't rotate with the orbit.
-    focusEye.current.set(focusPos.x, focusPos.y + FOCUS_ELEV, focusPos.z + FOCUS_BACK)
-
-    const ease = p * p * (3 - 2 * p) // smoothstep
-    blendedEye.current.lerpVectors(overviewEye.current, focusEye.current, ease)
-    blendedTarget.current.lerpVectors(overviewTarget.current, focusPos, ease)
-
-    cam.setLookAt(
-      blendedEye.current.x, blendedEye.current.y, blendedEye.current.z,
-      blendedTarget.current.x, blendedTarget.current.y, blendedTarget.current.z,
-      false,
-    )
-
-    if (dofRef.current) {
-      dofRef.current.bokehScale = ease * MAX_BOKEH
-      // Drive focus distance from the actual blended camera-to-planet distance so
-      // the focal plane always sits exactly on the planet regardless of zoom progress.
-      // The target setter and .copy() both fail to update cocMaterial uniforms in
-      // postprocessing v6 — direct uniform mutation is the only reliable path.
-      // CoC shader uses actual world-space distance — pass raw units, not normalised
-      const camDist = blendedEye.current.distanceTo(focusPos)
-      const coc = (dofRef.current as any).cocMaterial?.uniforms
-      if (coc) {
-        coc.focusDistance.value = camDist
-        coc.focusRange.value    = FOCUS_RANGE_WORLD
-      }
+    // Smoothly shift planet to left quarter (25% from left) when the HUD panel opens.
+    // camera.setViewOffset shifts the projection matrix so the lookAt point stays at
+    // canvas center in 3D space, but the rendered crop shifts right — planet ends up
+    // at 25% from left, leaving the right 50% for the DOM panel.
+    // Formula (t = 0→1): xOff = W*0.5*t, fullW = W*(1+0.5*t)
+    //   → planet position in output = (fullW/2 - xOff)/W = 0.5 - 0.25*t → 0.25 at t=1.
+    const hudTarget = hudOpenRef.current ? 1 : 0
+    hudOffsetRef.current = THREE.MathUtils.damp(hudOffsetRef.current, hudTarget, 5, delta)
+    const t = hudOffsetRef.current
+    const perspCam = state.camera as unknown as THREE.PerspectiveCamera
+    if (t > 0.001) {
+      const W = state.gl.domElement.width
+      const H = state.gl.domElement.height
+      perspCam.setViewOffset(W * (1 + 0.5 * t), H, W * 0.5 * t, 0, W, H)
+    } else {
+      perspCam.clearViewOffset()
     }
   })
 
@@ -164,11 +184,15 @@ export function WorldsScene({
   const positionsRef = useRef(new Map<string, THREE.Vector3>())
   const zoomRef      = useRef(0)
   const camRef       = useRef<CameraControls>(null)
+  const hudOpenRef   = useRef(false)
+
+  // Keep ref in sync each render so SceneController reads the latest value each frame
+  hudOpenRef.current = !!(focusName && selectedDimension)
 
   function selectWorld(name: string) {
     focusNameRef.current = name
     setFocusName(name)
-    setSelectedDimension(null)
+    setSelectedDimension('overworld')  // open HUD immediately on planet click
   }
 
   function goBack() {
@@ -177,13 +201,16 @@ export function WorldsScene({
     setSelectedDimension(null)
   }
 
+  const hudWorld = focusName ? worlds.find(w => w.name === focusName) ?? null : null
+  const hudOpen  = !!(focusName && selectedDimension)
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {focusName && (
         <button
           onClick={goBack}
           style={{
-            position: 'absolute', top: 10, left: 10, zIndex: 10,
+            position: 'absolute', top: 10, left: 10, zIndex: 20,
             background: 'var(--bg-surface)',
             border: '0.5px solid var(--border-subtle)',
             color: 'var(--text-muted)',
@@ -209,14 +236,6 @@ export function WorldsScene({
             selectedDimension={selectedDimension}
             onSelectWorld={selectWorld}
             onSelectDimension={kind => setSelectedDimension(k => k === kind ? null : kind)}
-            onCloseHud={() => setSelectedDimension(null)}
-            onSetActive={onSetActive}
-            onDelete={onDelete}
-            onRename={onRename}
-            onDuplicate={onDuplicate}
-            onOpenFolder={onOpenFolder}
-            onBackup={onBackup}
-            onRefresh={onRefresh}
           />
 
           {/* SceneController last so all planet positions are written before it reads them */}
@@ -225,11 +244,46 @@ export function WorldsScene({
             positionsRef={positionsRef}
             zoomRef={zoomRef}
             camRef={camRef}
+            hudOpenRef={hudOpenRef}
           />
         </Suspense>
 
         <CameraControls ref={camRef} enabled={false} />
       </Canvas>
+
+      {/* HUD panel — outside Canvas so it receives pointer events normally.
+          Slides in from the right; camera simultaneously shifts the planet to the left half
+          via setViewOffset in SceneController (planet at 25% from left = center of left half). */}
+      <div
+        style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0,
+          width: '50%',
+          background: 'var(--bg-surface)',
+          borderLeft: '0.5px solid var(--border-subtle)',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          padding: '24px 28px',
+          overflowY: 'auto',
+          transform: hudOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.25s cubic-bezier(0.25, 0, 0.25, 1)',
+          pointerEvents: hudOpen ? 'auto' : 'none',
+          zIndex: 10,
+        }}
+      >
+        {hudWorld && selectedDimension && (
+          <WorldHud
+            world={hudWorld}
+            dimension={selectedDimension}
+            onClose={() => setSelectedDimension(null)}
+            onSetActive={onSetActive}
+            onDelete={onDelete}
+            onRename={onRename}
+            onDuplicate={onDuplicate}
+            onOpenFolder={onOpenFolder}
+            onBackup={onBackup}
+            onRefresh={onRefresh}
+          />
+        )}
+      </div>
     </div>
   )
 }

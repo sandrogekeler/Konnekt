@@ -4,7 +4,6 @@ import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { OrbitRing } from './OrbitRing'
 import { OrbitPath } from './OrbitPath'
-import { WorldHud } from '../WorldHud'
 import type { WorldSystem as WorldSystemData } from '../useWorlds'
 
 const KIND_COLOR: Record<string, string> = {
@@ -41,22 +40,10 @@ interface MoonBodyProps {
   offset:  number
   selected: boolean
   onSelect: () => void
-  world:        WorldSystemData
-  onCloseHud:   () => void
-  onSetActive:  (name: string) => Promise<void>
-  onDelete:     (name: string) => Promise<void>
-  onRename:     (old: string, next: string) => Promise<void>
-  onDuplicate:  (name: string, next: string) => Promise<void>
-  onOpenFolder: (name: string) => Promise<void>
-  onBackup:     (name: string) => Promise<void>
-  onRefresh:    () => void
+  world:   WorldSystemData
 }
 
-function MoonBody({
-  kind, radius, orbitRX, orbitRZ, speed, offset,
-  selected, onSelect,
-  world, onCloseHud, onSetActive, onDelete, onRename, onDuplicate, onOpenFolder, onBackup, onRefresh,
-}: MoonBodyProps) {
+function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, world }: MoonBodyProps) {
   const groupRef = useRef<THREE.Group>(null)
   const meshRef  = useRef<THREE.Mesh>(null)
   const angleRef = useRef(offset)
@@ -114,20 +101,6 @@ function MoonBody({
         </Html>
       )}
 
-      {selected && (
-        <WorldHud
-          world={world}
-          dimension={kind}
-          onClose={onCloseHud}
-          onSetActive={onSetActive}
-          onDelete={onDelete}
-          onRename={onRename}
-          onDuplicate={onDuplicate}
-          onOpenFolder={onOpenFolder}
-          onBackup={onBackup}
-          onRefresh={onRefresh}
-        />
-      )}
     </group>
   )
 }
@@ -149,25 +122,16 @@ interface Props {
   focused?:         boolean
   worldName?:       string
   positionsRef?:    React.MutableRefObject<Map<string, THREE.Vector3>>
-  world?:           WorldSystemData
+  world?:             WorldSystemData
   selectedDimension?: string | null
   onSelectDimension?: (kind: string) => void
-  onCloseHud?:      () => void
-  onSetActive?:     (name: string) => Promise<void>
-  onDelete?:        (name: string) => Promise<void>
-  onRename?:        (old: string, next: string) => Promise<void>
-  onDuplicate?:     (name: string, next: string) => Promise<void>
-  onOpenFolder?:    (name: string) => Promise<void>
-  onBackup?:        (name: string) => Promise<void>
-  onRefresh?:       () => void
 }
 
 export function Planet({
   kind, radius, orbitRX, orbitRZ, orbitSpeed, orbitOffset = 0,
   active = false, label, sizeBytes, onClickWithPos,
   focused = false, worldName, positionsRef,
-  world, selectedDimension, onSelectDimension, onCloseHud,
-  onSetActive, onDelete, onRename, onDuplicate, onOpenFolder, onBackup, onRefresh,
+  world, selectedDimension, onSelectDimension,
 }: Props) {
   const groupRef      = useRef<THREE.Group>(null)
   const meshRef       = useRef<THREE.Mesh>(null)
@@ -304,22 +268,6 @@ export function Planet({
         </Html>
       )}
 
-      {/* Overworld HUD */}
-      {world && selectedDimension === 'overworld' && onCloseHud && onSetActive && (
-        <WorldHud
-          world={world}
-          dimension="overworld"
-          onClose={onCloseHud}
-          onSetActive={onSetActive}
-          onDelete={onDelete!}
-          onRename={onRename!}
-          onDuplicate={onDuplicate!}
-          onOpenFolder={onOpenFolder!}
-          onBackup={onBackup!}
-          onRefresh={onRefresh!}
-        />
-      )}
-
       {/* Moon system — scaled 0→1 by zoom progress, orbiting around this planet */}
       <group ref={moonSystemRef}>
         {moons.map(moon => {
@@ -327,7 +275,7 @@ export function Planet({
           return (
             <group key={moon.kind}>
               <OrbitPath radiusX={orbit.orbitRX} radiusZ={orbit.orbitRZ} opacity={0.1} />
-              {world && onCloseHud && onSetActive && (
+              {world && (
                 <MoonBody
                   kind={moon.kind}
                   radius={0.18}
@@ -338,14 +286,6 @@ export function Planet({
                   selected={selectedDimension === moon.kind}
                   onSelect={() => onSelectDimension?.(moon.kind)}
                   world={world}
-                  onCloseHud={onCloseHud}
-                  onSetActive={onSetActive}
-                  onDelete={onDelete!}
-                  onRename={onRename!}
-                  onDuplicate={onDuplicate!}
-                  onOpenFolder={onOpenFolder!}
-                  onBackup={onBackup!}
-                  onRefresh={onRefresh!}
                 />
               )}
             </group>

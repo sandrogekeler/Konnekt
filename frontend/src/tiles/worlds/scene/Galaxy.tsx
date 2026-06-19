@@ -11,14 +11,6 @@ interface Props {
   selectedDimension: string | null
   onSelectWorld: (name: string) => void
   onSelectDimension: (kind: string) => void
-  onCloseHud: () => void
-  onSetActive: (name: string) => Promise<void>
-  onDelete: (name: string) => Promise<void>
-  onRename: (old: string, next: string) => Promise<void>
-  onDuplicate: (name: string, next: string) => Promise<void>
-  onOpenFolder: (name: string) => Promise<void>
-  onBackup: (name: string) => Promise<void>
-  onRefresh: () => void
 }
 
 function planetRadius(totalSize: number): number {
@@ -33,8 +25,7 @@ const GALAXY_SPREAD = 11
 
 export function Galaxy({
   worlds, focusName, positionsRef, selectedDimension,
-  onSelectWorld, onSelectDimension, onCloseHud,
-  onSetActive, onDelete, onRename, onDuplicate, onOpenFolder, onBackup, onRefresh,
+  onSelectWorld, onSelectDimension,
 }: Props) {
   const spread = GALAXY_SPREAD
   const step   = worlds.length > 1 ? spread / worlds.length : spread
@@ -79,14 +70,6 @@ export function Galaxy({
               world={w}
               selectedDimension={focused ? selectedDimension : null}
               onSelectDimension={onSelectDimension}
-              onCloseHud={onCloseHud}
-              onSetActive={onSetActive}
-              onDelete={onDelete}
-              onRename={onRename}
-              onDuplicate={onDuplicate}
-              onOpenFolder={onOpenFolder}
-              onBackup={onBackup}
-              onRefresh={onRefresh}
             />
           </group>
         )
