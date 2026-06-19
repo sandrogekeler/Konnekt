@@ -109,6 +109,8 @@ export function WorldsTile({ maximized }: TileProps) {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: '#050608' }}>
+      {/* Keyframe registered here so it exists in the DOM before WorldsScene mounts */}
+      <style>{`@keyframes worlds-enter { from { opacity: 0; } to { opacity: 1; } }`}</style>
       {ready ? (
         <Suspense fallback={darkPanel}>
           <WorldsScene
