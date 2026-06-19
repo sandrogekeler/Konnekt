@@ -142,12 +142,12 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
       }
     }
 
-    // Smoothly shift planet to left quarter (25% from left) when the HUD panel opens.
-    // camera.setViewOffset shifts the projection matrix so the lookAt point stays at
-    // canvas center in 3D space, but the rendered crop shifts right — planet ends up
-    // at 25% from left, leaving the right 50% for the DOM panel.
-    // Formula (t = 0→1): xOff = W*0.5*t, fullW = W*(1+0.5*t)
-    //   → planet position in output = (fullW/2 - xOff)/W = 0.5 - 0.25*t → 0.25 at t=1.
+    // Smoothly shift planet to right quarter (75% from left) when the HUD panel opens.
+    // Panel is on the left half; planet should be centred in the right half.
+    // setViewOffset with xOff=0 and a wider virtual frustum pushes the lookAt point
+    // further right in the rendered output without changing the view direction.
+    // Formula (t = 0→1): xOff = 0, fullW = W*(1+0.5*t)
+    //   → planet position = (fullW/2) / W = 0.5 + 0.25*t → 0.75 at t=1.
     const hudTarget = hudOpenRef.current ? 1 : 0
     hudOffsetRef.current = THREE.MathUtils.damp(hudOffsetRef.current, hudTarget, 5, delta)
     const t = hudOffsetRef.current
@@ -155,7 +155,7 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
     if (t > 0.001) {
       const W = state.gl.domElement.width
       const H = state.gl.domElement.height
-      perspCam.setViewOffset(W * (1 + 0.5 * t), H, W * 0.5 * t, 0, W, H)
+      perspCam.setViewOffset(W * (1 + 0.5 * t), H, 0, 0, W, H)
     } else {
       perspCam.clearViewOffset()
     }
@@ -204,20 +204,19 @@ export function WorldsScene({
   const hudWorld = focusName ? worlds.find(w => w.name === focusName) ?? null : null
   const hudOpen  = !!(focusName && selectedDimension)
 
+  const navBtn: React.CSSProperties = {
+    background: 'transparent',
+    border: '0.5px solid var(--border-subtle)',
+    color: 'var(--text-muted)',
+    borderRadius: 4, padding: '3px 10px',
+    fontFamily: 'monospace', fontSize: 11, cursor: 'pointer',
+  }
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {focusName && (
-        <button
-          onClick={goBack}
-          style={{
-            position: 'absolute', top: 10, left: 10, zIndex: 20,
-            background: 'var(--bg-surface)',
-            border: '0.5px solid var(--border-subtle)',
-            color: 'var(--text-muted)',
-            borderRadius: 4, padding: '3px 10px',
-            fontFamily: 'monospace', fontSize: 11, cursor: 'pointer',
-          }}
-        >
+      {/* ← galaxy button — only visible in planetary view when the HUD panel is closed */}
+      {focusName && !hudOpen && (
+        <button onClick={goBack} style={{ position: 'absolute', top: 10, left: 10, zIndex: 20, ...navBtn }}>
           ← galaxy
         </button>
       )}
@@ -252,23 +251,29 @@ export function WorldsScene({
       </Canvas>
 
       {/* HUD panel — outside Canvas so it receives pointer events normally.
-          Slides in from the right; camera simultaneously shifts the planet to the left half
-          via setViewOffset in SceneController (planet at 25% from left = center of left half). */}
+          Slides in from the LEFT; camera simultaneously shifts the planet to the right half
+          via setViewOffset (planet at 75% from left = centre of right half). */}
       <div
         style={{
-          position: 'absolute', top: 0, right: 0, bottom: 0,
+          position: 'absolute', top: 0, left: 0, bottom: 0,
           width: '50%',
           background: 'var(--bg-surface)',
-          borderLeft: '0.5px solid var(--border-subtle)',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          padding: '24px 28px',
+          borderRight: '0.5px solid var(--border-subtle)',
+          display: 'flex', flexDirection: 'column',
+          padding: '16px 20px 24px',
           overflowY: 'auto',
-          transform: hudOpen ? 'translateX(0)' : 'translateX(100%)',
+          transform: hudOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.25s cubic-bezier(0.25, 0, 0.25, 1)',
           pointerEvents: hudOpen ? 'auto' : 'none',
           zIndex: 10,
         }}
       >
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexShrink: 0 }}>
+          <button style={navBtn} onClick={goBack}>← galaxy</button>
+          <button style={navBtn} onClick={() => setSelectedDimension(null)}>← system</button>
+        </div>
+
         {hudWorld && selectedDimension && (
           <WorldHud
             world={hudWorld}
