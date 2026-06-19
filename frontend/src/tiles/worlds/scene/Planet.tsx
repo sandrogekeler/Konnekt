@@ -46,10 +46,11 @@ interface MoonBodyProps {
 }
 
 function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, world, worldName, positionsRef }: MoonBodyProps) {
-  const groupRef    = useRef<THREE.Group>(null)
-  const meshRef     = useRef<THREE.Mesh>(null)
-  const angleRef    = useRef(offset)
-  const worldPosRef = useRef(new THREE.Vector3())
+  const groupRef      = useRef<THREE.Group>(null)
+  const meshRef       = useRef<THREE.Mesh>(null)
+  const angleRef      = useRef(offset)
+  const worldPosRef   = useRef(new THREE.Vector3())
+  const hoverScaleRef = useRef(1)
   const [hovered, setHovered] = useState(false)
 
   const color = KIND_COLOR[kind] ?? '#60a5fa'
@@ -66,7 +67,11 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
         positionsRef.current.set(`${worldName}/${kind}`, worldPosRef.current)
       }
     }
-    if (meshRef.current) meshRef.current.rotation.y += delta * 0.3
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 0.3
+      hoverScaleRef.current = THREE.MathUtils.damp(hoverScaleRef.current, hovered ? 1.06 : 1, 10, delta)
+      meshRef.current.scale.setScalar(hoverScaleRef.current)
+    }
   })
 
   return (
@@ -76,7 +81,6 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
         onClick={e => { e.stopPropagation(); onSelect() }}
         onPointerOver={e => { e.stopPropagation(); setHovered(true) }}
         onPointerOut={() => setHovered(false)}
-        scale={hovered ? 1.15 : 1}
       >
         <sphereGeometry args={[radius, 24, 24]} />
         <meshStandardMaterial
@@ -149,6 +153,7 @@ export function Planet({
   const angleRef      = useRef(orbitOffset)
   const pushRef       = useRef({ x: 0, z: 0 })
   const worldPosRef   = useRef(new THREE.Vector3())
+  const hoverScaleRef = useRef(1)
   // Per-planet zoom progress — damps independently so moons scale in/out smoothly
   // whether we're zooming in, zooming out, or switching to another planet.
   const localZoomRef  = useRef(0)
@@ -194,7 +199,11 @@ export function Planet({
       positionsRef.current.set(worldName, worldPosRef.current)
     }
 
-    if (meshRef.current) meshRef.current.rotation.y += delta * 0.25
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 0.25
+      hoverScaleRef.current = THREE.MathUtils.damp(hoverScaleRef.current, hovered ? 1.05 : 1, 10, delta)
+      meshRef.current.scale.setScalar(hoverScaleRef.current)
+    }
 
     // Damp the local zoom progress toward 1 when focused, 0 when not.
     // Using a per-planet ref (not the shared camera zoomRef) ensures moons
@@ -249,7 +258,6 @@ export function Planet({
         onClick={handleClick}
         onPointerOver={e => { e.stopPropagation(); setHovered(true) }}
         onPointerOut={() => setHovered(false)}
-        scale={hovered ? 1.12 : 1}
       >
         <sphereGeometry args={[radius, 32, 32]} />
         <meshStandardMaterial
