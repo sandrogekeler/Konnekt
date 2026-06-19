@@ -96,38 +96,49 @@ export function WorldsTile({ maximized }: TileProps) {
   // takes 180ms transition + 200ms cleanup). If Canvas mounts while the panel is
   // still scaled, WebView2 allocates the compositing layer at the wrong size and
   // the scene never fills the panel (gap on right/bottom).
-  const [ready, setReady] = useState(false)
+  const [ready,   setReady]   = useState(false)
+  const [visible, setVisible] = useState(false)
+
   useEffect(() => {
     const id = setTimeout(() => setReady(true), 220)
     return () => clearTimeout(id)
   }, [])
 
-  const loadingFallback = (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      height: '100%', fontFamily: 'monospace', fontSize: 12,
-      color: 'var(--text-faint)',
-    }}>
-      loading 3D scene…
-    </div>
-  )
+  // Trigger the enter animation one frame after the scene mounts so the
+  // CSS transition has a starting state to animate from.
+  useEffect(() => {
+    if (!ready) return
+    const id = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(id)
+  }, [ready])
+
+  // Dark panel matching the Canvas background — shown while waiting and as
+  // the Suspense fallback so there is never a visible "loading" flash.
+  const darkPanel = <div style={{ position: 'absolute', inset: 0, background: '#050608' }} />
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#050608' }}>
       {ready ? (
-        <Suspense fallback={loadingFallback}>
-          <WorldsScene
-            worlds={worlds}
-            onSetActive={setActive}
-            onDelete={deleteWorld}
-            onRename={rename}
-            onDuplicate={duplicate}
-            onOpenFolder={openFolder}
-            onBackup={backup}
-            onRefresh={refresh}
-          />
-        </Suspense>
-      ) : loadingFallback}
+        <div style={{
+          position: 'absolute', inset: 0,
+          opacity:   visible ? 1 : 0,
+          transform: visible ? 'scale(1)' : 'scale(0.97)',
+          transition: 'opacity 0.35s cubic-bezier(0.25, 0, 0.25, 1), transform 0.35s cubic-bezier(0.25, 0, 0.25, 1)',
+        }}>
+          <Suspense fallback={darkPanel}>
+            <WorldsScene
+              worlds={worlds}
+              onSetActive={setActive}
+              onDelete={deleteWorld}
+              onRename={rename}
+              onDuplicate={duplicate}
+              onOpenFolder={openFolder}
+              onBackup={backup}
+              onRefresh={refresh}
+            />
+          </Suspense>
+        </div>
+      ) : darkPanel}
     </div>
   )
 }
