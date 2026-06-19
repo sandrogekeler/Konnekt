@@ -38,7 +38,7 @@ export function Galaxy({
       <pointLight position={[0, 0, 0]} intensity={3} color="#fde68a" distance={60} />
       <ambientLight intensity={0.25} />
 
-      <Sun radius={0.55} label="Server" />
+      <Sun radius={0.55} />
 
       {worlds.map((w, i) => {
         const orbitRX  = 1.8 + (i + 0.5) * step
@@ -61,7 +61,7 @@ export function Galaxy({
               orbitOffset={offset}
               active={w.active}
               label={w.name}
-              sizeBytes={overworld?.size ?? w.totalSize}
+
               onClickWithPos={() => !focused && onSelectWorld(w.name)}
               // unified-scene props
               focused={focused}

@@ -125,7 +125,6 @@ interface Props {
   orbitOffset?: number
   active?:     boolean
   label:       string
-  sizeBytes:   number
   onClickWithPos?: (pos: THREE.Vector3) => void
   // unified-scene props (only set for galaxy planets, not for internal moon use)
   focused?:         boolean
@@ -138,13 +137,15 @@ interface Props {
 
 export function Planet({
   kind, radius, orbitRX, orbitRZ, orbitSpeed, orbitOffset = 0,
-  active = false, label, sizeBytes, onClickWithPos,
+  active = false, label, onClickWithPos,
   focused = false, worldName, positionsRef,
   world, selectedDimension, onSelectDimension,
 }: Props) {
   const groupRef      = useRef<THREE.Group>(null)
   const meshRef       = useRef<THREE.Mesh>(null)
   const moonSystemRef = useRef<THREE.Group>(null)
+  const labelGroupRef = useRef<THREE.Group>(null)
+  const labelSpanRef  = useRef<HTMLSpanElement>(null)
   const angleRef      = useRef(orbitOffset)
   const pushRef       = useRef({ x: 0, z: 0 })
   const worldPosRef   = useRef(new THREE.Vector3())
@@ -162,18 +163,20 @@ export function Planet({
     const ox = Math.cos(angleRef.current) * orbitRX
     const oz = Math.sin(angleRef.current) * orbitRZ
 
+    // Cursor position projected onto the orbital plane (y=0) — shared by push + label fade
+    const ray = state.raycaster.ray
+    const rt  = Math.abs(ray.direction.y) < 0.0001 ? 0 : -ray.origin.y / ray.direction.y
+    const cx  = ray.origin.x + ray.direction.x * rt
+    const cz  = ray.origin.z + ray.direction.z * rt
+    const dx  = ox - cx
+    const dz  = oz - cz
+    const cursorDist = Math.sqrt(dx * dx + dz * dz)
+
     // Cursor attraction push — disabled when focused (avoids jitter during follow)
     if (!focused) {
-      const ray = state.raycaster.ray
-      const t   = Math.abs(ray.direction.y) < 0.0001 ? 0 : -ray.origin.y / ray.direction.y
-      const cx  = ray.origin.x + ray.direction.x * t
-      const cz  = ray.origin.z + ray.direction.z * t
-      const dx  = ox - cx
-      const dz  = oz - cz
-      const dist = Math.sqrt(dx * dx + dz * dz)
       const threshold = 2.8
-      const strength  = dist < threshold ? (1 - dist / threshold) * 0.10 : 0
-      const safeD = Math.max(dist, 0.01)
+      const strength  = cursorDist < threshold ? (1 - cursorDist / threshold) * 0.10 : 0
+      const safeD = Math.max(cursorDist, 0.01)
       pushRef.current.x += ((-dx / safeD) * strength - pushRef.current.x) * 0.04
       pushRef.current.z += ((-dz / safeD) * strength - pushRef.current.z) * 0.04
     } else {
@@ -199,6 +202,27 @@ export function Planet({
     localZoomRef.current = THREE.MathUtils.damp(localZoomRef.current, focused ? 1 : 0, 3.5, delta)
     if (moonSystemRef.current) {
       moonSystemRef.current.scale.setScalar(localZoomRef.current)
+    }
+
+    // Place the name label radially outward from the sun (away from origin).
+    // In local space of this group the outward direction is normalize(ox, 0, oz).
+    if (labelGroupRef.current) {
+      const px  = ox + pushRef.current.x
+      const pz  = oz + pushRef.current.z
+      const len = Math.sqrt(px * px + pz * pz)
+      if (len > 0.001) {
+        const nx = px / len
+        const nz = pz / len
+        labelGroupRef.current.position.set(nx * (radius + 0.5), 0.1, nz * (radius + 0.5))
+      }
+    }
+    // Fade label: full opacity near cursor, fades to MIN_OPA when far away
+    if (labelSpanRef.current) {
+      const FADE_NEAR = 2.5
+      const FADE_FAR  = 7.0
+      const MIN_OPA   = 0.2
+      const f = Math.max(0, Math.min(1, (cursorDist - FADE_NEAR) / (FADE_FAR - FADE_NEAR)))
+      labelSpanRef.current.style.opacity = String(MIN_OPA + (1 - f) * (1 - MIN_OPA))
     }
   })
 
@@ -239,42 +263,19 @@ export function Planet({
 
       {active && <OrbitRing radius={radius} />}
 
-      {/* Overworld label — shown when not focused */}
-      {!focused && hovered && (
-        <Html
-          position={[0, radius + 0.35, 0]}
-          center
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-          distanceFactor={10}
-        >
-          <div style={{
-            fontFamily: 'monospace', fontSize: 10, color: '#fff',
-            background: 'rgba(0,0,0,0.75)',
-            border: `0.5px solid ${color}`,
-            borderRadius: 4, padding: '3px 7px',
-            whiteSpace: 'nowrap', textAlign: 'center',
-          }}>
-            <div style={{ fontWeight: 700, color }}>{label}</div>
-            <div style={{ color: '#94a3b8' }}>{fmtBytes(sizeBytes)}</div>
-          </div>
-        </Html>
-      )}
-
-      {/* Overworld name label when zoomed in */}
-      {focused && (
-        <Html
-          position={[0, radius + 0.5, 0]}
-          center
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-          distanceFactor={10}
-        >
-          <span style={{
-            fontFamily: 'monospace', fontSize: 11, color: '#22c55e',
-            textShadow: '0 0 6px #22c55e', whiteSpace: 'nowrap',
-          }}>
-            {label}
-          </span>
-        </Html>
+      {/* Name tag: orbits with the planet, always on the outward side (away from sun).
+          Position updated imperatively each frame; opacity driven by cursor distance. */}
+      {!focused && (
+        <group ref={labelGroupRef}>
+          <Html center style={{ pointerEvents: 'none', userSelect: 'none' }} distanceFactor={10}>
+            <span ref={labelSpanRef} style={{
+              fontFamily: 'monospace', fontSize: 11,
+              color, whiteSpace: 'nowrap', opacity: 0,
+            }}>
+              {label}
+            </span>
+          </Html>
+        </group>
       )}
 
       {/* Moon system — scaled 0→1 by zoom progress, orbiting around this planet */}
