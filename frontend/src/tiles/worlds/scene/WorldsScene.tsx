@@ -91,11 +91,12 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
   const hudOffsetRef          = useRef(0)
 
   // Reuse vectors across frames to avoid GC pressure
-  const overviewEye    = useRef(new THREE.Vector3(0, 14, 5))
-  const overviewTarget = useRef(new THREE.Vector3(0, 0, 0))
-  const blendedEye     = useRef(new THREE.Vector3())
-  const blendedTarget  = useRef(new THREE.Vector3())
-  const focusEye       = useRef(new THREE.Vector3())
+  const overviewEye      = useRef(new THREE.Vector3(0, 14, 5))
+  const overviewTarget   = useRef(new THREE.Vector3(0, 0, 0))
+  const blendedEye       = useRef(new THREE.Vector3())
+  const blendedTarget    = useRef(new THREE.Vector3())
+  const focusEye         = useRef(new THREE.Vector3())
+  const blendedFocusPos  = useRef(new THREE.Vector3())
 
   useFrame((state, delta) => {
     const targetP = focusNameRef.current ? 1 : 0
@@ -110,20 +111,27 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
     if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
     const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
 
-    // Keep tracking the moon while t is still animating back to 0 (zoom-out).
-    // Once the animation settles (t ≤ 0.001), clear the stale dim so the camera
-    // re-centres on the planet rather than staying locked on the last moon.
-    if (selectedDimensionRef.current) {
-      lastSelectedDimRef.current = selectedDimensionRef.current
-    } else if (t <= 0.001) {
-      lastSelectedDimRef.current = null
-    }
-    const dimForPos = selectedDimensionRef.current ?? lastSelectedDimRef.current
+    // Retain last non-null dim during animation so we know which moon to blend from.
+    if (selectedDimensionRef.current) lastSelectedDimRef.current = selectedDimensionRef.current
 
-    const posKey = nameForPos && dimForPos && dimForPos !== 'overworld'
-      ? `${nameForPos}/${dimForPos}`
-      : nameForPos
-    const focusPos = posKey ? positionsRef.current.get(posKey) : undefined
+    const planetPos = nameForPos ? positionsRef.current.get(nameForPos) : undefined
+    const moonKey   = (() => {
+      const d = lastSelectedDimRef.current
+      return nameForPos && d && d !== 'overworld' ? `${nameForPos}/${d}` : null
+    })()
+    const moonPos = moonKey ? positionsRef.current.get(moonKey) : undefined
+
+    // Interpolate focusPos between planet (t=0) and moon (t=1).
+    // This means closing the HUD smoothly glides the camera target from the moon
+    // back toward the planet instead of snapping when lastSelectedDimRef is cleared.
+    let focusPos: THREE.Vector3 | undefined
+    if (moonPos && planetPos && t > 0.001) {
+      blendedFocusPos.current.lerpVectors(planetPos, moonPos, t)
+      focusPos = blendedFocusPos.current
+    } else {
+      focusPos = planetPos
+      lastSelectedDimRef.current = null  // safe to clear once t has fully settled
+    }
 
     const cam = camRef.current
     if (cam) {
