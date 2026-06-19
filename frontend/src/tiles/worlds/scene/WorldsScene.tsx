@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls, Stars } from '@react-three/drei'
-import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
-import type { DepthOfFieldEffect } from 'postprocessing'
 import * as THREE from 'three'
 import { Galaxy } from './Galaxy'
 import { WorldHud } from '../WorldHud'
@@ -26,14 +24,6 @@ const FOCUS_DIST         = Math.sqrt(FOCUS_ELEV * FOCUS_ELEV + FOCUS_BACK * FOCU
 const CLOSE_DIST_MOON    = 1.2  // camera distance when a moon is the HUD focus
 const CLOSE_DIST_PLANET  = 2.5  // camera distance when the main planet is the HUD focus
 const ZOOM_LAMBDA  = 3.5
-const MAX_BOKEH = 8.0
-// CoC shader: smoothstep(0, focusRange, |dist − focusDist|) × bokehScale = blur px.
-// Need CoC×bokehScale < 0.3px for orbit lines (max ±3.2 world units from focal plane)
-// AND > 2px for the sun (~10 world units behind the planet).
-// focusRange=30, bokehScale=8 satisfies both: orbit lines → 3.2%×8=0.25px (invisible);
-// sun → 25.9%×8=2.07px (visible blur). Larger focusRange / smaller bokehScale fails
-// to blur the sun; smaller focusRange causes visible artifacts on thin line geometry.
-const FOCUS_RANGE_WORLD = 30
 
 function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
   const groupRef    = useRef<THREE.Group>(null)
@@ -47,16 +37,23 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
     groupRef.current.traverse(obj => {
       const points = obj as THREE.Points
       if (!points.isPoints) return
-      const old = points.material as THREE.ShaderMaterial
-      const fade = { value: 1 }
-      const patched = old.clone()
-      patched.uniforms = { ...old.uniforms, uFade: fade }
-      patched.fragmentShader = old.fragmentShader.replace(
-        'gl_FragColor = vec4(vColor, opacity);',
-        'gl_FragColor = vec4(vColor, opacity * uFade);',
-      )
-      patched.needsUpdate = true
-      points.material = patched
+      const mat = points.material as THREE.ShaderMaterial
+      if (fadeUniform.current) return  // already patched
+      // Mutate in-place so R3F's reconciler keeps managing the same material object.
+      // Cloning and replacing points.material causes R3F to reset it back to the
+      // original on the next re-render of Stars (via <primitive attach="material">).
+      const fade = { value: 1.0 }
+      mat.uniforms.uFade = fade
+      mat.fragmentShader = mat.fragmentShader
+        .replace(
+          'uniform float fade;',
+          'uniform float fade;\nuniform float uFade;',
+        )
+        .replace(
+          'gl_FragColor = vec4(vColor, opacity);',
+          'gl_FragColor = vec4(vColor, opacity * uFade);',
+        )
+      mat.needsUpdate = true
       fadeUniform.current = fade
     })
   }, [])
@@ -105,7 +102,6 @@ interface ControllerProps {
 function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef, selectedDimensionRef }: ControllerProps) {
   const lastFocusNameRef      = useRef<string | null>(null)
   const lastSelectedDimRef    = useRef<string | null>(null)
-  const dofRef                = useRef<DepthOfFieldEffect>(null)
   const hudOffsetRef          = useRef(0)
 
   // Reuse vectors across frames to avoid GC pressure
@@ -158,7 +154,6 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
           overviewEye.current.x, overviewEye.current.y, overviewEye.current.z,
           0, 0, 0, false,
         )
-        if (dofRef.current) dofRef.current.bokehScale = 0
       } else {
         // Eye distance lerps from FOCUS_DIST (planetary view) toward the close-up
         // distance as the HUD panel opens. Moons are small so zoom in tighter;
@@ -181,21 +176,6 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
           blendedTarget.current.x, blendedTarget.current.y, blendedTarget.current.z,
           false,
         )
-
-        if (dofRef.current) {
-          dofRef.current.bokehScale = ease * MAX_BOKEH
-          // Drive focus distance from the actual blended camera-to-planet distance so
-          // the focal plane always sits exactly on the planet regardless of zoom progress.
-          // The target setter and .copy() both fail to update cocMaterial uniforms in
-          // postprocessing v6 — direct uniform mutation is the only reliable path.
-          // CoC shader uses actual world-space distance — pass raw units, not normalised
-          const camDist = blendedEye.current.distanceTo(focusPos)
-          const coc = (dofRef.current as any).cocMaterial?.uniforms
-          if (coc) {
-            coc.focusDistance.value = camDist
-            coc.focusRange.value    = FOCUS_RANGE_WORLD
-          }
-        }
       }
     }
 
@@ -215,17 +195,7 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
     }
   })
 
-  return (
-    <EffectComposer>
-      <DepthOfField
-        ref={dofRef}
-        focusDistance={0}
-        focusRange={0}
-        focalLength={0.05}
-        bokehScale={0}
-      />
-    </EffectComposer>
-  )
+  return null
 }
 
 export function WorldsScene({
