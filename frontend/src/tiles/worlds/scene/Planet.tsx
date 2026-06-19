@@ -149,7 +149,6 @@ interface Props {
   focused?:         boolean
   worldName?:       string
   positionsRef?:    React.MutableRefObject<Map<string, THREE.Vector3>>
-  zoomRef?:         React.MutableRefObject<number>
   world?:           WorldSystemData
   selectedDimension?: string | null
   onSelectDimension?: (kind: string) => void
@@ -166,7 +165,7 @@ interface Props {
 export function Planet({
   kind, radius, orbitRX, orbitRZ, orbitSpeed, orbitOffset = 0,
   active = false, label, sizeBytes, onClickWithPos,
-  focused = false, worldName, positionsRef, zoomRef,
+  focused = false, worldName, positionsRef,
   world, selectedDimension, onSelectDimension, onCloseHud,
   onSetActive, onDelete, onRename, onDuplicate, onOpenFolder, onBackup, onRefresh,
 }: Props) {
@@ -176,6 +175,9 @@ export function Planet({
   const angleRef      = useRef(orbitOffset)
   const pushRef       = useRef({ x: 0, z: 0 })
   const worldPosRef   = useRef(new THREE.Vector3())
+  // Per-planet zoom progress — damps independently so moons scale in/out smoothly
+  // whether we're zooming in, zooming out, or switching to another planet.
+  const localZoomRef  = useRef(0)
   const [hovered, setHovered] = useState(false)
 
   const color = KIND_COLOR[kind] ?? '#60a5fa'
@@ -218,10 +220,12 @@ export function Planet({
 
     if (meshRef.current) meshRef.current.rotation.y += delta * 0.25
 
-    // Scale moon system in/out based on zoom progress
-    if (moonSystemRef.current && zoomRef) {
-      const s = focused ? zoomRef.current : 0
-      moonSystemRef.current.scale.setScalar(s)
+    // Damp the local zoom progress toward 1 when focused, 0 when not.
+    // Using a per-planet ref (not the shared camera zoomRef) ensures moons
+    // scale back smoothly on deselect instead of hard-cutting to zero.
+    localZoomRef.current = THREE.MathUtils.damp(localZoomRef.current, focused ? 1 : 0, 3.5, delta)
+    if (moonSystemRef.current) {
+      moonSystemRef.current.scale.setScalar(localZoomRef.current)
     }
   })
 
@@ -238,7 +242,7 @@ export function Planet({
     onClickWithPos(pos)
   }
 
-  const showZoomedGlow = focused || (zoomRef && zoomRef.current > 0.1)
+  const showZoomedGlow = focused || localZoomRef.current > 0.1
 
   return (
     <group ref={groupRef}>

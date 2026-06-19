@@ -206,7 +206,6 @@ export function WorldsScene({
             worlds={worlds}
             focusName={focusName}
             positionsRef={positionsRef}
-            zoomRef={zoomRef}
             selectedDimension={selectedDimension}
             onSelectWorld={selectWorld}
             onSelectDimension={kind => setSelectedDimension(k => k === kind ? null : kind)}

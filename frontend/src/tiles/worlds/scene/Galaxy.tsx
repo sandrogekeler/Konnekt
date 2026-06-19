@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { useThree } from '@react-three/fiber'
 import { Sun } from './Sun'
 import { Planet } from './Planet'
 import { OrbitPath } from './OrbitPath'
@@ -9,7 +8,6 @@ interface Props {
   worlds: WorldSystem[]
   focusName: string | null
   positionsRef: React.MutableRefObject<Map<string, THREE.Vector3>>
-  zoomRef: React.MutableRefObject<number>
   selectedDimension: string | null
   onSelectWorld: (name: string) => void
   onSelectDimension: (kind: string) => void
@@ -28,15 +26,18 @@ function planetRadius(totalSize: number): number {
   return Math.max(0.26, Math.min(0.58, 0.26 + Math.log10(mb + 1) * 0.13))
 }
 
+// Fixed world-space spread for orbit radii. Must NOT depend on useThree().viewport
+// because viewport.width changes when the camera zooms in — any re-render during
+// the transition would recalculate smaller orbit radii and snap all planets.
+const GALAXY_SPREAD = 11
+
 export function Galaxy({
-  worlds, focusName, positionsRef, zoomRef, selectedDimension,
+  worlds, focusName, positionsRef, selectedDimension,
   onSelectWorld, onSelectDimension, onCloseHud,
   onSetActive, onDelete, onRename, onDuplicate, onOpenFolder, onBackup, onRefresh,
 }: Props) {
-  const { viewport } = useThree()
-
-  const spread     = Math.min(viewport.width * 0.48, 13)
-  const step       = worlds.length > 1 ? spread / worlds.length : spread
+  const spread = GALAXY_SPREAD
+  const step   = worlds.length > 1 ? spread / worlds.length : spread
   const speedBase  = 0.035
   const speedDecay = 0.88
 
@@ -75,7 +76,6 @@ export function Galaxy({
               focused={focused}
               worldName={w.name}
               positionsRef={positionsRef}
-              zoomRef={zoomRef}
               world={w}
               selectedDimension={focused ? selectedDimension : null}
               onSelectDimension={onSelectDimension}
