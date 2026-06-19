@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, Suspense } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls, Stars } from '@react-three/drei'
 import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
@@ -55,6 +55,7 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
         'gl_FragColor = vec4(vColor, opacity);',
         'gl_FragColor = vec4(vColor, opacity * uFade);',
       )
+      patched.needsUpdate = true
       points.material = patched
       fadeUniform.current = fade
     })
@@ -64,7 +65,7 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
     if (!groupRef.current) return
     groupRef.current.rotation.y += delta * 0.001
     if (fadeUniform.current) {
-      // Fade to 0 over the first 40% of the zoom-in transition
+      // Fade to 0 over the first 40% of the zoom-in transition, back to 1 at zero
       fadeUniform.current.value = Math.max(0, 1 - zoomRef.current / 0.4)
     }
   })
@@ -74,6 +75,22 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
       <Stars radius={60} depth={40} count={1400} factor={3} fade />
     </group>
   )
+}
+
+// Fires onReady after 2 rendered frames so the entrance reveal waits for actual
+// WebGL content (shader compilation + first draw) rather than just canvas mount.
+function FirstFrameSignal({ onReady }: { onReady: () => void }) {
+  const frameCount = useRef(0)
+  const fired      = useRef(false)
+  useFrame(() => {
+    if (fired.current) return
+    frameCount.current += 1
+    if (frameCount.current >= 2) {
+      fired.current = true
+      onReady()
+    }
+  })
+  return null
 }
 
 interface ControllerProps {
@@ -216,6 +233,8 @@ export function WorldsScene({
 }: Props) {
   const [focusName, setFocusName]               = useState<string | null>(null)
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
+  const [revealed, setRevealed]                 = useState(false)
+  const handleReady = useCallback(() => setRevealed(true), [])
 
   const focusNameRef = useRef<string | null>(null)
   const positionsRef          = useRef(new Map<string, THREE.Vector3>())
@@ -253,6 +272,16 @@ export function WorldsScene({
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {/* Entrance reveal — wrapper div so the WebGL drawing-buffer size (set by Canvas
+          layout, already correct after the 220ms gate) is never affected by transform */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        opacity:   revealed ? 1 : 0,
+        transform: revealed ? 'scale(1)' : 'scale(0.97)',
+        transition: revealed
+          ? 'opacity 0.4s cubic-bezier(0.25,0,0.25,1), transform 0.4s cubic-bezier(0.25,0,0.25,1)'
+          : 'none',
+      }}>
       {/* ← galaxy button — only visible in planetary view when the HUD panel is closed */}
       {focusName && !hudOpen && (
         <button onClick={goBack} style={{ position: 'absolute', top: 10, left: 10, zIndex: 20, ...navBtn }}>
@@ -262,10 +291,11 @@ export function WorldsScene({
 
       <Canvas
         camera={{ position: [0, 14, 5], fov: 50 }}
-        style={{ position: 'absolute', inset: 0, background: '#050608', animation: 'worlds-enter 0.5s ease both' }}
+        style={{ position: 'absolute', inset: 0, background: '#050608' }}
       >
         <Suspense fallback={null}>
           <SlowStars zoomRef={zoomRef} />
+          <FirstFrameSignal onReady={handleReady} />
 
           <Galaxy
             worlds={worlds}
@@ -328,6 +358,7 @@ export function WorldsScene({
             onRefresh={onRefresh}
           />
         )}
+      </div>
       </div>
     </div>
   )
