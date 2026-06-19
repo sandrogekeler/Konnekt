@@ -22,13 +22,14 @@ interface Props {
 const FOCUS_ELEV   = 4.5  // units above the orbital plane
 const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
 const ZOOM_LAMBDA  = 3.5
-const MAX_BOKEH = 4.0
-// CoC shader uses length(viewPosition) — actual world-space distance from camera.
-// focusDistance = camera-to-planet distance (world units, ~4.9 when fully zoomed).
-// focusRange = transition width in world units: smoothstep(0, focusRange, |dist-focus|).
-// 12 world units means: planet/moons (within ±3 units) have <15% coc, sun (10+ units
-// behind planet ≈ 15 units from camera) is 93% blurred.
-const FOCUS_RANGE_WORLD = 12
+const MAX_BOKEH = 8.0
+// CoC shader: smoothstep(0, focusRange, |dist − focusDist|) × bokehScale = blur px.
+// Need CoC×bokehScale < 0.3px for orbit lines (max ±3.2 world units from focal plane)
+// AND > 2px for the sun (~10 world units behind the planet).
+// focusRange=30, bokehScale=8 satisfies both: orbit lines → 3.2%×8=0.25px (invisible);
+// sun → 25.9%×8=2.07px (visible blur). Larger focusRange / smaller bokehScale fails
+// to blur the sun; smaller focusRange causes visible artifacts on thin line geometry.
+const FOCUS_RANGE_WORLD = 30
 
 function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
   const groupRef    = useRef<THREE.Group>(null)
