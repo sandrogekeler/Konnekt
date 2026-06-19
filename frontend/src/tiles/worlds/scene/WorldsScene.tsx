@@ -1,0 +1,196 @@
+import { useState, useRef, Suspense } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { CameraControls, Stars } from '@react-three/drei'
+import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
+import type { DepthOfFieldEffect } from 'postprocessing'
+import * as THREE from 'three'
+import { Galaxy } from './Galaxy'
+import type { WorldSystem as WorldSystemData } from '../useWorlds'
+
+interface Props {
+  worlds: WorldSystemData[]
+  onSetActive: (name: string) => Promise<void>
+  onDelete: (name: string) => Promise<void>
+  onRename: (old: string, next: string) => Promise<void>
+  onDuplicate: (name: string, next: string) => Promise<void>
+  onOpenFolder: (name: string) => Promise<void>
+  onBackup: (name: string) => Promise<void>
+  onRefresh: () => void
+}
+
+const FOLLOW_DIST  = 7
+const FOLLOW_ELEV  = 3.5
+const ZOOM_LAMBDA  = 3.5
+const MAX_BOKEH    = 4.5
+
+function SlowStars() {
+  const ref = useRef<THREE.Group>(null)
+  useFrame((_, delta) => {
+    if (ref.current) ref.current.rotation.y += delta * 0.001
+  })
+  return (
+    <group ref={ref}>
+      <Stars radius={60} depth={40} count={1400} factor={3} fade />
+    </group>
+  )
+}
+
+interface ControllerProps {
+  focusNameRef: React.MutableRefObject<string | null>
+  positionsRef: React.MutableRefObject<Map<string, THREE.Vector3>>
+  zoomRef:      React.MutableRefObject<number>
+  camRef:       React.RefObject<CameraControls | null>
+}
+
+function SceneController({ focusNameRef, positionsRef, zoomRef, camRef }: ControllerProps) {
+  const lastFocusNameRef = useRef<string | null>(null)
+  const dofRef           = useRef<DepthOfFieldEffect>(null)
+
+  // Reuse vectors across frames to avoid GC pressure
+  const overviewEye    = useRef(new THREE.Vector3(0, 14, 5))
+  const overviewTarget = useRef(new THREE.Vector3(0, 0, 0))
+  const blendedEye     = useRef(new THREE.Vector3())
+  const blendedTarget  = useRef(new THREE.Vector3())
+  const focusEye       = useRef(new THREE.Vector3())
+  const outward        = useRef(new THREE.Vector3())
+
+  useFrame((_, delta) => {
+    const targetP = focusNameRef.current ? 1 : 0
+    zoomRef.current = THREE.MathUtils.damp(zoomRef.current, targetP, ZOOM_LAMBDA, delta)
+    const p = zoomRef.current
+
+    if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
+    const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
+    const focusPos   = nameForPos ? positionsRef.current.get(nameForPos) : undefined
+
+    const cam = camRef.current
+    if (!cam) return
+
+    if (!focusPos || p < 0.001) {
+      cam.setLookAt(
+        overviewEye.current.x, overviewEye.current.y, overviewEye.current.z,
+        0, 0, 0, false,
+      )
+      if (dofRef.current) dofRef.current.bokehScale = 0
+      return
+    }
+
+    // Outward direction from the sun, so the sun sits behind the planet in frame
+    outward.current.set(focusPos.x, 0, focusPos.z).normalize()
+    focusEye.current
+      .copy(focusPos)
+      .addScaledVector(outward.current, FOLLOW_DIST)
+    focusEye.current.y += FOLLOW_ELEV
+
+    const ease = p * p * (3 - 2 * p) // smoothstep
+    blendedEye.current.lerpVectors(overviewEye.current, focusEye.current, ease)
+    blendedTarget.current.lerpVectors(overviewTarget.current, focusPos, ease)
+
+    cam.setLookAt(
+      blendedEye.current.x, blendedEye.current.y, blendedEye.current.z,
+      blendedTarget.current.x, blendedTarget.current.y, blendedTarget.current.z,
+      false,
+    )
+
+    if (dofRef.current) {
+      dofRef.current.bokehScale = ease * MAX_BOKEH
+      // Mutate target in-place so the effect picks it up without re-render
+      if ((dofRef.current as any).target) {
+        (dofRef.current as any).target.copy(focusPos)
+      } else {
+        (dofRef.current as any).target = focusPos.clone()
+      }
+    }
+  })
+
+  return (
+    <EffectComposer>
+      <DepthOfField
+        ref={dofRef}
+        focalLength={0.05}
+        bokehScale={0}
+      />
+    </EffectComposer>
+  )
+}
+
+export function WorldsScene({
+  worlds, onSetActive, onDelete, onRename, onDuplicate, onOpenFolder, onBackup, onRefresh,
+}: Props) {
+  const [focusName, setFocusName]               = useState<string | null>(null)
+  const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
+
+  const focusNameRef = useRef<string | null>(null)
+  const positionsRef = useRef(new Map<string, THREE.Vector3>())
+  const zoomRef      = useRef(0)
+  const camRef       = useRef<CameraControls>(null)
+
+  function selectWorld(name: string) {
+    focusNameRef.current = name
+    setFocusName(name)
+    setSelectedDimension(null)
+  }
+
+  function goBack() {
+    focusNameRef.current = null
+    setFocusName(null)
+    setSelectedDimension(null)
+  }
+
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {focusName && (
+        <button
+          onClick={goBack}
+          style={{
+            position: 'absolute', top: 10, left: 10, zIndex: 10,
+            background: 'var(--bg-surface)',
+            border: '0.5px solid var(--border-subtle)',
+            color: 'var(--text-muted)',
+            borderRadius: 4, padding: '3px 10px',
+            fontFamily: 'monospace', fontSize: 11, cursor: 'pointer',
+          }}
+        >
+          ← galaxy
+        </button>
+      )}
+
+      <Canvas
+        camera={{ position: [0, 14, 5], fov: 50 }}
+        style={{ position: 'absolute', inset: 0, background: '#050608' }}
+      >
+        <Suspense fallback={null}>
+          <SlowStars />
+
+          <Galaxy
+            worlds={worlds}
+            focusName={focusName}
+            positionsRef={positionsRef}
+            zoomRef={zoomRef}
+            selectedDimension={selectedDimension}
+            onSelectWorld={selectWorld}
+            onSelectDimension={kind => setSelectedDimension(k => k === kind ? null : kind)}
+            onCloseHud={() => setSelectedDimension(null)}
+            onSetActive={onSetActive}
+            onDelete={onDelete}
+            onRename={onRename}
+            onDuplicate={onDuplicate}
+            onOpenFolder={onOpenFolder}
+            onBackup={onBackup}
+            onRefresh={onRefresh}
+          />
+
+          {/* SceneController last so all planet positions are written before it reads them */}
+          <SceneController
+            focusNameRef={focusNameRef}
+            positionsRef={positionsRef}
+            zoomRef={zoomRef}
+            camRef={camRef}
+          />
+        </Suspense>
+
+        <CameraControls ref={camRef} enabled={false} />
+      </Canvas>
+    </div>
+  )
+}
