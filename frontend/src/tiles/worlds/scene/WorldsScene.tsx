@@ -252,7 +252,8 @@ export function WorldsScene({
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', animation: 'worlds-enter 0.5s ease both' }}>
+      <style>{`@keyframes worlds-enter { from { opacity: 0; } to { opacity: 1; } }`}</style>
       {/* ← galaxy button — only visible in planetary view when the HUD panel is closed */}
       {focusName && !hudOpen && (
         <button onClick={goBack} style={{ position: 'absolute', top: 10, left: 10, zIndex: 20, ...navBtn }}>

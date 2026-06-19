@@ -109,33 +109,19 @@ export function WorldsTile({ maximized }: TileProps) {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: '#050608' }}>
-      {/* Keyframe fires the moment the element enters the DOM — no rAF/state
-          juggling needed. CSS transition approach failed because a single rAF
-          fires before the browser paints, collapsing both renders into one frame. */}
-      <style>{`
-        @keyframes worlds-enter {
-          from { opacity: 0; transform: scale(0.97); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
       {ready ? (
-        <div style={{
-          position: 'absolute', inset: 0,
-          animation: 'worlds-enter 0.4s cubic-bezier(0.25, 0, 0.25, 1) both',
-        }}>
-          <Suspense fallback={darkPanel}>
-            <WorldsScene
-              worlds={worlds}
-              onSetActive={setActive}
-              onDelete={deleteWorld}
-              onRename={rename}
-              onDuplicate={duplicate}
-              onOpenFolder={openFolder}
-              onBackup={backup}
-              onRefresh={refresh}
-            />
-          </Suspense>
-        </div>
+        <Suspense fallback={darkPanel}>
+          <WorldsScene
+            worlds={worlds}
+            onSetActive={setActive}
+            onDelete={deleteWorld}
+            onRename={rename}
+            onDuplicate={duplicate}
+            onOpenFolder={openFolder}
+            onBackup={backup}
+            onRefresh={refresh}
+          />
+        </Suspense>
       ) : darkPanel}
     </div>
   )
