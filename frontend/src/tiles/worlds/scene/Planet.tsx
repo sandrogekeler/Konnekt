@@ -32,13 +32,14 @@ interface MoonBodyProps {
   orbitRZ: number
   speed:   number
   offset:  number
-  selected: boolean
-  onSelect: () => void
-  worldName?:   string
+  selected:      boolean
+  onSelect:      () => void
+  planetFocused: boolean
+  worldName?:    string
   positionsRef?: React.MutableRefObject<Map<string, THREE.Vector3>>
 }
 
-function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, worldName, positionsRef }: MoonBodyProps) {
+function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, planetFocused, worldName, positionsRef }: MoonBodyProps) {
   const groupRef      = useRef<THREE.Group>(null)
   const meshRef       = useRef<THREE.Mesh>(null)
   const labelGroupRef = useRef<THREE.Group>(null)
@@ -112,16 +113,18 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
         />
       </mesh>
 
-      <group ref={labelGroupRef}>
-        <Html center style={{ pointerEvents: 'none', userSelect: 'none' }} distanceFactor={10}>
-          <span ref={labelSpanRef} style={{
-            fontFamily: 'monospace', fontSize: 10,
-            color, whiteSpace: 'nowrap', opacity: 0,
-          }}>
-            {label}
-          </span>
-        </Html>
-      </group>
+      {planetFocused && (
+        <group ref={labelGroupRef}>
+          <Html center style={{ pointerEvents: 'none', userSelect: 'none' }} distanceFactor={10}>
+            <span ref={labelSpanRef} style={{
+              fontFamily: 'monospace', fontSize: 9,
+              color, whiteSpace: 'nowrap', opacity: 0,
+            }}>
+              {label}
+            </span>
+          </Html>
+        </group>
+      )}
     </group>
   )
 }
@@ -237,7 +240,7 @@ export function Planet({
     if (labelSpanRef.current) {
       const FADE_NEAR = 2.5
       const FADE_FAR  = 7.0
-      const MIN_OPA   = 0.2
+      const MIN_OPA   = 0.4  // raised so label stays readable in galaxy view
       const f = Math.max(0, Math.min(1, (cursorDist - FADE_NEAR) / (FADE_FAR - FADE_NEAR)))
       labelSpanRef.current.style.opacity = String(MIN_OPA + (1 - f) * (1 - MIN_OPA))
     }
@@ -285,7 +288,7 @@ export function Planet({
         <group ref={labelGroupRef}>
           <Html center style={{ pointerEvents: 'none', userSelect: 'none' }} distanceFactor={10}>
             <span ref={labelSpanRef} style={{
-              fontFamily: 'monospace', fontSize: 11,
+              fontFamily: 'monospace', fontSize: 9,
               color, whiteSpace: 'nowrap', opacity: 0,
             }}>
               {label}
@@ -311,6 +314,7 @@ export function Planet({
                   offset={orbit.offset}
                   selected={selectedDimension === moon.kind}
                   onSelect={() => onSelectDimension?.(moon.kind)}
+                  planetFocused={focused}
                   worldName={worldName}
                   positionsRef={positionsRef}
                 />
