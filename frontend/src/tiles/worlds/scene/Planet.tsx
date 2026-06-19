@@ -23,12 +23,6 @@ const MOON_ORBIT: Record<string, { orbitRX: number; orbitRZ: number; speed: numb
   the_end: { orbitRX: 3.2, orbitRZ: 1.8, speed: 0.04, offset: Math.PI * 0.6 },
 }
 
-function fmtBytes(n: number): string {
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`
-  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`
-  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
-
 // ----- MoonBody: orbits the parent group (the planet), scales with zoomProgress -----
 
 interface MoonBodyProps {
@@ -40,14 +34,15 @@ interface MoonBodyProps {
   offset:  number
   selected: boolean
   onSelect: () => void
-  world:   WorldSystemData
   worldName?:   string
   positionsRef?: React.MutableRefObject<Map<string, THREE.Vector3>>
 }
 
-function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, world, worldName, positionsRef }: MoonBodyProps) {
+function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onSelect, worldName, positionsRef }: MoonBodyProps) {
   const groupRef      = useRef<THREE.Group>(null)
   const meshRef       = useRef<THREE.Mesh>(null)
+  const labelGroupRef = useRef<THREE.Group>(null)
+  const labelSpanRef  = useRef<HTMLSpanElement>(null)
   const angleRef      = useRef(offset)
   const worldPosRef   = useRef(new THREE.Vector3())
   const hoverScaleRef = useRef(1)
@@ -56,7 +51,7 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
   const color = KIND_COLOR[kind] ?? '#60a5fa'
   const label = KIND_LABEL[kind] ?? kind
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     angleRef.current += speed * delta
     const x = Math.cos(angleRef.current) * orbitRX
     const z = Math.sin(angleRef.current) * orbitRZ
@@ -71,6 +66,31 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
       meshRef.current.rotation.y += delta * 0.3
       hoverScaleRef.current = THREE.MathUtils.damp(hoverScaleRef.current, hovered ? 1.06 : 1, 10, delta)
       meshRef.current.scale.setScalar(hoverScaleRef.current)
+    }
+
+    // Place label radially outward from the planet center (opposite side to planet)
+    if (labelGroupRef.current) {
+      const len = Math.sqrt(x * x + z * z)
+      if (len > 0.001) {
+        const nx = x / len
+        const nz = z / len
+        labelGroupRef.current.position.set(nx * (radius + 0.32), 0, nz * (radius + 0.32))
+      }
+    }
+    // Fade by cursor distance in the orbital plane
+    if (labelSpanRef.current) {
+      const ray = state.raycaster.ray
+      const rt  = Math.abs(ray.direction.y) < 0.0001 ? 0 : -ray.origin.y / ray.direction.y
+      const cx  = ray.origin.x + ray.direction.x * rt
+      const cz  = ray.origin.z + ray.direction.z * rt
+      const cursorDist = Math.sqrt(
+        (worldPosRef.current.x - cx) ** 2 + (worldPosRef.current.z - cz) ** 2,
+      )
+      const FADE_NEAR = 0.8
+      const FADE_FAR  = 3.0
+      const MIN_OPA   = 0.2
+      const f = Math.max(0, Math.min(1, (cursorDist - FADE_NEAR) / (FADE_FAR - FADE_NEAR)))
+      labelSpanRef.current.style.opacity = String(MIN_OPA + (1 - f) * (1 - MIN_OPA))
     }
   })
 
@@ -92,28 +112,16 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
         />
       </mesh>
 
-      {hovered && (
-        <Html
-          position={[0, radius + 0.3, 0]}
-          center
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-          distanceFactor={10}
-        >
-          <div style={{
-            fontFamily: 'monospace', fontSize: 10, color: '#fff',
-            background: 'rgba(0,0,0,0.75)',
-            border: `0.5px solid ${color}`,
-            borderRadius: 4, padding: '3px 7px',
-            whiteSpace: 'nowrap', textAlign: 'center',
+      <group ref={labelGroupRef}>
+        <Html center style={{ pointerEvents: 'none', userSelect: 'none' }} distanceFactor={10}>
+          <span ref={labelSpanRef} style={{
+            fontFamily: 'monospace', fontSize: 10,
+            color, whiteSpace: 'nowrap', opacity: 0,
           }}>
-            <div style={{ fontWeight: 700, color }}>{label}</div>
-            <div style={{ color: '#94a3b8' }}>
-              {fmtBytes(world.dimensions.find(d => d.kind === kind)?.size ?? 0)}
-            </div>
-          </div>
+            {label}
+          </span>
         </Html>
-      )}
-
+      </group>
     </group>
   )
 }
@@ -303,7 +311,6 @@ export function Planet({
                   offset={orbit.offset}
                   selected={selectedDimension === moon.kind}
                   onSelect={() => onSelectDimension?.(moon.kind)}
-                  world={world}
                   worldName={worldName}
                   positionsRef={positionsRef}
                 />
