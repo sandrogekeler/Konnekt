@@ -67,9 +67,10 @@ type ServerService struct {
 	tpsLastUpdate time.Time
 
 	// TPS poll goroutine lifecycle
-	stopTPS chan struct{}
-	tpsOnce sync.Once
-	rcon    *RconService
+	stopTPS    chan struct{}
+	tpsOnce    sync.Once
+	rcon       *RconService
+	rconFlavor string // "paper", "forge", "vanilla", or "" (unknown — re-detect next poll)
 
 	// log-derived TPS fallback (always active while server is running)
 	logTPSMu       sync.RWMutex
@@ -341,6 +342,7 @@ func (s *ServerService) stopTPSPoll() {
 	s.tpsMu.Lock()
 	s.currentTPS = -1
 	s.tpsLastUpdate = time.Time{}
+	s.rconFlavor = "" // reset so next server start re-detects flavor
 	s.tpsMu.Unlock()
 	s.logTPSMu.Lock()
 	s.logTPS = -1
@@ -355,7 +357,7 @@ func (s *ServerService) pollTPS() {
 		return
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -378,11 +380,53 @@ func (s *ServerService) pollTPS() {
 }
 
 func (s *ServerService) queryTPSViaRcon() (float64, bool) {
+	s.tpsMu.RLock()
+	flavor := s.rconFlavor
+	s.tpsMu.RUnlock()
+
+	// Fast path: server flavor already known — one RCON call only.
+	switch flavor {
+	case "paper":
+		resp, err := s.rcon.Execute(s.rconAddr, s.rconPassword, "tps")
+		if err == nil {
+			if m := reTPSPaper.FindStringSubmatch(resp); m != nil {
+				if tps, e := strconv.ParseFloat(m[1], 64); e == nil {
+					return math.Min(tps, 20.0), true
+				}
+			}
+		}
+		return 0, false
+	case "forge":
+		resp, err := s.rcon.Execute(s.rconAddr, s.rconPassword, "forge tps")
+		if err == nil {
+			if m := reTPSForge.FindStringSubmatch(resp); m != nil {
+				if tps, e := strconv.ParseFloat(m[1], 64); e == nil {
+					return math.Min(tps, 20.0), true
+				}
+			}
+		}
+		return 0, false
+	case "vanilla":
+		resp, err := s.rcon.Execute(s.rconAddr, s.rconPassword, "tick query")
+		if err == nil {
+			if m := reTickQuery.FindStringSubmatch(resp); m != nil {
+				if mspt, e := strconv.ParseFloat(m[1], 64); e == nil && mspt > 0 {
+					return math.Min(1000.0/mspt, 20.0), true
+				}
+			}
+		}
+		return 0, false
+	}
+
+	// Detection path: try each flavor in turn, cache the first that succeeds.
 	// Paper/Spigot/Purpur: /tps → "TPS from last 1m, 5m, 15m: *20.0, 20.0, 20.0"
 	resp, err := s.rcon.Execute(s.rconAddr, s.rconPassword, "tps")
 	if err == nil {
 		if m := reTPSPaper.FindStringSubmatch(resp); m != nil {
 			if tps, e := strconv.ParseFloat(m[1], 64); e == nil {
+				s.tpsMu.Lock()
+				s.rconFlavor = "paper"
+				s.tpsMu.Unlock()
 				return math.Min(tps, 20.0), true
 			}
 		}
@@ -392,6 +436,9 @@ func (s *ServerService) queryTPSViaRcon() (float64, bool) {
 	if err == nil {
 		if m := reTPSForge.FindStringSubmatch(resp); m != nil {
 			if tps, e := strconv.ParseFloat(m[1], 64); e == nil {
+				s.tpsMu.Lock()
+				s.rconFlavor = "forge"
+				s.tpsMu.Unlock()
 				return math.Min(tps, 20.0), true
 			}
 		}
@@ -403,6 +450,9 @@ func (s *ServerService) queryTPSViaRcon() (float64, bool) {
 	}
 	if m := reTickQuery.FindStringSubmatch(resp); m != nil {
 		if mspt, e := strconv.ParseFloat(m[1], 64); e == nil && mspt > 0 {
+			s.tpsMu.Lock()
+			s.rconFlavor = "vanilla"
+			s.tpsMu.Unlock()
 			return math.Min(1000.0/mspt, 20.0), true
 		}
 	}
@@ -555,17 +605,10 @@ func (s *ServerService) currentLogTPS() float64 {
 
 func (s *ServerService) RAMUsedMB() float64 {
 	s.mu.Lock()
-	pid := 0
-	if s.running && s.cmd != nil && s.cmd.Process != nil {
-		pid = s.cmd.Process.Pid
-	}
+	proc := s.cachedProc
 	s.mu.Unlock()
 
-	if pid == 0 {
-		return 0
-	}
-	proc, err := process.NewProcess(int32(pid))
-	if err != nil {
+	if proc == nil {
 		return 0
 	}
 	mem, err := proc.MemoryInfo()

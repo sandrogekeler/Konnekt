@@ -43,14 +43,26 @@ function App() {
     return () => { try { cleanup?.() } catch { } }
   }, [])
 
+  // Batch log lines so the console re-renders at most ~7×/sec instead of once
+  // per line — prevents render storms on busy servers.
+  const pendingLines = useRef<Array<{ timestamp: string; line: string }>>([])
   useEffect(() => {
     let cleanup: (() => void) | undefined
     try {
       cleanup = EventsOn(EVENTS.LOG_LINE, (data: { timestamp: string; line: string }) => {
-        useConsoleStore.getState().appendLine(data.timestamp, data.line)
+        pendingLines.current.push(data)
       })
     } catch { /* non-Wails context */ }
     return () => { try { cleanup?.() } catch { } }
+  }, [])
+  useEffect(() => {
+    const id = setInterval(() => {
+      const batch = pendingLines.current
+      if (batch.length === 0) return
+      pendingLines.current = []
+      useConsoleStore.getState().batchAppend(batch)
+    }, 150)
+    return () => clearInterval(id)
   }, [])
 
   // Server stopped — detect crash vs. deliberate stop

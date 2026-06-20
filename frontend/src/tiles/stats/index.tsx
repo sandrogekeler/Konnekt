@@ -28,7 +28,7 @@ export function StatsTile({ serverId }: TileProps) {
 
   useEffect(() => {
     poll()
-    const id = setInterval(poll, 2000)
+    const id = setInterval(poll, 10_000)
     return () => clearInterval(id)
   }, [poll])
 

@@ -32,6 +32,7 @@ export function classifyLine(text: string): LogLine['level'] {
 interface ConsoleStore {
   lines: LogLine[]
   appendLine: (timestamp: string, text: string) => void
+  batchAppend: (incoming: Array<{ timestamp: string; line: string }>) => void
   loadHistory: (lines: Array<{ timestamp: string; line: string }>) => void
   clear: () => void
 }
@@ -47,6 +48,19 @@ export const useConsoleStore = create<ConsoleStore>((set) => ({
           { id: ++lineId, timestamp, text, level: classifyLine(text) },
         ],
       }
+    }),
+  batchAppend: (incoming) =>
+    set((s) => {
+      if (incoming.length === 0) return s
+      const max = useSettingsStore.getState().settings.consoleBufferLines || 1000
+      const newLines = incoming.map((l) => ({
+        id: ++lineId,
+        timestamp: l.timestamp,
+        text: l.line,
+        level: classifyLine(l.line),
+      }))
+      const combined = [...s.lines, ...newLines]
+      return { lines: combined.length > max ? combined.slice(-max) : combined }
     }),
   // Remote-access seam: prime the console from App.GetConsoleHistory() on
   // (re)connect. No caller yet; replaces lines wholesale, then live LOG_LINE
