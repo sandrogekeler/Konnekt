@@ -1,7 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useMemo } from 'react'
 import { SendCommand } from '../../../wailsjs/go/main/App'
 import { useConsoleStore } from '../../stores/useConsoleStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { Segmented } from '../../components/ui/Segmented'
 import type { TileProps } from '../../types'
 import { useState } from 'react'
 
@@ -12,19 +13,54 @@ const LEVEL_CLASS = {
   dim: 'text-[var(--text-secondary)]',
 } as const
 
+type LevelFilter = 'all' | 'warn' | 'error'
+
+const LEVEL_FILTER_OPTIONS: { value: LevelFilter; label: string }[] = [
+  { value: 'all',   label: 'All' },
+  { value: 'warn',  label: 'Warn' },
+  { value: 'error', label: 'Error' },
+]
+
+function highlightQuery(text: string, query: string) {
+  if (!query) return <span>{text}</span>
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) return <span>{text}</span>
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark style={{ background: 'var(--accent)', color: 'var(--bg-base)', borderRadius: 2 }}>
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  )
+}
+
 export function ConsoleTile({ serverId }: TileProps) {
   const lines = useConsoleStore((s) => s.lines)
   const clear = useConsoleStore((s) => s.clear)
   const showTimestamps = useSettingsStore((s) => s.settings.consoleTimestamps)
   const [input, setInput] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
+  const [query, setQuery] = useState('')
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>('all')
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const filtered = useMemo(() => {
+    let result = lines
+    if (levelFilter !== 'all') result = result.filter((l) => l.level === levelFilter)
+    if (query.trim()) {
+      const q = query.trim().toLowerCase()
+      result = result.filter((l) => l.text.toLowerCase().includes(q))
+    }
+    return result
+  }, [lines, levelFilter, query])
 
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [lines, autoScroll])
+  }, [filtered, autoScroll])
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
@@ -45,20 +81,51 @@ export function ConsoleTile({ serverId }: TileProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Search / filter toolbar */}
+      <div className="flex items-center gap-2 px-3 pt-2 pb-1 shrink-0">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter…"
+          className="flex-1 rounded px-2 py-0.5 text-xs font-mono outline-none"
+          style={{
+            background: 'var(--hover-surface)',
+            border: '0.5px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+          onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)' }}
+          onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)' }}
+        />
+        <Segmented options={LEVEL_FILTER_OPTIONS} value={levelFilter} onChange={setLevelFilter} />
+        <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-faint)' }}>
+          {filtered.length}/{lines.length}
+        </span>
+      </div>
+
       <div
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex-1 min-h-0 overflow-y-auto px-3 py-2 font-mono text-xs leading-5 select-text"
         style={{ fontFamily: "'JetBrains Mono', monospace" }}
       >
-        {lines.map((line) => (
-          <div key={line.id} className="flex gap-2">
-            {showTimestamps && (
-              <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>{line.timestamp}</span>
-            )}
-            <span className={LEVEL_CLASS[line.level]}>{line.text}</span>
+        {filtered.length === 0 && lines.length > 0 ? (
+          <div className="text-xs font-mono py-2" style={{ color: 'var(--text-faint)' }}>
+            No matching lines
           </div>
-        ))}
+        ) : (
+          filtered.map((line) => (
+            <div key={line.id} className="flex gap-2">
+              {showTimestamps && (
+                <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>{line.timestamp}</span>
+              )}
+              <span className={LEVEL_CLASS[line.level]}>
+                {highlightQuery(line.text, query)}
+              </span>
+            </div>
+          ))
+        )}
       </div>
 
       {!autoScroll && (
