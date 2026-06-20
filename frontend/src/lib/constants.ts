@@ -2,6 +2,7 @@ export const DEFAULT_SERVER_ID = 'default'
 
 export const EVENTS = {
   LOG_LINE:         'log:line',
+  SERVER_STARTED:   'server:started',
   SERVER_STOPPED:   'server:stopped',
   EULA_REQUIRED:    'server:eula-required',
   STATS_SNAPSHOT:   'stats:snapshot',

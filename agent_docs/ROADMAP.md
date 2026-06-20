@@ -30,13 +30,12 @@ were shipped early during Alpha. Their status below reflects reality.
 - [x] Startup splash screen (Satoshi Black "Konnekt" in accent green, 1s fade+glow animation)
 - [x] Tile layout system (react-grid-layout, drag, resize, snap)
 - [x] Tile crate (inactive tiles panel, add/remove from canvas)
-- [~] Tile scale and maximise
-  - [ ] Per-tile zoom level (font/content scale independent of grid size)
+- [x] Tile scale and maximise
   - [x] Maximise button in tile header: expands tile to fill the canvas area as an overlay
   - [x] Restore button returns tile to its previous grid position and size
   - [x] Only one tile maximised at a time; closing restores the previous layout
   - [x] Smooth open/close animations: opacity fade on both flip-transform and fallback paths
-  - (maximise lives in tiles/TileWrapper + Dashboard animations; per-tile scale not built)
+  - (maximise lives in tiles/TileWrapper + Dashboard animations)
 - [x] Layout presets (save, restore, delete named layouts)
 - [x] Default presets: "Default", "Console Focus", "Compact", "Essentials"
 - [x] Persistence via Go JSON files (~/.config/konnekt/)
@@ -144,7 +143,8 @@ were shipped early during Alpha. Their status below reflects reality.
   - [x] Restore backup (refuses while server running, safe extract-then-swap, rolls back on failure)
   - [x] Notifications: backup:completed / backup:failed events + emitNotification
   - [x] Path-traversal validation on all filename inputs
-  - [ ] Scheduled backup config (interval: hourly/daily/weekly) — defer to Scheduler tile
+  - [x] Scheduled backups — delivered via the Scheduler tile (interval/timeOfDay/cron
+    trigger → backup action block), rather than a dedicated config here
   - Go: BackupService (backup.go — ListBackups, CreateBackup, RestoreBackup, DeleteBackup); models/backup.go; frontend tiles/backups/useBackups.ts
 
 - [x] Server Config tile  *(shipped as a general config-file editor; diverged from original spec)*
@@ -153,19 +153,18 @@ were shipped early during Alpha. Their status below reflects reality.
   - [x] Form-based key/value editor with typed widgets (parsers in tiles/config/form/)
   - [x] Raw text editor with dirty-tracking, save, revert; compact summary when not maximised
   - [x] Save writes directly to the config file; offers restart when server running
-  - [ ] Grouped server.properties fields (General/Performance/World/Network/Gameplay)
-  - [ ] Gamerule editor (per-world, fetched via RCON when server is running)
-  - [ ] MOTD editor with live preview
   - Go: backend/services/config_editor.go — ListConfigFiles / ReadConfigFile / WriteConfigFile
+  - (grouped fields / gamerule editor / MOTD preview moved to Beta — see "Tiles — beta")
 
 - [x] Notifications tile
   
   - [x] In-app feed (reverse-chronological, timestamped, colour-coded by kind), clear-all
   - [x] OS desktop notifications too (WebView Notification API, lib/notify.ts)
   - [x] Notification kinds: crash, join, info, warn, error — each with distinct icon + colour
-  - [~] Events wired so far: server crashed, player joined, backup completed/failed,
-    server stopped, scheduler notify block (info/warn/error). Not yet:
-    server started, player left, TPS below threshold (<14)
+  - [x] Events wired: server started/stopped/crashed, player joined/left,
+    backup completed/failed, scheduler notify block (info/warn/error), TPS below
+    threshold (<14, edge-triggered with 14/15 hysteresis). Player-left shares the
+    "Player join/leave alerts" toggle.
   - Frontend: stores/useNotificationsStore.ts (emitted client-side; no Go NotificationService)
 
 ---
@@ -189,6 +188,15 @@ Beta work begins only after all Alpha tiles are complete and stable.
 - [ ] Import / restore from an external backup file (drag-in or file picker)
 
 ### Tiles — beta
+
+- [ ] Server Config tile — beta enhancements
+  
+  - The tile already shipped in Alpha as a general config-file editor; these are
+    deferred refinements on top of it.
+  - [ ] Grouped server.properties fields (General/Performance/World/Network/Gameplay)
+  - [ ] Gamerule editor (per-world, fetched via RCON when server is running)
+  - [ ] MOTD editor with live preview
+  - Go: backend/services/config_editor.go (extend existing service)
 
 - [ ] File explorer tile
   
@@ -275,6 +283,16 @@ injects a **shim** that implements those same globals against an embedded HTTP
 server. Tiles render remotely with zero per-tile changes (every generated
 binding funnels through `window['go']['main']['App'][Method]`).
 
+**Sequencing decision:** Phases 1–5 are deferred until after all Beta tiles ship.
+The shim is tile-agnostic, so Phases 1–2 cost the same now or later, while the
+expensive-to-retrofit groundwork (Phase 0 — EventBus, console replay buffer,
+uniform `(T, error)` bindings) is already done. Beta also adds the most
+remote-hostile surface (file explorer, mod manager → native file I/O, downloads),
+all of which Phase 5 must adapt; building remote first would mean redoing that
+work per tile. Auth + tunnel (Phases 3–4) also expose the dashboard to the web,
+so they should land once against a stable, hardened feature set. Until then, the
+only ongoing cost is the remote-readiness checklist under "Adding a tile" below.
+
 - [x] **Phase 0 — Event hub refactor**
   - `EventBus` (backend/services/eventbus.go) is now the single emit path; every
     service routes through `bus.Emit(event, data)` instead of calling
@@ -340,6 +358,12 @@ mirrors the one active server like the desktop does (default: mirror).
    b. Add method to relevant service in `backend/services/` c. Bind method on App struct in `backend/app.go` d. Run `wails generate module` to regenerate TS bindings
    e. Import from `frontend/src/wailsjs/go/main/` in the tile
 5. Run `pnpm typecheck` and `go vet ./...` before marking done
+6. Remote-readiness (keeps the future Remote Access feature cheap — see below):
+   a. Fetch data only through generated bindings — never raw `window.go`
+   b. Emit/consume events through `EventBus`, never `runtime.EventsEmit` directly
+   c. Any native-only method (file dialog, OS file/folder open, host path access)
+      must be flagged "needs a remote fallback in Remote Access Phase 5" at the
+      call site, so it surfaces when the remote shim is built
 
 ### Event naming convention
 

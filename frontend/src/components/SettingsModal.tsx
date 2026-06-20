@@ -283,8 +283,8 @@ function NotificationsPane({ settings, update }: {
         />
       </SettingRow>
       <SettingRow
-        label="Player join alerts"
-        description="Notify when a player joins the server."
+        label="Player join/leave alerts"
+        description="Notify when a player joins or leaves the server."
       >
         <Toggle
           checked={settings.notifyOnJoin}

@@ -21,6 +21,7 @@ function App() {
   const [eulaRequired, setEulaRequired] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const autoStarted = useRef(false)
+  const lowTpsWarned = useRef(false)
 
   useEffect(() => {
     useSettingsStore.getState().load()
@@ -133,6 +134,48 @@ function App() {
       cleanup = EventsOn(EVENTS.SCHEDULE_NOTIFY, (data: { kind: string; message: string }) => {
         const kind = (['info', 'warn', 'error'].includes(data.kind) ? data.kind : 'info') as 'info' | 'warn' | 'error'
         emitNotification(kind, data.message)
+      })
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
+  // Server started notification
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.SERVER_STARTED, () => {
+        emitNotification('info', 'Server started')
+      })
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
+  // Player left notifications — shares the join toggle (player-activity alerts)
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.PLAYER_LEFT, (name: string) => {
+        const { settings } = useSettingsStore.getState()
+        if (settings.notifyOnJoin) {
+          emitNotification('join', `${name} left the game`)
+        }
+      })
+    } catch { /* non-Wails context */ }
+    return () => { try { cleanup?.() } catch { } }
+  }, [])
+
+  // Low-TPS warning — edge-triggered with 14/15 hysteresis so a sustained dip
+  // warns once, not every 10s snapshot; re-arms only after TPS recovers.
+  useEffect(() => {
+    let cleanup: (() => void) | undefined
+    try {
+      cleanup = EventsOn(EVENTS.STATS_SNAPSHOT, (snap: { tps: number }) => {
+        if (snap.tps > 0 && snap.tps < 14 && !lowTpsWarned.current) {
+          lowTpsWarned.current = true
+          emitNotification('warn', `TPS dropped to ${snap.tps.toFixed(1)} (below 14)`)
+        } else if (snap.tps >= 15) {
+          lowTpsWarned.current = false
+        }
       })
     } catch { /* non-Wails context */ }
     return () => { try { cleanup?.() } catch { } }
