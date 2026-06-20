@@ -7,9 +7,10 @@ interface SegmentedProps<T extends string> {
   options: Option<T>[]
   value: T
   onChange: (v: T) => void
+  compact?: boolean
 }
 
-export function Segmented<T extends string>({ options, value, onChange }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ options, value, onChange, compact }: SegmentedProps<T>) {
   return (
     <div
       className="flex rounded-lg overflow-hidden shrink-0"
@@ -21,7 +22,7 @@ export function Segmented<T extends string>({ options, value, onChange }: Segmen
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            className="px-3 py-1 text-xs transition-colors"
+            className={`${compact ? 'px-2 py-px' : 'px-3 py-1'} text-xs transition-colors`}
             style={{
               background: active ? 'var(--accent)' : 'transparent',
               color: active ? 'var(--bg-base)' : 'var(--text-muted)',

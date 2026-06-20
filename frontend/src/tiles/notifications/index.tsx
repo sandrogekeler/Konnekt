@@ -40,17 +40,32 @@ function matchesFilter(kind: NotifKind, filter: KindFilter): boolean {
 export function NotificationsTile(_props: TileProps) {
   const { items, clear } = useNotificationsStore()
   const [filter, setFilter] = useState<KindFilter>('all')
+  const [filterOpen, setFilterOpen] = useState(false)
 
   const filtered = useMemo(
     () => [...items].reverse().filter((item) => matchesFilter(item.kind, filter)),
     [items, filter],
   )
 
+  const activeLabel = FILTER_OPTIONS.find((o) => o.value === filter)?.label ?? 'All'
+
   return (
     <div className="flex flex-col h-full">
-      {/* Filter toolbar */}
-      <div className="flex items-center px-3 pt-2 pb-1 shrink-0">
-        <Segmented options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
+      {/* Filter toolbar — collapsed by default */}
+      <div className="flex items-center gap-2 px-3 pt-2 pb-1 shrink-0">
+        <button
+          onClick={() => setFilterOpen((v) => !v)}
+          className="flex items-center gap-1 text-xs transition-colors"
+          style={{ color: filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)' }}
+        >
+          <span>{filterOpen ? '▾' : '▸'}</span>
+          <span className="font-mono">{filterOpen ? 'Filter' : activeLabel}</span>
+        </button>
+        {filterOpen && (
+          <Segmented options={FILTER_OPTIONS} value={filter} onChange={setFilter} compact />
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 flex flex-col gap-1">
