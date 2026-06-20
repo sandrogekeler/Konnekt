@@ -42,6 +42,7 @@ export function ConsoleTile({ serverId }: TileProps) {
   const showTimestamps = useSettingsStore((s) => s.settings.consoleTimestamps)
   const [input, setInput] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
+  const [filterOpen, setFilterOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [levelFilter, setLevelFilter] = useState<LevelFilter>('all')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -81,27 +82,41 @@ export function ConsoleTile({ serverId }: TileProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Search / filter toolbar */}
+      {/* Search / filter toolbar — collapsed by default */}
       <div className="flex items-center gap-2 px-3 pt-2 pb-1 shrink-0">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter…"
-          className="flex-1 rounded px-2 py-0.5 text-xs font-mono outline-none"
-          style={{
-            background: 'var(--hover-surface)',
-            border: '0.5px solid var(--border-subtle)',
-            color: 'var(--text-primary)',
-            fontFamily: "'JetBrains Mono', monospace",
-          }}
-          onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)' }}
-          onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)' }}
-        />
-        <Segmented options={LEVEL_FILTER_OPTIONS} value={levelFilter} onChange={setLevelFilter} />
-        <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-faint)' }}>
-          {filtered.length}/{lines.length}
-        </span>
+        <button
+          onClick={() => setFilterOpen((v) => !v)}
+          className="flex items-center gap-1 text-xs transition-colors shrink-0"
+          style={{ color: filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)', fontFamily: "'JetBrains Mono', monospace" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)' }}
+        >
+          <span>{filterOpen ? '▾' : '▸'}</span>
+          <span>{filterOpen ? 'Filter' : levelFilter !== 'all' ? levelFilter : 'All'}</span>
+        </button>
+        {filterOpen && (
+          <>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="search…"
+              className="flex-1 rounded px-2 py-0.5 text-xs font-mono outline-none"
+              style={{
+                background: 'var(--hover-surface)',
+                border: '0.5px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)' }}
+              onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)' }}
+            />
+            <Segmented options={LEVEL_FILTER_OPTIONS} value={levelFilter} onChange={setLevelFilter} compact />
+            <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-faint)' }}>
+              {filtered.length}/{lines.length}
+            </span>
+          </>
+        )}
       </div>
 
       <div
