@@ -107,16 +107,34 @@ were shipped early during Alpha. Their status below reflects reality.
   - [x] Graph entrance animation on maximize: nodes stagger-fade in, edges draw in
     via AnimatedEdge (SVG pathLength stroke-dashoffset technique); handle re-measurement
     deferred until after animations so connections land at correct positions
-  - [ ] Phase 2b: live node highlighting via schedule:* events, run history to disk,
-    cycle visualization, next-run in compact summary
+  - [x] Phase 2b complete:
+    - Live node highlighting: GraphEditor subscribes to schedule:run/node events,
+      pulses the running node (accent glow), colors finished nodes green/red, and
+      lights fired control edges in accent; auto-clears ~2.4s after run finishes.
+    - Run history persisted to ~/.config/konnekt/scheduler-history.json (load on
+      startup, capped at 200; addHistory writes a snapshot outside the lock).
+    - Cycle visualization: detectControlCycles() statically flags nodes/edges in a
+      control-flow loop (amber) — warns before a run aborts on the maxNodesPerRun guard.
+    - Next-run in compact summary: backend NextRuns() computes the next fire time for
+      interval/timeOfDay/cron triggers (GetScheduleNextRuns, polled every 30s); summary
+      shows per-graph "in 5m/2h/3d" + a soonest "next run" footer.
 
-- [ ] Worlds tile - 3D Space / Solar System Visualization
-  (placeholder tile registered, no backend yet — extend, don't re-scaffold)
-  - List world folders found in server working directory.
-  - World visualized as planets in space, grouped into solar systems. # ADD MULTI-WORLD SERVER COMPATIBILITY PLANS
-  - Show folder size, last modified date with hover tooltip.
-  - Switch active world (stop server → swap level-name in server.properties → restart)
-  - Delete world (with confirmation modal)
+- [x] Worlds tile - 3D Solar-System World Manager
+  - 3-level navigation: Galaxy (L0) → World system (L1) → Floating HUD card (L2)
+  - L0: central Sun = server, each world save orbits it; active world wears rings;
+    cursor parallax (useParallax lerps group rotation from pointer).
+  - L1: overworld is the central body, nether/the_end are moons; OrbitControls.
+  - L2: WorldHud (drei Html) anchored to the clicked body — metadata from level.dat
+    (NBT reader: version, mode, difficulty, seed, last-played), size, modified, path;
+    Set-active with 3-way confirm when running (Stop+restart / Stop only / Cancel),
+    per-world Backup (reuses BackupService + shared progress bar), Open folder,
+    Rename, Duplicate, Delete.
+  - Backend: WorldService (ListWorlds, SetActiveWorld, DeleteWorld, RenameWorld,
+    DuplicateWorld, OpenWorldFolder, BackupWorld); built-in NBT reader (nbt.go,
+    no new Go dependency); groups Paper/Spigot siblings + vanilla DIM-1/DIM1.
+  - Compact summary: world count, active world name, per-world size list.
+  - three.js + @react-three/fiber + @react-three/drei; lazy-loaded so the bundle
+    only ships when the tile is maximized.
 
 - [x] Backups tile
   - [x] Manual backup button (zip world folder → {dataDir}/backups/{serverID}/)

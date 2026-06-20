@@ -563,6 +563,96 @@ export namespace models {
 	        this.players = source["players"];
 	    }
 	}
+	export class WorldDimension {
+	    kind: string;
+	    path: string;
+	    size: number;
+	    modified: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorldDimension(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.path = source["path"];
+	        this.size = source["size"];
+	        this.modified = source["modified"];
+	    }
+	}
+	export class WorldMeta {
+	    found: boolean;
+	    levelName: string;
+	    version: string;
+	    gameMode: string;
+	    difficulty: string;
+	    hardcore: boolean;
+	    lastPlayed: number;
+	    seed: string;
+	    spawnX: number;
+	    spawnY: number;
+	    spawnZ: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorldMeta(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.found = source["found"];
+	        this.levelName = source["levelName"];
+	        this.version = source["version"];
+	        this.gameMode = source["gameMode"];
+	        this.difficulty = source["difficulty"];
+	        this.hardcore = source["hardcore"];
+	        this.lastPlayed = source["lastPlayed"];
+	        this.seed = source["seed"];
+	        this.spawnX = source["spawnX"];
+	        this.spawnY = source["spawnY"];
+	        this.spawnZ = source["spawnZ"];
+	    }
+	}
+	export class WorldSystem {
+	    name: string;
+	    active: boolean;
+	    totalSize: number;
+	    modified: number;
+	    dimensions: WorldDimension[];
+	    meta: WorldMeta;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorldSystem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.active = source["active"];
+	        this.totalSize = source["totalSize"];
+	        this.modified = source["modified"];
+	        this.dimensions = this.convertValues(source["dimensions"], WorldDimension);
+	        this.meta = this.convertValues(source["meta"], WorldMeta);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 
 }
 

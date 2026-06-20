@@ -7,7 +7,7 @@ import {
   useUpdateNodeInternals,
   type Connection, type Node as FlowNode, type Edge as FlowEdge,
 } from '@xyflow/react'
-import { SchedulerCtx } from './schedulerContext'
+import { SchedulerCtx, type NodeRunState } from './schedulerContext'
 import { BlockNode } from './BlockNode'
 import { AnimatedEdge } from './AnimatedEdge'
 import { BlockPalette } from './BlockPalette'
@@ -16,9 +16,18 @@ import { NodeDataPanel } from './NodeDataPanel'
 import { QuickAddMenu } from './QuickAddMenu'
 import {
   graphToFlow, flowToGraph, isValidConnection, randId, defaultConfig,
+  detectControlCycles,
   type NodeData, type BlockFlowNode,
 } from './graphMapping'
+import { EventsOn } from '../../../../wailsjs/runtime/runtime'
+import { EVENTS } from '../../../lib/constants'
 import type { models } from '../../../../wailsjs/go/models'
+
+// schedule:* event payload shapes (emitted by the Go engine via EventBus).
+interface RunEvt   { graphId: string }
+interface NodeEvt  { graphId: string; nodeId: string; status?: string; firedPort?: string }
+
+const RUN_CLEAR_MS = 2400
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { smoothstep: AnimatedEdge }
@@ -76,6 +85,14 @@ function GraphEditorInner({
   const [saving, setSaving]         = useState(false)
   const runStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // ── Live run highlighting (driven by schedule:* events) ───────────────────
+  const [nodeRunState, setNodeRunState] = useState<Map<string, NodeRunState>>(new Map())
+  const [firedEdges, setFiredEdges]     = useState<Set<string>>(new Set())
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Refs so the event handlers (registered once) read current graph + edges.
+  const graphIdRef = useRef<string | null>(null)
+  const edgesRef   = useRef<FlowEdge[]>([])
+
   const [quickAdd, setQuickAdd] = useState<{
     screen: { x: number; y: number }
     flow:   { x: number; y: number }
@@ -94,6 +111,49 @@ function GraphEditorInner({
     setRunStatus(msg)
     if (runStatusTimer.current) clearTimeout(runStatusTimer.current)
     runStatusTimer.current = setTimeout(() => setRunStatus(null), 4000)
+  }, [])
+
+  // Keep refs in sync so the once-registered event handlers see current state.
+  useEffect(() => { edgesRef.current = edges }, [edges])
+  useEffect(() => { graphIdRef.current = graphId }, [graphId])
+
+  // ── Subscribe to live run events ──────────────────────────────────────────
+  // The engine emits these for every graph; we only reflect the loaded one.
+  useEffect(() => {
+    const reset = () => { setNodeRunState(new Map()); setFiredEdges(new Set()) }
+
+    const offRunStart = EventsOn(EVENTS.SCHEDULE_RUN_STARTED, (p: RunEvt) => {
+      if (p.graphId !== graphIdRef.current) return
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      reset()
+    })
+    const offNodeStart = EventsOn(EVENTS.SCHEDULE_NODE_STARTED, (p: NodeEvt) => {
+      if (p.graphId !== graphIdRef.current) return
+      setNodeRunState(m => new Map(m).set(p.nodeId, 'running'))
+    })
+    const offNodeFin = EventsOn(EVENTS.SCHEDULE_NODE_FINISHED, (p: NodeEvt) => {
+      if (p.graphId !== graphIdRef.current) return
+      setNodeRunState(m =>
+        new Map(m).set(p.nodeId, p.status === 'failed' ? 'failed' : 'success'))
+      const fired = `ctrl:${p.firedPort ?? ''}`
+      setFiredEdges(s => {
+        const next = new Set(s)
+        for (const e of edgesRef.current) {
+          if (e.source === p.nodeId && (e.sourceHandle ?? '') === fired) next.add(e.id)
+        }
+        return next
+      })
+    })
+    const offRunFin = EventsOn(EVENTS.SCHEDULE_RUN_FINISHED, (p: RunEvt) => {
+      if (p.graphId !== graphIdRef.current) return
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      clearTimer.current = setTimeout(reset, RUN_CLEAR_MS)
+    })
+
+    return () => {
+      offRunStart(); offNodeStart(); offNodeFin(); offRunFin()
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+    }
   }, [])
 
   // ── Right-click on canvas → open quick-add ───────────────────────────────
@@ -146,6 +206,8 @@ function GraphEditorInner({
     setGraphEnabled(g.enabled)
     setCreatedAt(g.createdAt)
     setSelectedNodeId(null)
+    setNodeRunState(new Map())
+    setFiredEdges(new Set())
     // Re-measure handle positions after the maximize animation (panel animates
     // for 180ms). ReactFlow's initial measurement runs while the panel ancestor
     // may still have scale < 1, producing stale edge endpoints. Waiting 220ms
@@ -348,9 +410,18 @@ function GraphEditorInner({
     updateNodeInternals(nodeId)
   }, [setNodes, updateNodeInternals])
 
+  // Static control-flow cycle analysis (cycles abort runs — warn the author).
+  const { cycleNodes, cycleEdges } = useMemo(
+    () => detectControlCycles(nodes, edges),
+    [nodes, edges],
+  )
+
   const ctxValue = useMemo(
-    () => ({ blockDefs: defMap, edges, collapsed, onToggleCollapse }),
-    [defMap, edges, collapsed, onToggleCollapse],
+    () => ({
+      blockDefs: defMap, edges, collapsed, onToggleCollapse,
+      nodeRunState, firedEdges, cycleNodes, cycleEdges,
+    }),
+    [defMap, edges, collapsed, onToggleCollapse, nodeRunState, firedEdges, cycleNodes, cycleEdges],
   )
 
   // ── Toolbar button style helper ───────────────────────────────────────────

@@ -18,16 +18,21 @@ interface Props {
 }
 
 // Fixed scene-space offset from the focused planet (not sun-axis-relative)
-const FOCUS_ELEV   = 4.5  // units above the orbital plane
-const FOCUS_BACK   = 2.0  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
+const FOCUS_ELEV   = 5.5  // units above the orbital plane
+const FOCUS_BACK   = 2.5  // units in +Z (gives slight frontal tilt; sun visible when planet is at +Z)
 const FOCUS_DIST         = Math.sqrt(FOCUS_ELEV * FOCUS_ELEV + FOCUS_BACK * FOCUS_BACK)  // ≈ 4.92
 const CLOSE_DIST_MOON    = 1.2  // camera distance when a moon is the HUD focus
 const CLOSE_DIST_PLANET  = 2.5  // camera distance when the main planet is the HUD focus
-const ZOOM_LAMBDA  = 3.5
+const ZOOM_LAMBDA  = 3.2
+const CAM_LAMBDA   = 4.5  // single time-constant for all camera transitions (tunable)
+
+// Precomputed unit direction: offset applied from the focused body to place the camera eye
+const FOCUS_DIR = new THREE.Vector3(0, FOCUS_ELEV, FOCUS_BACK).normalize()
 
 function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
   const groupRef    = useRef<THREE.Group>(null)
   const fadeUniform = useRef<{ value: number } | null>(null)
+  const entranceRef = useRef(0)  // ramps 0→1 on mount for star-only fade-in
 
   // Patch the Stars ShaderMaterial once it mounts so we can drive a uFade uniform.
   // drei's Stars uses AdditiveBlending + custom GLSL — material.opacity alone has no
@@ -44,14 +49,28 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
       // original on the next re-render of Stars (via <primitive attach="material">).
       const fade = { value: 1.0 }
       mat.uniforms.uFade = fade
+      // Vertex: add vShimmer varying — per-star phase from positional hash so each
+      // star twinkles independently rather than all pulsing in sync.
+      mat.vertexShader = mat.vertexShader
+        .replace(
+          'varying vec3 vColor;',
+          'varying vec3 vColor;\nvarying float vShimmer;',
+        )
+        .replace(
+          'gl_Position = projectionMatrix * mvPosition;',
+          // fract() keeps the hash in [0,1] so sin() never loses precision on large floats.
+          // Per-star frequency (1.0–2.6) means stars drift out of phase over time instead
+          // of all sharing the same period with just a phase offset.
+          'float starPhase = fract(position.x * 1.27 + position.y * 3.11 + position.z * 0.74) * 6.2832;\n        float starFreq  = 1.0 + fract(position.z * 2.17 + position.x * 0.89) * 1.6;\n        vShimmer = sin(time * starFreq + starPhase);\n        gl_Position = projectionMatrix * mvPosition;',
+        )
       mat.fragmentShader = mat.fragmentShader
         .replace(
           'uniform float fade;',
-          'uniform float fade;\nuniform float uFade;',
+          'uniform float fade;\nuniform float uFade;\nvarying float vShimmer;',
         )
         .replace(
           'gl_FragColor = vec4(vColor, opacity);',
-          'gl_FragColor = vec4(vColor, opacity * uFade);',
+          'gl_FragColor = vec4(vColor * (0.82 + 0.18 * vShimmer), opacity * uFade);',
         )
       mat.needsUpdate = true
       fadeUniform.current = fade
@@ -61,9 +80,10 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
   useFrame((_, delta) => {
     if (!groupRef.current) return
     groupRef.current.rotation.y += delta * 0.001
+    entranceRef.current = THREE.MathUtils.damp(entranceRef.current, 1, 8, delta)
     if (fadeUniform.current) {
-      // Fade to 0 over the first 40% of the zoom-in transition, back to 1 at zero
-      fadeUniform.current.value = Math.max(0, 1 - zoomRef.current / 0.4)
+      const zoomFade = Math.max(0, 1 - zoomRef.current / 0.4)
+      fadeUniform.current.value = entranceRef.current * zoomFade
     }
   })
 
@@ -72,6 +92,22 @@ function SlowStars({ zoomRef }: { zoomRef: React.MutableRefObject<number> }) {
       <Stars radius={60} depth={40} count={1400} factor={3} fade />
     </group>
   )
+}
+
+// Scales the scene content (planets, sun, controller) from 0.97→1 on reveal.
+// Lives inside the Canvas so stars (outside this group) are unaffected.
+function SceneScaleGroup({ revealedRef, children }: {
+  revealedRef: React.MutableRefObject<boolean>
+  children: React.ReactNode
+}) {
+  const groupRef = useRef<THREE.Group>(null)
+  const scaleRef = useRef(0.82)
+  useFrame((_, delta) => {
+    if (!groupRef.current || !revealedRef.current) return
+    scaleRef.current = THREE.MathUtils.damp(scaleRef.current, 1, 10, delta)
+    groupRef.current.scale.setScalar(scaleRef.current)
+  })
+  return <group ref={groupRef} scale={0.82}>{children}</group>
 }
 
 // Fires onReady after 2 rendered frames so the entrance reveal waits for actual
@@ -100,96 +136,61 @@ interface ControllerProps {
 }
 
 function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef, selectedDimensionRef }: ControllerProps) {
-  const lastFocusNameRef      = useRef<string | null>(null)
-  const lastSelectedDimRef    = useRef<string | null>(null)
-  const hudOffsetRef          = useRef(0)
-
-  // Reuse vectors across frames to avoid GC pressure
-  const overviewEye      = useRef(new THREE.Vector3(0, 14, 5))
-  const overviewTarget   = useRef(new THREE.Vector3(0, 0, 0))
-  const blendedEye       = useRef(new THREE.Vector3())
-  const blendedTarget    = useRef(new THREE.Vector3())
-  const focusEye         = useRef(new THREE.Vector3())
-  const blendedFocusPos  = useRef(new THREE.Vector3())
+  const hudOffsetRef  = useRef(0)
+  // Live camera state — damped toward desiredEye/desiredTarget each frame
+  const currentEye    = useRef(new THREE.Vector3(0, 14, 5))
+  const currentTarget = useRef(new THREE.Vector3(0, 0, 0))
+  const desiredEye    = useRef(new THREE.Vector3(0, 14, 5))
+  const desiredTarget = useRef(new THREE.Vector3(0, 0, 0))
 
   useFrame((state, delta) => {
-    const targetP = focusNameRef.current ? 1 : 0
-    zoomRef.current = THREE.MathUtils.damp(zoomRef.current, targetP, ZOOM_LAMBDA, delta)
-    const p = zoomRef.current
+    // Keep zoomRef updated for SlowStars fade (0 = overview, 1 = focused)
+    zoomRef.current = THREE.MathUtils.damp(zoomRef.current, focusNameRef.current ? 1 : 0, ZOOM_LAMBDA, delta)
 
-    // Damp HUD offset first so t is available for the eye-distance calc below.
+    // HUD offset drives the view-offset shift; kept independent of eye/target math
     const hudTarget = hudOpenRef.current ? 1 : 0
-    hudOffsetRef.current = THREE.MathUtils.damp(hudOffsetRef.current, hudTarget, 5, delta)
+    hudOffsetRef.current = THREE.MathUtils.damp(hudOffsetRef.current, hudTarget, 4.5, delta)
     const t = hudOffsetRef.current
 
-    if (focusNameRef.current) lastFocusNameRef.current = focusNameRef.current
-    const nameForPos = focusNameRef.current ?? lastFocusNameRef.current
+    // Compute desired eye + target from discrete logical state — no feedback loops
+    const name      = focusNameRef.current
+    const dim       = selectedDimensionRef.current
+    const planetPos = name ? positionsRef.current.get(name) : undefined
 
-    // Retain last non-null dim during animation so we know which moon to blend from.
-    if (selectedDimensionRef.current) lastSelectedDimRef.current = selectedDimensionRef.current
-
-    const planetPos = nameForPos ? positionsRef.current.get(nameForPos) : undefined
-    const moonKey   = (() => {
-      const d = lastSelectedDimRef.current
-      return nameForPos && d && d !== 'overworld' ? `${nameForPos}/${d}` : null
-    })()
-    const moonPos = moonKey ? positionsRef.current.get(moonKey) : undefined
-
-    // Interpolate focusPos between planet (t=0) and moon (t=1).
-    // This means closing the HUD smoothly glides the camera target from the moon
-    // back toward the planet instead of snapping when lastSelectedDimRef is cleared.
-    let focusPos: THREE.Vector3 | undefined
-    if (moonPos && planetPos && t > 0.001) {
-      blendedFocusPos.current.lerpVectors(planetPos, moonPos, t)
-      focusPos = blendedFocusPos.current
+    if (!name || !planetPos) {
+      desiredEye.current.set(0, 14, 5)
+      desiredTarget.current.set(0, 0, 0)
     } else {
-      focusPos = planetPos
-      lastSelectedDimRef.current = null  // safe to clear once t has fully settled
+      const isMoon  = dim !== null && dim !== 'overworld'
+      const moonPos = isMoon ? positionsRef.current.get(`${name}/${dim}`) : undefined
+      const bodyPos = (isMoon && moonPos) ? moonPos : planetPos
+      const dist    = isMoon ? CLOSE_DIST_MOON : (dim === 'overworld' ? CLOSE_DIST_PLANET : FOCUS_DIST)
+
+      desiredTarget.current.copy(bodyPos)
+      desiredEye.current.copy(bodyPos).addScaledVector(FOCUS_DIR, dist)
     }
+
+    // Single lambda damps actual camera toward desired — covers all transitions uniformly
+    const k = 1 - Math.exp(-CAM_LAMBDA * delta)
+    currentEye.current.lerp(desiredEye.current, k)
+    currentTarget.current.lerp(desiredTarget.current, k)
 
     const cam = camRef.current
     if (cam) {
-      if (!focusPos || p < 0.001) {
-        cam.setLookAt(
-          overviewEye.current.x, overviewEye.current.y, overviewEye.current.z,
-          0, 0, 0, false,
-        )
-      } else {
-        // Eye distance lerps from FOCUS_DIST (planetary view) toward the close-up
-        // distance as the HUD panel opens. Moons are small so zoom in tighter;
-        // the main planet is larger so stay further back.
-        const isMoonFocus = lastSelectedDimRef.current !== null && lastSelectedDimRef.current !== 'overworld'
-        const closeDist   = isMoonFocus ? CLOSE_DIST_MOON : CLOSE_DIST_PLANET
-        const eyeScale    = THREE.MathUtils.lerp(1, closeDist / FOCUS_DIST, t)
-        focusEye.current.set(
-          focusPos.x,
-          focusPos.y + FOCUS_ELEV * eyeScale,
-          focusPos.z + FOCUS_BACK * eyeScale,
-        )
-
-        const ease = p * p * (3 - 2 * p) // smoothstep
-        blendedEye.current.lerpVectors(overviewEye.current, focusEye.current, ease)
-        blendedTarget.current.lerpVectors(overviewTarget.current, focusPos, ease)
-
-        cam.setLookAt(
-          blendedEye.current.x, blendedEye.current.y, blendedEye.current.z,
-          blendedTarget.current.x, blendedTarget.current.y, blendedTarget.current.z,
-          false,
-        )
-      }
+      cam.setLookAt(
+        currentEye.current.x,    currentEye.current.y,    currentEye.current.z,
+        currentTarget.current.x, currentTarget.current.y, currentTarget.current.z,
+        false,
+      )
     }
 
-    // Smoothly shift planet to right quarter (75% from left) when the HUD panel opens.
-    // Panel is on the left half; planet should be centred in the right half.
-    // setViewOffset with xOff=0 and a wider virtual frustum pushes the lookAt point
-    // further right in the rendered output without changing the view direction.
-    // Formula (t = 0→1): xOff = 0, fullW = W*(1+0.5*t)
-    //   → planet position = (fullW/2) / W = 0.5 + 0.25*t → 0.75 at t=1.
+    // Shift focused body into right 2/3 when HUD panel is open
+    // Formula (t = 0→1): fullW = W*(1 + t/3) → planet at (fullW/2)/W = 0.5 + t/6 → 0.667 at t=1
     const perspCam = state.camera as unknown as THREE.PerspectiveCamera
     if (t > 0.001) {
       const W = state.gl.domElement.width
       const H = state.gl.domElement.height
-      perspCam.setViewOffset(W * (1 + 0.5 * t), H, 0, 0, W, H)
+      perspCam.setViewOffset(W * (1 + t / 3), H, 0, 0, W, H)
     } else {
       perspCam.clearViewOffset()
     }
@@ -204,7 +205,11 @@ export function WorldsScene({
   const [focusName, setFocusName]               = useState<string | null>(null)
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
   const [revealed, setRevealed]                 = useState(false)
-  const handleReady = useCallback(() => setRevealed(true), [])
+  const revealedRef = useRef(false)
+  const handleReady = useCallback(() => {
+    setRevealed(true)
+    revealedRef.current = true
+  }, [])
 
   const focusNameRef = useRef<string | null>(null)
   const positionsRef          = useRef(new Map<string, THREE.Vector3>())
@@ -246,11 +251,8 @@ export function WorldsScene({
           layout, already correct after the 220ms gate) is never affected by transform */}
       <div style={{
         position: 'absolute', inset: 0,
-        opacity:   revealed ? 1 : 0,
-        transform: revealed ? 'scale(1)' : 'scale(0.97)',
-        transition: revealed
-          ? 'opacity 0.4s cubic-bezier(0.25,0,0.25,1), transform 0.4s cubic-bezier(0.25,0,0.25,1)'
-          : 'none',
+        opacity:    revealed ? 1 : 0,
+        transition: revealed ? 'opacity 0.4s cubic-bezier(0.25,0,0.25,1)' : 'none',
       }}>
       {/* ← galaxy button — only visible in planetary view when the HUD panel is closed */}
       {focusName && !hudOpen && (
@@ -267,36 +269,38 @@ export function WorldsScene({
           <SlowStars zoomRef={zoomRef} />
           <FirstFrameSignal onReady={handleReady} />
 
-          <Galaxy
-            worlds={worlds}
-            focusName={focusName}
-            positionsRef={positionsRef}
-            selectedDimension={selectedDimension}
-            onSelectWorld={selectWorld}
-            onSelectDimension={kind => setSelectedDimension(k => k === kind ? null : kind)}
-          />
+          <SceneScaleGroup revealedRef={revealedRef}>
+            <Galaxy
+              worlds={worlds}
+              focusName={focusName}
+              positionsRef={positionsRef}
+              selectedDimension={selectedDimension}
+              onSelectWorld={selectWorld}
+              onSelectDimension={kind => setSelectedDimension(k => k === kind ? null : kind)}
+            />
 
-          {/* SceneController last so all planet positions are written before it reads them */}
-          <SceneController
-            focusNameRef={focusNameRef}
-            positionsRef={positionsRef}
-            zoomRef={zoomRef}
-            camRef={camRef}
-            hudOpenRef={hudOpenRef}
-            selectedDimensionRef={selectedDimensionRef}
-          />
+            {/* SceneController last so all planet positions are written before it reads them */}
+            <SceneController
+              focusNameRef={focusNameRef}
+              positionsRef={positionsRef}
+              zoomRef={zoomRef}
+              camRef={camRef}
+              hudOpenRef={hudOpenRef}
+              selectedDimensionRef={selectedDimensionRef}
+            />
+          </SceneScaleGroup>
         </Suspense>
 
         <CameraControls ref={camRef} enabled={false} />
       </Canvas>
 
       {/* HUD panel — outside Canvas so it receives pointer events normally.
-          Slides in from the LEFT; camera simultaneously shifts the planet to the right half
-          via setViewOffset (planet at 75% from left = centre of right half). */}
+          Slides in from the LEFT; camera simultaneously shifts the planet into the right 2/3
+          via setViewOffset (planet at ≈66.7% from left = centre of the right two-thirds). */}
       <div
         style={{
           position: 'absolute', top: 0, left: 0, bottom: 0,
-          width: '50%',
+          width: '33.3333%',
           background: 'var(--bg-surface)',
           borderRight: '0.5px solid var(--border-subtle)',
           display: 'flex', flexDirection: 'column',

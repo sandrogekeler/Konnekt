@@ -7,6 +7,7 @@ import {
   GetScheduleBlockDefs,
   RunScheduleGraphNow,
   GetScheduleRunHistory,
+  GetScheduleNextRuns,
   PreviewScheduleNode,
 } from '../../../wailsjs/go/main/App'
 import type { models } from '../../../wailsjs/go/models'
@@ -15,6 +16,7 @@ export function useScheduler() {
   const [graphs,    setGraphs]    = useState<models.Graph[]>([])
   const [blockDefs, setBlockDefs] = useState<models.BlockDef[]>([])
   const [history,   setHistory]   = useState<models.RunRecord[]>([])
+  const [nextRuns,  setNextRuns]  = useState<Record<string, number>>({})
   const [loading,   setLoading]   = useState(false)
 
   const refreshGraphs = useCallback(async () => {
@@ -27,13 +29,25 @@ export function useScheduler() {
     setHistory(h ?? [])
   }, [])
 
+  const refreshNextRuns = useCallback(async () => {
+    const n = await GetScheduleNextRuns()
+    setNextRuns(n ?? {})
+  }, [])
+
   useEffect(() => {
     Promise.all([
       GetScheduleGraphs().then(g => setGraphs(g ?? [])),
       GetScheduleBlockDefs().then(d => setBlockDefs(d ?? [])),
       GetScheduleRunHistory().then(h => setHistory(h ?? [])),
+      GetScheduleNextRuns().then(n => setNextRuns(n ?? {})),
     ])
   }, [])
+
+  // Re-poll next-run times so the summary's countdown stays fresh.
+  useEffect(() => {
+    const t = setInterval(() => { refreshNextRuns() }, 30_000)
+    return () => clearInterval(t)
+  }, [refreshNextRuns])
 
   const saveGraph = useCallback(async (g: models.Graph): Promise<models.Graph> => {
     setLoading(true)
@@ -74,8 +88,8 @@ export function useScheduler() {
   )
 
   return {
-    graphs, blockDefs, history, loading,
+    graphs, blockDefs, history, nextRuns, loading,
     saveGraph, deleteGraph, setEnabled, runGraph, previewNode,
-    refreshGraphs, refreshHistory,
+    refreshGraphs, refreshHistory, refreshNextRuns,
   }
 }

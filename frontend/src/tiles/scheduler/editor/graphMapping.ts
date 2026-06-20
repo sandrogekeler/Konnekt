@@ -90,6 +90,58 @@ export function randId(): string {
   return Math.random().toString(36).slice(2, 10)
 }
 
+// detectControlCycles finds nodes and edges that participate in a control-flow
+// cycle. The engine aborts any run that loops (maxNodesPerRun guard), so the
+// editor flags cycles statically to warn the author before they run.
+export function detectControlCycles(
+  nodes: { id: string }[],
+  edges: FlowEdge[],
+): { cycleNodes: Set<string>; cycleEdges: Set<string> } {
+  const cycleNodes = new Set<string>()
+  const cycleEdges = new Set<string>()
+
+  const controlEdges = edges.filter(
+    e => (e.data as { kind?: string } | undefined)?.kind !== 'data'
+      && !(e.sourceHandle ?? '').startsWith('data:'),
+  )
+  if (controlEdges.length === 0) return { cycleNodes, cycleEdges }
+
+  const adj = new Map<string, string[]>()
+  for (const e of controlEdges) {
+    const list = adj.get(e.source) ?? []
+    list.push(e.target)
+    adj.set(e.source, list)
+  }
+
+  // Memoised forward reachability over control edges.
+  const reachCache = new Map<string, Set<string>>()
+  const reachableFrom = (start: string): Set<string> => {
+    const cached = reachCache.get(start)
+    if (cached) return cached
+    const seen = new Set<string>()
+    const stack = [...(adj.get(start) ?? [])]
+    while (stack.length) {
+      const cur = stack.pop()!
+      if (seen.has(cur)) continue
+      seen.add(cur)
+      for (const next of adj.get(cur) ?? []) stack.push(next)
+    }
+    reachCache.set(start, seen)
+    return seen
+  }
+
+  // An edge u→v closes a cycle when v can reach u again.
+  for (const e of controlEdges) {
+    if (e.source === e.target || reachableFrom(e.target).has(e.source)) {
+      cycleEdges.add(e.id)
+      cycleNodes.add(e.source)
+      cycleNodes.add(e.target)
+    }
+  }
+
+  return { cycleNodes, cycleEdges }
+}
+
 export function defaultConfig(def: models.BlockDef): Record<string, unknown> {
   const cfg: Record<string, unknown> = {}
   for (const f of def.configSchema ?? []) {

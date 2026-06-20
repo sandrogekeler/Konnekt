@@ -179,6 +179,8 @@ export function Dashboard() {
       el.style.backgroundColor = 'rgba(0,0,0,0.6)'
     }
 
+    let cleanupId: ReturnType<typeof setTimeout> | undefined
+
     if (panelRef.current && rect) {
       const panel = panelRef.current
       panel.style.transition = 'none'
@@ -189,6 +191,17 @@ export function Dashboard() {
       panel.style.transition = `transform 180ms cubic-bezier(0.34, 1.15, 0.64, 1), opacity 140ms ease-out`
       panel.style.opacity = '1'
       panel.style.transform = 'translate(0px, 0px) scale(1, 1)'
+      // After the animation lands, strip the inline transform so the panel has no
+      // CSS transform at all. Leaving even an identity transform (scale(1,1)) causes
+      // WebView2/Chromium to allocate the WebGL compositing layer at the tile's
+      // initial visual size (the small flip-start scale), producing a canvas that
+      // doesn't fill the maximized panel.
+      cleanupId = setTimeout(() => {
+        if (panelRef.current) {
+          panelRef.current.style.transform = ''
+          panelRef.current.style.transition = ''
+        }
+      }, 200)
     } else if (panelRef.current) {
       const panel = panelRef.current
       panel.style.transition = 'none'
@@ -200,6 +213,8 @@ export function Dashboard() {
       panel.style.opacity = '1'
       panel.style.transform = 'scale(1)'
     }
+
+    return () => clearTimeout(cleanupId)
   }, [maximizedId]) // intentionally excludes `closing` — only fires on open
 
   // Collapse animation — runs when closing becomes true

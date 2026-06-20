@@ -4,6 +4,8 @@ import {models} from '../models';
 
 export function AcceptEula(arg1:string):Promise<void>;
 
+export function BackupWorld(arg1:string,arg2:string):Promise<models.Backup>;
+
 export function BanPlayer(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function BrowseDirectory():Promise<string>;
@@ -19,6 +21,10 @@ export function DeleteLayoutPreset(arg1:string):Promise<void>;
 export function DeleteScheduleGraph(arg1:string):Promise<void>;
 
 export function DeleteServerConfig(arg1:string):Promise<void>;
+
+export function DeleteWorld(arg1:string,arg2:string):Promise<void>;
+
+export function DuplicateWorld(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function GetActiveLayout():Promise<string>;
 
@@ -46,6 +52,8 @@ export function GetScheduleBlockDefs():Promise<Array<models.BlockDef>>;
 
 export function GetScheduleGraphs():Promise<Array<models.Graph>>;
 
+export function GetScheduleNextRuns():Promise<Record<string, number>>;
+
 export function GetScheduleRunHistory():Promise<Array<models.RunRecord>>;
 
 export function GetServerConfigs():Promise<Array<models.ServerConfig>>;
@@ -62,15 +70,21 @@ export function ListBackups(arg1:string):Promise<Array<models.Backup>>;
 
 export function ListConfigFiles(arg1:string):Promise<Array<models.ConfigFile>>;
 
+export function ListWorlds(arg1:string):Promise<Array<models.WorldSystem>>;
+
 export function OpenBackupDir(arg1:string):Promise<void>;
 
 export function OpenDataDir():Promise<void>;
+
+export function OpenWorldFolder(arg1:string,arg2:string):Promise<void>;
 
 export function PardonPlayer(arg1:string,arg2:string):Promise<void>;
 
 export function PreviewScheduleNode(arg1:models.Graph,arg2:string):Promise<models.NodePreview>;
 
 export function ReadConfigFile(arg1:string,arg2:string):Promise<string>;
+
+export function RenameWorld(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RestartServer(arg1:string):Promise<void>;
 
@@ -97,6 +111,8 @@ export function SaveServerConfig(arg1:models.ServerConfig):Promise<void>;
 export function SendCommand(arg1:string,arg2:string):Promise<void>;
 
 export function SetActiveServerID(arg1:string):Promise<void>;
+
+export function SetActiveWorld(arg1:string,arg2:string):Promise<void>;
 
 export function SetScheduleGraphEnabled(arg1:string,arg2:boolean):Promise<void>;
 

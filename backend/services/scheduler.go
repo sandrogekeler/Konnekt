@@ -67,6 +67,11 @@ func (s *SchedulerService) SetDataDir(dir string) {
 		s.graphs = graphs
 		s.mu.Unlock()
 	}
+	if history, err := s.loadHistory(); err == nil {
+		s.mu.Lock()
+		s.history = history
+		s.mu.Unlock()
+	}
 	primitives := s.primitiveMap()
 	s.registry.LoadManifests(filepath.Join(dir, "blocks"), primitives)
 }
@@ -218,11 +223,47 @@ func (s *SchedulerService) ImportGraphJSON(raw string) (models.Graph, error) {
 
 func (s *SchedulerService) addHistory(rec models.RunRecord) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.history = append(s.history, rec)
 	if len(s.history) > historyCapacity {
 		s.history = s.history[len(s.history)-historyCapacity:]
 	}
+	snapshot := make([]models.RunRecord, len(s.history))
+	copy(snapshot, s.history)
+	s.mu.Unlock()
+
+	// Persist outside the lock; history is small and writes are infrequent.
+	if err := s.writeHistory(snapshot); err != nil {
+		fmt.Printf("scheduler: write history: %v\n", err)
+	}
+}
+
+func (s *SchedulerService) loadHistory() ([]models.RunRecord, error) {
+	data, err := os.ReadFile(filepath.Join(s.dataDir, "scheduler-history.json"))
+	if os.IsNotExist(err) {
+		return []models.RunRecord{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var history []models.RunRecord
+	if err := json.Unmarshal(data, &history); err != nil {
+		return nil, err
+	}
+	if len(history) > historyCapacity {
+		history = history[len(history)-historyCapacity:]
+	}
+	return history, nil
+}
+
+func (s *SchedulerService) writeHistory(history []models.RunRecord) error {
+	if s.dataDir == "" {
+		return nil
+	}
+	data, err := json.Marshal(history)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(s.dataDir, "scheduler-history.json"), data, 0644)
 }
 
 func (s *SchedulerService) activeServerID() string {

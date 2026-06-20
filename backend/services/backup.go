@@ -196,6 +196,68 @@ func (s *BackupService) CreateBackup(serverID string) (models.Backup, error) {
 	return b, nil
 }
 
+// CreateWorldBackup zips an arbitrary world folder (by name, not level-name)
+// so the Worlds tile can back up any world, not just the active one.
+func (s *BackupService) CreateWorldBackup(serverID, worldName string) (models.Backup, error) {
+	cfg, err := s.config.GetServerConfig(serverID)
+	if err != nil {
+		return models.Backup{}, err
+	}
+	worldDir := filepath.Join(cfg.WorkingDir, worldName)
+	if _, err := os.Stat(worldDir); err != nil {
+		return models.Backup{}, fmt.Errorf("world folder %q not found", worldName)
+	}
+
+	backupDir, err := s.backupDir(serverID)
+	if err != nil {
+		return models.Backup{}, err
+	}
+
+	filename := fmt.Sprintf("%s_%s_%s.zip", worldName, shortID(), time.Now().Format("02_01_06_150405"))
+	destPath := filepath.Join(backupDir, filename)
+
+	s.bus.Emit(EventBackupStarted, map[string]string{"serverID": serverID})
+
+	if s.server != nil && s.server.PrepareForBackup() {
+		defer s.server.ResumeSaves()
+	}
+
+	var lastPct int = -1
+	onProgress := func(pct int) {
+		if pct > lastPct {
+			lastPct = pct
+			s.bus.Emit(EventBackupProgress, map[string]interface{}{
+				"serverID": serverID,
+				"percent":  pct,
+			})
+		}
+	}
+
+	if err := zipDirWithProgress(worldDir, destPath, onProgress); err != nil {
+		s.bus.Emit(EventBackupFailed, map[string]interface{}{
+			"serverID": serverID,
+			"error":    err.Error(),
+		})
+		return models.Backup{}, err
+	}
+
+	info, err := os.Stat(destPath)
+	if err != nil {
+		return models.Backup{}, err
+	}
+	b := models.Backup{
+		Filename:  filename,
+		CreatedAt: info.ModTime().UnixMilli(),
+		SizeBytes: info.Size(),
+		Tags:      []string{},
+	}
+	s.bus.Emit(EventBackupCompleted, map[string]interface{}{
+		"serverID": serverID,
+		"filename": b.Filename,
+	})
+	return b, nil
+}
+
 func (s *BackupService) RestoreBackup(serverID, filename string) error {
 	if err := validateFilename(filename); err != nil {
 		return err

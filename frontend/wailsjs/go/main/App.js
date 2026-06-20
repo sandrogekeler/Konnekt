@@ -6,6 +6,10 @@ export function AcceptEula(arg1) {
   return window['go']['main']['App']['AcceptEula'](arg1);
 }
 
+export function BackupWorld(arg1, arg2) {
+  return window['go']['main']['App']['BackupWorld'](arg1, arg2);
+}
+
 export function BanPlayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['BanPlayer'](arg1, arg2, arg3);
 }
@@ -36,6 +40,14 @@ export function DeleteScheduleGraph(arg1) {
 
 export function DeleteServerConfig(arg1) {
   return window['go']['main']['App']['DeleteServerConfig'](arg1);
+}
+
+export function DeleteWorld(arg1, arg2) {
+  return window['go']['main']['App']['DeleteWorld'](arg1, arg2);
+}
+
+export function DuplicateWorld(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DuplicateWorld'](arg1, arg2, arg3);
 }
 
 export function GetActiveLayout() {
@@ -90,6 +102,10 @@ export function GetScheduleGraphs() {
   return window['go']['main']['App']['GetScheduleGraphs']();
 }
 
+export function GetScheduleNextRuns() {
+  return window['go']['main']['App']['GetScheduleNextRuns']();
+}
+
 export function GetScheduleRunHistory() {
   return window['go']['main']['App']['GetScheduleRunHistory']();
 }
@@ -122,12 +138,20 @@ export function ListConfigFiles(arg1) {
   return window['go']['main']['App']['ListConfigFiles'](arg1);
 }
 
+export function ListWorlds(arg1) {
+  return window['go']['main']['App']['ListWorlds'](arg1);
+}
+
 export function OpenBackupDir(arg1) {
   return window['go']['main']['App']['OpenBackupDir'](arg1);
 }
 
 export function OpenDataDir() {
   return window['go']['main']['App']['OpenDataDir']();
+}
+
+export function OpenWorldFolder(arg1, arg2) {
+  return window['go']['main']['App']['OpenWorldFolder'](arg1, arg2);
 }
 
 export function PardonPlayer(arg1, arg2) {
@@ -140,6 +164,10 @@ export function PreviewScheduleNode(arg1, arg2) {
 
 export function ReadConfigFile(arg1, arg2) {
   return window['go']['main']['App']['ReadConfigFile'](arg1, arg2);
+}
+
+export function RenameWorld(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RenameWorld'](arg1, arg2, arg3);
 }
 
 export function RestartServer(arg1) {
@@ -192,6 +220,10 @@ export function SendCommand(arg1, arg2) {
 
 export function SetActiveServerID(arg1) {
   return window['go']['main']['App']['SetActiveServerID'](arg1);
+}
+
+export function SetActiveWorld(arg1, arg2) {
+  return window['go']['main']['App']['SetActiveWorld'](arg1, arg2);
 }
 
 export function SetScheduleGraphEnabled(arg1, arg2) {

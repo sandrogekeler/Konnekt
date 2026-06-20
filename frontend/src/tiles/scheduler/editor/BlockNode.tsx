@@ -12,8 +12,11 @@ const PAD      = 6
 
 export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<BlockFlowNode>) {
   const nd = data as NodeData
-  const { blockDefs, collapsed, onToggleCollapse } = useContext(SchedulerCtx)
+  const { blockDefs, collapsed, onToggleCollapse, nodeRunState, cycleNodes } = useContext(SchedulerCtx)
   const def = blockDefs.get(nd.blockType)
+
+  const runState = nodeRunState.get(nd.id as string)
+  const inCycle  = cycleNodes.has(nd.id as string)
 
   const color = CATEGORY_COLOR[def?.category ?? ''] ?? '#6b7280'
   const icon  = CATEGORY_ICON[def?.category ?? ''] ?? '?'
@@ -71,14 +74,33 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
   const totalH = HEADER_H + (hint !== undefined ? INFO_H : 0) + bodyH
   const portTop = HEADER_H + (hint !== undefined ? INFO_H : 0) + PAD
 
-  const borderColor = selected ? 'var(--accent)' : color
-  const borderWidth = selected ? 1.5 : 1
+  let borderColor = selected ? 'var(--accent)' : color
+  let borderWidth = selected ? 1.5 : 1
+  let boxShadow: string | undefined
+  let stateClass = ''
+  if (runState === 'running') {
+    borderColor = 'var(--accent)'
+    borderWidth = 2
+    stateClass = 'node-running'
+  } else if (runState === 'success') {
+    borderColor = '#22c55e'
+    borderWidth = 2
+    boxShadow = '0 0 0 1px #22c55e55, 0 0 12px #22c55e44'
+  } else if (runState === 'failed') {
+    borderColor = '#ef4444'
+    borderWidth = 2
+    boxShadow = '0 0 0 1px #ef444466, 0 0 12px #ef444455'
+  } else if (inCycle) {
+    borderColor = '#f59e0b'
+    borderWidth = 1.5
+    boxShadow = '0 0 0 1px #f59e0b55'
+  }
 
   const hasExpandablePorts = dataIns.length > visibleDataIns.length || dataIns.length > 0
 
   return (
     <div
-      className="node-entrance"
+      className={`node-entrance ${stateClass}`}
       style={{
         '--node-anim-delay': `${data._animDelay ?? 0}ms`,
         background: 'var(--bg-surface)',
@@ -88,6 +110,7 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
         height: totalH,
         position: 'relative',
         overflow: 'hidden',
+        boxShadow,
       } as React.CSSProperties}
     >
       {/* Header */}

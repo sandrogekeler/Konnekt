@@ -47,6 +47,10 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
   const angleRef      = useRef(offset)
   const worldPosRef   = useRef(new THREE.Vector3())
   const hoverScaleRef = useRef(1)
+  // Normalized direction from moon center to label; damped each frame (lerp+normalize ≈ slerp)
+  const labelDirRef    = useRef(new THREE.Vector3())
+  const targetDirRef   = useRef(new THREE.Vector3())
+  const labelOffsetRef = useRef(0.32)  // damped offset distance from moon surface
   const [hovered, setHovered] = useState(false)
 
   const color = KIND_COLOR[kind] ?? '#60a5fa'
@@ -69,13 +73,35 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
       meshRef.current.scale.setScalar(hoverScaleRef.current)
     }
 
-    // Place label radially outward from the planet center (opposite side to planet)
+    // Animate label direction: locked to the camera's screen-up when selected
+    // (top of the moon from camera perspective), radially outward otherwise.
+    // Lerp+normalize approximates slerp and always takes the shorter arc.
+    // All parent groups are translation-only, so world directions = local directions.
     if (labelGroupRef.current) {
-      const len = Math.sqrt(x * x + z * z)
-      if (len > 0.001) {
-        const nx = x / len
-        const nz = z / len
-        labelGroupRef.current.position.set(nx * (radius + 0.32), 0, nz * (radius + 0.32))
+      const outLen = Math.sqrt(x * x + z * z)
+      if (outLen > 0.001) {
+        if (selected) {
+          // Column 1 of the camera's world matrix (column-major) is its screen-up axis.
+          // Read from elements directly to avoid a @types/three version mismatch.
+          const e = state.camera.matrixWorld.elements
+          targetDirRef.current.set(e[4], e[5], e[6])
+        } else {
+          targetDirRef.current.set(x / outLen, 0, z / outLen)
+        }
+        // Initialize on first valid frame so there's no snap from origin
+        if (labelDirRef.current.lengthSq() < 0.001) {
+          labelDirRef.current.copy(targetDirRef.current)
+        }
+        labelDirRef.current.lerp(targetDirRef.current, 1 - Math.exp(-5 * delta))
+        labelDirRef.current.normalize()
+        const targetOffset = selected ? radius + 0.20 : radius + 0.32
+        labelOffsetRef.current = THREE.MathUtils.damp(labelOffsetRef.current, targetOffset, 5, delta)
+        const r = labelOffsetRef.current
+        labelGroupRef.current.position.set(
+          labelDirRef.current.x * r,
+          labelDirRef.current.y * r,
+          labelDirRef.current.z * r,
+        )
       }
     }
     // Fade by cursor distance in the orbital plane
@@ -117,7 +143,7 @@ function MoonBody({ kind, radius, orbitRX, orbitRZ, speed, offset, selected, onS
         <group ref={labelGroupRef}>
           <Html center style={{ pointerEvents: 'none', userSelect: 'none' }} distanceFactor={10}>
             <span ref={labelSpanRef} style={{
-              fontFamily: 'monospace', fontSize: 9,
+              fontFamily: 'monospace', fontSize: selected ? 7 : 9,
               color, whiteSpace: 'nowrap', opacity: 0,
             }}>
               {label}

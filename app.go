@@ -22,6 +22,7 @@ type App struct {
 	playerService       *services.PlayerService
 	backupService       *services.BackupService
 	schedulerService    *services.SchedulerService
+	worldService        *services.WorldService
 	bus                 *services.EventBus
 	dataDir             string
 }
@@ -48,6 +49,7 @@ func NewApp() *App {
 		playerService:       services.NewPlayerService(cfg, srv, rcon),
 		backupService:       backup,
 		schedulerService:    sched,
+		worldService:        services.NewWorldService(cfg, srv, backup),
 		bus:                 bus,
 	}
 }
@@ -428,6 +430,40 @@ func (a *App) RunScheduleGraphNow(id string) (models.RunRecord, error) {
 
 func (a *App) GetScheduleRunHistory() ([]models.RunRecord, error) {
 	return a.schedulerService.GetRunHistory()
+}
+
+func (a *App) GetScheduleNextRuns() (map[string]int64, error) {
+	return a.schedulerService.NextRuns()
+}
+
+// --- Worlds ---
+
+func (a *App) ListWorlds(serverID string) ([]models.WorldSystem, error) {
+	return a.worldService.ListWorlds(serverID)
+}
+
+func (a *App) SetActiveWorld(serverID, name string) error {
+	return a.worldService.SetActiveWorld(serverID, name)
+}
+
+func (a *App) DeleteWorld(serverID, name string) error {
+	return a.worldService.DeleteWorld(serverID, name)
+}
+
+func (a *App) RenameWorld(serverID, oldName, newName string) error {
+	return a.worldService.RenameWorld(serverID, oldName, newName)
+}
+
+func (a *App) DuplicateWorld(serverID, name, newName string) error {
+	return a.worldService.DuplicateWorld(serverID, name, newName)
+}
+
+func (a *App) OpenWorldFolder(serverID, name string) error {
+	return a.worldService.OpenWorldFolder(serverID, name)
+}
+
+func (a *App) BackupWorld(serverID, name string) (models.Backup, error) {
+	return a.worldService.BackupWorld(serverID, name)
 }
 
 func (a *App) ImportScheduleGraphJSON(raw string) (models.Graph, error) {

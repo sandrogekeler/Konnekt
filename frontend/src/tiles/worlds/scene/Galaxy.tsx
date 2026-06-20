@@ -35,8 +35,8 @@ export function Galaxy({
   return (
     <group>
       {/* Increased distance so far planets stay lit when zoomed in */}
-      <pointLight position={[0, 0, 0]} intensity={3} color="#fde68a" distance={60} />
-      <ambientLight intensity={0.25} />
+      <pointLight position={[0, 0, 0]} intensity={2} color="#fde68a" decay={0} />
+      <ambientLight intensity={0.06} />
 
       <Sun radius={0.55} />
 

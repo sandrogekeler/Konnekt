@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import type * as THREE from 'three'
+import * as THREE from 'three'
 
 interface Props {
   radius?: number
@@ -8,6 +8,21 @@ interface Props {
 
 export function Sun({ radius = 0.55 }: Props) {
   const meshRef = useRef<THREE.Mesh>(null)
+
+  const glowTexture = useMemo(() => {
+    const size = 256
+    const canvas = document.createElement('canvas')
+    canvas.width = size; canvas.height = size
+    const ctx = canvas.getContext('2d')!
+    const mid = size / 2
+    const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid)
+    grad.addColorStop(0,    'rgba(255, 210, 60, 0.15)')
+    grad.addColorStop(0.4,  'rgba(254, 190, 40, 0.06)')
+    grad.addColorStop(1,    'rgba(253, 160, 20, 0)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, size, size)
+    return new THREE.CanvasTexture(canvas)
+  }, [])
 
   useFrame(({ clock }) => {
     if (meshRef.current) {
@@ -17,18 +32,22 @@ export function Sun({ radius = 0.55 }: Props) {
 
   return (
     <group>
-      {/* Corona glow */}
-      <mesh>
-        <sphereGeometry args={[radius * 1.25, 32, 32]} />
-        <meshBasicMaterial color="#fde047" transparent opacity={0.07} />
-      </mesh>
+      {/* Soft glow sprite — always faces camera, radial gradient fades to transparent */}
+      <sprite scale={[radius * 4, radius * 4, 1]}>
+        <spriteMaterial
+          map={glowTexture as any}
+          transparent
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </sprite>
       {/* Sun sphere */}
       <mesh ref={meshRef}>
         <sphereGeometry args={[radius, 32, 32]} />
         <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#f59e0b"
-          emissiveIntensity={0.6}
+          color="#ffd84d"
+          emissive="#ffc200"
+          emissiveIntensity={1.2}
           roughness={0.8}
         />
       </mesh>
