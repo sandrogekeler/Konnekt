@@ -182,7 +182,7 @@ function App() {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
+    <div className="flex h-screen overflow-hidden">
       <aside
         className="w-48 shrink-0 flex flex-col overflow-y-auto"
         style={{ borderRight: '0.5px solid var(--border-subtle)' }}

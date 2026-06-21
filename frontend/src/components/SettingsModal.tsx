@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import type { AppSettings } from '../types'
-import { ACCENT_PRESETS } from '../lib/theme'
+import {
+  ACCENT_PRESETS,
+  SUCCESS_PRESETS,
+  WARNING_PRESETS,
+  DANGER_PRESETS,
+  BUILTIN_SKINS,
+} from '../lib/theme'
+import type { SkinDefinition } from '../lib/theme'
 import { Toggle } from './ui/Toggle'
 import { Segmented } from './ui/Segmented'
 import { ColorSwatch } from './ui/ColorSwatch'
@@ -21,9 +28,14 @@ const NAV: { id: Section; label: string }[] = [
 ]
 
 const THEME_OPTIONS = [
-  { value: 'light' as const,  label: '☀ Light'  },
-  { value: 'dark'  as const,  label: '◐ Dark'   },
+  { value: 'light'  as const, label: '☀ Light'  },
+  { value: 'dark'   as const, label: '◐ Dark'   },
   { value: 'system' as const, label: '⊙ System' },
+]
+
+const BG_STYLE_OPTIONS = [
+  { value: 'solid'    as const, label: 'Solid'    },
+  { value: 'gradient' as const, label: 'Gradient' },
 ]
 
 interface Props {
@@ -44,8 +56,6 @@ export function SettingsModal({ open, onClose }: Props) {
   }, [open, onClose])
 
   if (!open) return null
-
-  const isPresetColor = ACCENT_PRESETS.some((p) => p.hex.toLowerCase() === settings.accentColor.toLowerCase())
 
   return (
     <div
@@ -116,11 +126,11 @@ export function SettingsModal({ open, onClose }: Props) {
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-5 py-2">
-            {section === 'appearance' && <AppearancePane settings={settings} update={update} isPresetColor={isPresetColor} />}
-            {section === 'general'    && <GeneralPane    settings={settings} update={update} />}
-            {section === 'console'    && <ConsolePane    settings={settings} update={update} />}
+            {section === 'appearance'    && <AppearancePane    settings={settings} update={update} />}
+            {section === 'general'       && <GeneralPane       settings={settings} update={update} />}
+            {section === 'console'       && <ConsolePane       settings={settings} update={update} />}
             {section === 'notifications' && <NotificationsPane settings={settings} update={update} />}
-            {section === 'about'      && <AboutPane />}
+            {section === 'about'         && <AboutPane />}
           </div>
         </div>
       </div>
@@ -128,23 +138,107 @@ export function SettingsModal({ open, onClose }: Props) {
   )
 }
 
+// ─── Shared local components ──────────────────────────────────────────────────
+
+function ColorField({ value, onChange, presets }: {
+  value: string
+  onChange: (hex: string) => void
+  presets: { label: string; hex: string }[]
+}) {
+  const isPreset = presets.some((p) => p.hex.toLowerCase() === value.toLowerCase())
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {presets.map((preset) => (
+        <ColorSwatch
+          key={preset.hex}
+          hex={preset.hex}
+          label={preset.label}
+          selected={value.toLowerCase() === preset.hex.toLowerCase()}
+          onClick={() => onChange(preset.hex)}
+        />
+      ))}
+      <label
+        className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 transition-transform hover:scale-110 cursor-pointer"
+        style={{
+          background: isPreset ? 'var(--hover-surface)' : value,
+          border: '1.5px dashed var(--border-hover)',
+          outline: !isPreset ? `2.5px solid ${value}` : '2.5px solid transparent',
+          outlineOffset: 2,
+        }}
+        title="Custom color"
+      >
+        {isPreset && (
+          <span className="absolute inset-0 flex items-center justify-center text-[10px]" style={{ color: 'var(--text-muted)' }}>+</span>
+        )}
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute opacity-0 w-0 h-0"
+        />
+      </label>
+    </div>
+  )
+}
+
+function SkinCard({ skin, selected, onClick }: { skin: SkinDefinition; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col gap-1.5 p-2 rounded-lg shrink-0 transition-colors"
+      style={{
+        width: 84,
+        border: selected ? '1.5px solid var(--accent)' : '1.5px solid var(--border-subtle)',
+        background: selected ? 'rgb(var(--accent-rgb) / 0.08)' : 'var(--hover-surface)',
+      }}
+    >
+      <div className="flex gap-0.5 rounded-sm overflow-hidden" style={{ height: 18 }}>
+        {skin.previewColors.map((color, i) => (
+          <div key={i} className="flex-1" style={{ background: color }} />
+        ))}
+      </div>
+      <span
+        className="text-[11px] text-left leading-tight"
+        style={{ color: selected ? 'var(--accent)' : 'var(--text-secondary)' }}
+      >
+        {skin.name}
+      </span>
+    </button>
+  )
+}
+
 // ─── Appearance ───────────────────────────────────────────────────────────────
 
-function AppearancePane({ settings, update, isPresetColor }: {
+function AppearancePane({ settings, update }: {
   settings: AppSettings
   update: UpdateFn
-  isPresetColor: boolean
 }) {
   return (
     <div>
-      <SettingRow label="Theme" description="Light, dark, or follow your OS preference.">
-        <Segmented
-          options={THEME_OPTIONS}
-          value={settings.theme}
-          onChange={(theme) => update({ theme })}
-        />
+      {/* Skin gallery */}
+      <div className="py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Skin</span>
+        <p className="text-xs mt-0.5 mb-3" style={{ color: 'var(--text-muted)' }}>
+          Built-in surface and border palette.
+        </p>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {BUILTIN_SKINS.map((skin) => (
+            <SkinCard
+              key={skin.id}
+              skin={skin}
+              selected={settings.skinId === skin.id}
+              onClick={() => update({ skinId: skin.id })}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Mode */}
+      <SettingRow label="Mode" description="Light, dark, or follow your OS preference.">
+        <Segmented options={THEME_OPTIONS} value={settings.theme} onChange={(theme) => update({ theme })} />
       </SettingRow>
 
+      {/* Accent color */}
       <div className="py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
         <div className="flex items-center justify-between gap-4 mb-3">
           <div>
@@ -158,37 +252,62 @@ function AppearancePane({ settings, update, isPresetColor }: {
             style={{ background: settings.accentColor, outline: '1.5px solid var(--border-hover)', outlineOffset: 2 }}
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {ACCENT_PRESETS.map((preset) => (
-            <ColorSwatch
-              key={preset.hex}
-              hex={preset.hex}
-              label={preset.label}
-              selected={settings.accentColor.toLowerCase() === preset.hex.toLowerCase()}
-              onClick={() => update({ accentColor: preset.hex })}
-            />
+        <ColorField
+          value={settings.accentColor}
+          onChange={(accentColor) => update({ accentColor })}
+          presets={ACCENT_PRESETS}
+        />
+      </div>
+
+      {/* Status colors */}
+      <div className="py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Status colors</span>
+        <p className="text-xs mt-0.5 mb-3" style={{ color: 'var(--text-muted)' }}>
+          Used for success, warnings, and errors across the app.
+        </p>
+        <div className="flex flex-col gap-3">
+          {(
+            [
+              { label: 'Success', key: 'successColor' as const, presets: SUCCESS_PRESETS },
+              { label: 'Warning', key: 'warningColor' as const, presets: WARNING_PRESETS },
+              { label: 'Danger',  key: 'dangerColor'  as const, presets: DANGER_PRESETS  },
+            ] as const
+          ).map(({ label, key, presets }) => (
+            <div key={key} className="flex items-center justify-between gap-4">
+              <span className="text-xs shrink-0 w-14" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+              <ColorField
+                value={settings[key]}
+                onChange={(hex) => update({ [key]: hex } as Partial<AppSettings>)}
+                presets={presets}
+              />
+            </div>
           ))}
-          {/* Custom color input */}
-          <label
-            className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 transition-transform hover:scale-110 cursor-pointer"
+        </div>
+      </div>
+
+      {/* Background style */}
+      <SettingRow label="Background" description="Subtle accent glow behind the interface.">
+        <Segmented
+          options={BG_STYLE_OPTIONS}
+          value={settings.backgroundStyle}
+          onChange={(backgroundStyle) => update({ backgroundStyle })}
+        />
+      </SettingRow>
+
+      {/* Import stub */}
+      <div className="py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm" style={{ color: 'var(--text-faint)' }}>Import custom skin…</span>
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded"
             style={{
-              background: isPresetColor ? 'var(--hover-surface)' : settings.accentColor,
-              border: '1.5px dashed var(--border-hover)',
-              outline: !isPresetColor ? `2.5px solid ${settings.accentColor}` : '2.5px solid transparent',
-              outlineOffset: 2,
+              background: 'var(--hover-surface)',
+              color: 'var(--text-faint)',
+              border: '0.5px solid var(--border-subtle)',
             }}
-            title="Custom color"
           >
-            {isPresetColor && (
-              <span className="absolute inset-0 flex items-center justify-center text-[10px]" style={{ color: 'var(--text-muted)' }}>+</span>
-            )}
-            <input
-              type="color"
-              value={settings.accentColor}
-              onChange={(e) => update({ accentColor: e.target.value })}
-              className="absolute opacity-0 w-0 h-0"
-            />
-          </label>
+            Coming soon
+          </span>
         </div>
       </div>
     </div>

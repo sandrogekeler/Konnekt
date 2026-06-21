@@ -3,7 +3,12 @@ export type { LayoutItem } from 'react-grid-layout'
 
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system'
+  skinId: string
   accentColor: string
+  successColor: string
+  warningColor: string
+  dangerColor: string
+  backgroundStyle: 'solid' | 'gradient'
   autoStartActiveServer: boolean
   confirmBeforeStop: boolean
   consoleBufferLines: number

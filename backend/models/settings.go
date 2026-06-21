@@ -1,8 +1,13 @@
 package models
 
 type AppSettings struct {
-	Theme       string `json:"theme"`       // "light" | "dark" | "system"
-	AccentColor string `json:"accentColor"` // hex e.g. "#4ade80"
+	Theme           string `json:"theme"`           // "light" | "dark" | "system"
+	SkinId          string `json:"skinId"`          // built-in skin id, e.g. "default"
+	AccentColor     string `json:"accentColor"`     // hex e.g. "#4ade80"
+	SuccessColor    string `json:"successColor"`    // hex
+	WarningColor    string `json:"warningColor"`    // hex
+	DangerColor     string `json:"dangerColor"`     // hex
+	BackgroundStyle string `json:"backgroundStyle"` // "solid" | "gradient"
 
 	AutoStartActiveServer bool `json:"autoStartActiveServer"`
 	ConfirmBeforeStop     bool `json:"confirmBeforeStop"`

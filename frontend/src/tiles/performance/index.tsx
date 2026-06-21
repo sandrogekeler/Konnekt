@@ -19,15 +19,15 @@ import type { StatsSnapshot } from './usePerformanceHistory'
 function tpsColor(tps: number): string {
   if (tps < 0) return 'text-[var(--text-faint)]'
   if (tps >= 18) return 'text-accent'
-  if (tps >= 14) return 'text-yellow-400'
-  return 'text-red-400'
+  if (tps >= 14) return 'text-[var(--warning)]'
+  return 'text-[var(--danger)]'
 }
 
 function tpsStrokeColor(tps: number): string {
   if (tps < 0) return 'var(--border-hover)'
   if (tps >= 18) return 'var(--accent)'
-  if (tps >= 14) return '#facc15'
-  return '#f87171'
+  if (tps >= 14) return 'var(--warning)'
+  return 'var(--danger)'
 }
 
 function fmtTime(ts: number): string {
@@ -76,7 +76,7 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
         <div className="h-1 rounded-full overflow-hidden shrink-0" style={{ background: 'var(--hover-surface)' }}>
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              ramPct > 80 ? 'bg-red-500' : ramPct > 60 ? 'bg-yellow-500' : 'bg-accent'
+              ramPct > 80 ? 'bg-[var(--danger)]' : ramPct > 60 ? 'bg-[var(--warning)]' : 'bg-accent'
             }`}
             style={{ width: `${Math.min(ramPct, 100)}%` }}
           />
@@ -113,7 +113,7 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
               <Line
                 type="monotone"
                 dataKey="tps"
-                stroke="#4ade80"
+                stroke="var(--accent)"
                 strokeWidth={1.5}
                 dot={false}
                 connectNulls={false}
@@ -122,7 +122,7 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
               <Line
                 type="monotone"
                 dataKey="ramPct"
-                stroke="#fbbf24"
+                stroke="var(--warning)"
                 strokeWidth={1.5}
                 dot={false}
                 connectNulls={false}
@@ -131,7 +131,7 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
               <Line
                 type="monotone"
                 dataKey="cpu"
-                stroke="#f87171"
+                stroke="var(--danger)"
                 strokeWidth={1.5}
                 dot={false}
                 connectNulls={false}
@@ -379,7 +379,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ramPct"
-                stroke="#fbbf24"
+                stroke="var(--warning)"
                 strokeWidth={1.5}
                 dot={false}
                 connectNulls={false}
@@ -389,7 +389,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="cpu"
-                stroke="#f87171"
+                stroke="var(--danger)"
                 strokeWidth={1.5}
                 dot={false}
                 connectNulls={false}

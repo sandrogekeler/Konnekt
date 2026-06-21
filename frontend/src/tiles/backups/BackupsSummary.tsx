@@ -58,7 +58,7 @@ export function BackupsSummary({ serverId }: Props) {
 
   if (listError) {
     return (
-      <div className="flex items-center justify-center h-full text-xs font-mono px-3 text-center" style={{ color: '#f87171' }}>
+      <div className="flex items-center justify-center h-full text-xs font-mono px-3 text-center" style={{ color: 'var(--danger)' }}>
         {listError}
       </div>
     )

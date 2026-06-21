@@ -2,7 +2,12 @@ export namespace models {
 	
 	export class AppSettings {
 	    theme: string;
+	    skinId: string;
 	    accentColor: string;
+	    successColor: string;
+	    warningColor: string;
+	    dangerColor: string;
+	    backgroundStyle: string;
 	    autoStartActiveServer: boolean;
 	    confirmBeforeStop: boolean;
 	    consoleBufferLines: number;
@@ -17,7 +22,12 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.theme = source["theme"];
+	        this.skinId = source["skinId"];
 	        this.accentColor = source["accentColor"];
+	        this.successColor = source["successColor"];
+	        this.warningColor = source["warningColor"];
+	        this.dangerColor = source["dangerColor"];
+	        this.backgroundStyle = source["backgroundStyle"];
 	        this.autoStartActiveServer = source["autoStartActiveServer"];
 	        this.confirmBeforeStop = source["confirmBeforeStop"];
 	        this.consoleBufferLines = source["consoleBufferLines"];

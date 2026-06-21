@@ -16,7 +16,7 @@ export function ActiveProcesses() {
             <span className="text-xs font-mono truncate" style={{ color: 'var(--text-muted)' }}>
               {p.label}
             </span>
-            <span className="text-xs font-mono shrink-0" style={{ color: p.status === 'failed' ? '#f87171' : 'var(--text-faint)' }}>
+            <span className="text-xs font-mono shrink-0" style={{ color: p.status === 'failed' ? 'var(--danger)' : 'var(--text-faint)' }}>
               {p.status === 'running' ? `${p.percent}%` : p.status === 'done' ? '✓' : '✗'}
             </span>
           </div>
@@ -25,7 +25,7 @@ export function ActiveProcesses() {
               className="h-full transition-all duration-300"
               style={{
                 width: `${p.percent}%`,
-                background: p.status === 'failed' ? '#f87171' : 'var(--accent)',
+                background: p.status === 'failed' ? 'var(--danger)' : 'var(--accent)',
               }}
             />
           </div>

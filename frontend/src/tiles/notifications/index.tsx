@@ -13,11 +13,11 @@ const KIND_ICON: Record<NotifKind, string> = {
 }
 
 const KIND_COLOR: Record<NotifKind, string> = {
-  crash: '#f87171',
+  crash: 'var(--danger)',
   join:  'var(--accent)',
   info:  'var(--text-muted)',
-  warn:  '#fb923c',
-  error: '#f87171',
+  warn:  'var(--warning)',
+  error: 'var(--danger)',
 }
 
 // Filter options — "errors" matches both 'error' and 'crash' (same severity).
