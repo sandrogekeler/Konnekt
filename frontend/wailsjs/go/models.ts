@@ -62,6 +62,8 @@ export namespace models {
 	    sizeBytes: number;
 	    displayName: string;
 	    tags: string[];
+	    kind: string;
+	    world?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Backup(source);
@@ -74,6 +76,8 @@ export namespace models {
 	        this.sizeBytes = source["sizeBytes"];
 	        this.displayName = source["displayName"];
 	        this.tags = source["tags"];
+	        this.kind = source["kind"];
+	        this.world = source["world"];
 	    }
 	}
 	export class FieldOption {

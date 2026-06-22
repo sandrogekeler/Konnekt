@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { EventsOn } from '../../../wailsjs/runtime/runtime'
 import {
   ListBackups, CreateBackup, RestoreBackup, DeleteBackup,
@@ -14,6 +14,7 @@ interface BackupsState {
   loading: boolean
   listError: string | null
   creating: boolean
+  creatingFilename: string | null
   actionError: string | null
   refresh: () => Promise<void>
   create: () => Promise<void>
@@ -28,31 +29,51 @@ export function useBackups(serverId: string): BackupsState {
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [creatingFilename, setCreatingFilename] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  // Snapshot-based in-progress detection: no dependency on backup:started event.
+  const backupsRef = useRef<Backup[]>([])
+  const creatingRef = useRef(false)
+  const preCreateFilenamesRef = useRef<Set<string>>(new Set())
+
+  const refresh = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     setListError(null)
     try {
-      const result = await ListBackups(serverId)
-      setBackups((result as Backup[]) ?? [])
+      const result = (await ListBackups(serverId) as Backup[]) ?? []
+      backupsRef.current = result
+      // While a create is in flight, identify the new file by exclusion from
+      // the pre-create snapshot and surface it as the in-progress entry.
+      if (creatingRef.current) {
+        const inProgress = result.find(b => !preCreateFilenamesRef.current.has(b.filename))
+        setCreatingFilename(inProgress?.filename ?? null)
+      }
+      setBackups(result)
     } catch (e) {
       setListError(String(e))
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [serverId])
 
   const create = useCallback(async () => {
     setCreating(true)
     setActionError(null)
+    // Snapshot current filenames so refresh() can spot the new file by exclusion.
+    preCreateFilenamesRef.current = new Set(backupsRef.current.map(b => b.filename))
+    creatingRef.current = true
     try {
       await CreateBackup(serverId)
+      // Clear before the final refresh so the completed backup renders normally.
+      creatingRef.current = false
       await refresh()
     } catch (e) {
       setActionError(String(e))
     } finally {
       setCreating(false)
+      creatingRef.current = false
+      setCreatingFilename(null)
     }
   }, [serverId, refresh])
 
@@ -98,7 +119,8 @@ export function useBackups(serverId: string): BackupsState {
 
     // Poll every 10 s so the list stays fresh across mount/unmount cycles
     // (compact ↔ maximized transitions create a new hook instance each time).
-    const pollTimer = setInterval(refresh, 10_000)
+    // Silent=true so polling never flashes a loading state (which would unmount the carousel).
+    const pollTimer = setInterval(() => refresh(true), 10_000)
 
     let c1: (() => void) | undefined
     let c2: (() => void) | undefined
@@ -106,9 +128,16 @@ export function useBackups(serverId: string): BackupsState {
     try {
       // Refresh list on backup/restore events. Notifications live in App.tsx
       // to avoid duplicates from React 18 Strict Mode double-effect runs.
-      c1 = EventsOn(EVENTS.BACKUP_COMPLETED,  () => { refresh() })
-      c2 = EventsOn(EVENTS.RESTORE_COMPLETED, () => { refresh() })
-      c3 = EventsOn(EVENTS.BACKUP_FAILED,     () => { refresh() })
+      c1 = EventsOn(EVENTS.BACKUP_COMPLETED, () => {
+        creatingRef.current = false  // prevent next refresh() from re-marking as in-progress
+        refresh(true)
+      })
+      c2 = EventsOn(EVENTS.RESTORE_COMPLETED, () => { refresh(true) })
+      c3 = EventsOn(EVENTS.BACKUP_FAILED, () => {
+        creatingRef.current = false
+        setCreatingFilename(null)
+        refresh(true)
+      })
     } catch { /* Wails runtime unavailable in dev without backend */ }
 
     return () => {
@@ -119,5 +148,5 @@ export function useBackups(serverId: string): BackupsState {
     }
   }, [serverId])
 
-  return { backups, loading, listError, creating, actionError, refresh, create, restore, remove, updateMeta, openDir }
+  return { backups, loading, listError, creating, creatingFilename, actionError, refresh, create, restore, remove, updateMeta, openDir }
 }

@@ -34,6 +34,8 @@ export function GetActiveTiles():Promise<Array<string>>;
 
 export function GetAppSettings():Promise<models.AppSettings>;
 
+export function GetBackupWorlds(arg1:string,arg2:string):Promise<Array<models.WorldSystem>>;
+
 export function GetCommandButtons():Promise<string>;
 
 export function GetConsoleHistory(arg1:string):Promise<Array<models.ConsoleLine>>;

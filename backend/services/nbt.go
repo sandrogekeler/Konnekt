@@ -39,15 +39,19 @@ type nbtValue struct {
 }
 
 // readLevelDat opens a gzip-compressed level.dat and extracts world metadata.
-// Tolerant: returns whatever was found; Meta.Found=true on any successful parse.
 func readLevelDat(path string) (models.WorldMeta, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return models.WorldMeta{}, err
 	}
 	defer f.Close()
+	return readLevelDatFromReader(f)
+}
 
-	gr, err := gzip.NewReader(f)
+// readLevelDatFromReader parses a gzip-compressed level.dat from an io.Reader.
+// Used when reading level.dat directly out of a zip archive entry.
+func readLevelDatFromReader(r io.Reader) (models.WorldMeta, error) {
+	gr, err := gzip.NewReader(r)
 	if err != nil {
 		return models.WorldMeta{}, fmt.Errorf("nbt: gzip: %w", err)
 	}

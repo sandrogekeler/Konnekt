@@ -340,6 +340,10 @@ func (a *App) ListBackups(serverID string) ([]models.Backup, error) {
 	return a.backupService.ListBackups(serverID)
 }
 
+func (a *App) GetBackupWorlds(serverID string, filename string) ([]models.WorldSystem, error) {
+	return a.backupService.GetBackupWorlds(serverID, filename)
+}
+
 func (a *App) CreateBackup(serverID string) (models.Backup, error) {
 	return a.backupService.CreateBackup(serverID)
 }

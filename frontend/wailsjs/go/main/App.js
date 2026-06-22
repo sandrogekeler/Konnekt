@@ -66,6 +66,10 @@ export function GetAppSettings() {
   return window['go']['main']['App']['GetAppSettings']();
 }
 
+export function GetBackupWorlds(arg1, arg2) {
+  return window['go']['main']['App']['GetBackupWorlds'](arg1, arg2);
+}
+
 export function GetCommandButtons() {
   return window['go']['main']['App']['GetCommandButtons']();
 }

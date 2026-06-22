@@ -30,6 +30,8 @@
   --danger-rgb: 248 113 113;
   --danger: rgb(var(--danger-rgb));
   --bg-gradient-overlay: none;
+  --sun-rgb: 255 216 77;
+  --sun: rgb(var(--sun-rgb));
 }
 
 [data-theme="light"] {
@@ -42,6 +44,8 @@
   --text-muted: rgba(0, 0, 0, 0.45);
   --text-faint: rgba(0, 0, 0, 0.30);
   --hover-surface: rgba(0, 0, 0, 0.05);
+  --sun-rgb: 255 216 77;
+  --sun: rgb(var(--sun-rgb));
   /* accent/success/warning/danger/overlay are set dynamically via JS */
   --success-rgb: 22 163 74;
   --warning-rgb: 217 119 6;
@@ -222,6 +226,24 @@ input[type="number"]::-webkit-outer-spin-button {
   background: var(--bg-base);
   animation: splash-overlay-fade 1s ease forwards;
   pointer-events: none;
+}
+
+/* Backup carousel — wireframe sphere idle spin */
+@keyframes backup-sphere-spin {
+  0%   { transform: scaleX(1);    }
+  25%  { transform: scaleX(0.05); }
+  50%  { transform: scaleX(-1);   }
+  75%  { transform: scaleX(-0.05);}
+  100% { transform: scaleX(1);    }
+}
+
+@keyframes planet-float-0 { from { transform: translateY(0);    } to { transform: translateY(-5px); } }
+@keyframes planet-float-1 { from { transform: translateY(-3px); } to { transform: translateY(3px);  } }
+@keyframes planet-float-2 { from { transform: translateY(0);    } to { transform: translateY(4px);  } }
+
+@media (prefers-reduced-motion: reduce) {
+  .backup-sphere-meridian { animation: none !important; }
+  .backup-planet { animation: none !important; }
 }
 
 .splash-word {
