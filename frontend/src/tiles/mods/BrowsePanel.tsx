@@ -473,9 +473,7 @@ export function BrowsePanel({
     }
   }, [panelOpen])
 
-  const gridCols = layoutOpen
-    ? 'repeat(2, 1fr)'
-    : 'repeat(auto-fill, minmax(200px, 1fr))'
+  const gridCols = 'repeat(auto-fill, minmax(200px, 1fr))'
 
   // ── Debounced search — query / categories / sort changes ─────────────────────
   useEffect(() => {
