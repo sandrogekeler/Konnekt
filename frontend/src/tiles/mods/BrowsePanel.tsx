@@ -95,7 +95,7 @@ function SortMenu({ sort, onSort }: SortMenuProps) {
             style={{
               position: 'absolute',
               top: 'calc(100% + 4px)',
-              left: 0,
+              right: 0,
               zIndex: 201,
               minWidth: 160,
               background: 'var(--bg-elevated)',
@@ -143,17 +143,20 @@ interface CategoriesMenuProps {
 function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: CategoriesMenuProps) {
   const { open, toggle, close } = usePopover()
   const count = selectedCats.length
+  const disabled = categories.length === 0
 
   return (
     <div className="relative shrink-0">
       <button
-        onClick={toggle}
+        onClick={disabled ? undefined : toggle}
         className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
         style={{
           border: '0.5px solid var(--border-subtle)',
           background: open ? 'var(--hover-surface)' : 'transparent',
-          color: count > 0 ? 'var(--accent)' : 'var(--text-muted)',
+          color: disabled ? 'var(--text-faint)' : count > 0 ? 'var(--accent)' : 'var(--text-muted)',
           whiteSpace: 'nowrap',
+          cursor: disabled ? 'default' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
         }}
       >
         <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>☰</span>
@@ -358,14 +361,12 @@ export function BrowsePanel({
         </div>
 
         <SortMenu sort={sortBy} onSort={setSortBy} />
-        {categories.length > 0 && (
-          <CategoriesMenu
-            categories={categories}
-            selectedCats={selectedCats}
-            onToggle={toggleCat}
-            onClear={clearCats}
-          />
-        )}
+        <CategoriesMenu
+          categories={categories}
+          selectedCats={selectedCats}
+          onToggle={toggleCat}
+          onClear={clearCats}
+        />
       </div>
 
       {/* Active category chips — only shown when filters are active */}
