@@ -75,7 +75,6 @@ function getTileStyle(
   }
 
   if (phase === 'enter') {
-    // Right-most column enters first → delay decreases as col increases
     const delay = (numCols - 1 - col) * COL_DELAY
     return {
       opacity: gridVisible ? 1 : 0,
@@ -86,7 +85,7 @@ function getTileStyle(
     }
   }
 
-  // idle — existing panel/initial-load animation
+  // idle — covers panel open/close, initial load, and grid reflow (all unified)
   return {
     opacity: gridVisible ? 1 : 0,
     transform: gridVisible ? 'none' : 'scale(0.94)',
@@ -316,6 +315,14 @@ export function BrowsePanel({
     document.addEventListener('mouseup', onMouseUp)
   }, [panelWidth])
 
+  // ── Reflow animation refs ────────────────────────────────────────────────────
+  // gridVisibleRef lets the numCols effect read a fresh value without a stale closure.
+  // Declared before the numCols effect so the sync effect always runs first in the
+  // same flush, guaranteeing a fresh read when both gridVisible and numCols change.
+  const gridVisibleRef = useRef(false)
+  const prevNumColsRef = useRef(0)
+  const reflowTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
   // ── Buffered results: hold old page during exit, swap in on commit ──────────
   const [displayResults, setDisplayResults] = useState<ModProject[]>(results)
   const [displayTotal, setDisplayTotal] = useState(total)
@@ -355,11 +362,8 @@ export function BrowsePanel({
     const el = containerRef.current
     if (!el) return
     const update = () => {
-      // auto-fill minmax(200px,1fr) + 8px gap: N cols fit when N*200+(N-1)*8 ≤ width-24
-      // Solving: N ≤ (width - 16) / 208
-      const cols = layoutOpen
-        ? 2
-        : Math.max(1, Math.floor((el.getBoundingClientRect().width - 16) / 208))
+      // auto-fill minmax(200px,1fr) + 8px gap: N ≤ (width - 16) / 208
+      const cols = Math.max(1, Math.floor((el.getBoundingClientRect().width - 16) / 208))
       setNumCols(cols)
       numColsRef.current = cols
     }
@@ -368,6 +372,21 @@ export function BrowsePanel({
     obs.observe(el)
     return () => obs.disconnect()
   }, [layoutOpen])
+
+  // Keep gridVisibleRef fresh — must be declared before the numCols reflow effect
+  // so it runs first in the same flush (effects fire in declaration order).
+  useEffect(() => { gridVisibleRef.current = gridVisible }, [gridVisible])
+
+  // Animate tiles on column count change — same gridVisible toggle as panel open/close.
+  // Reads gridVisibleRef (not stale closure) to skip when another animation owns tiles.
+  useEffect(() => {
+    const prev = prevNumColsRef.current
+    prevNumColsRef.current = numCols
+    if (prev === 0 || prev === numCols || pagePhase !== 'idle' || !gridVisibleRef.current) return
+    clearTimeout(reflowTimerRef.current)
+    setGridVisible(false)
+    reflowTimerRef.current = setTimeout(() => setGridVisible(true), CARD_ANIM)
+  }, [numCols]) // intentionally omit pagePhase — only numCols change should trigger this
 
   // ── commitEnter: swap in new results and start enter animation ───────────────
   // Called after BOTH the exit timer fires AND the network results arrive.
