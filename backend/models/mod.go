@@ -94,10 +94,9 @@ type InstalledMod struct {
 	VersionNumber   string `json:"versionNumber"`
 	Loader          string `json:"loader"`
 	TargetFolder    string `json:"targetFolder"` // "mods" | "plugins"
-	Enabled         bool   `json:"enabled"`
-	SizeBytes       int64  `json:"sizeBytes"`
-	InstalledAt     int64  `json:"installedAt"` // unix ms; 0 for local/unknown
-	UpdateAvailable bool   `json:"updateAvailable"`
+	Enabled     bool  `json:"enabled"`
+	SizeBytes   int64 `json:"sizeBytes"`
+	InstalledAt int64 `json:"installedAt"` // unix ms; 0 for local/unknown
 }
 
 // ModUpdateInfo holds the result of an update check for one installed mod.

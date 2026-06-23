@@ -15,6 +15,20 @@ export type ModSearchResult = models.ModSearchResult
 export type ResolvedDependency = models.ResolvedDependency
 export type InstalledMod = models.InstalledMod
 
+export class DepsRequiredError extends Error {
+  readonly deps: ResolvedDependency[]
+  readonly versionId: string
+  constructor(deps: ResolvedDependency[], versionId: string) {
+    super('Dependencies required')
+    this.deps = deps
+    this.versionId = versionId
+  }
+}
+
+export function isDepsRequiredError(e: unknown): e is DepsRequiredError {
+  return e instanceof DepsRequiredError
+}
+
 export interface ModUpdateInfo {
   updateAvailable: boolean
   latestVersionId: string
@@ -50,7 +64,6 @@ interface ModsState {
 
   // Categories
   categories: string[]
-  categoriesLoading: boolean
 
   // Project detail
   selectedProject: ModProject | null
@@ -91,7 +104,6 @@ export function useMods(serverId: string): ModsState {
   const [searchError, setSearchError] = useState<string | null>(null)
 
   const [categories, setCategories] = useState<string[]>([])
-  const [categoriesLoading, setCategoriesLoading] = useState(false)
 
   const [selectedProject, setSelectedProject] = useState<ModProject | null>(null)
   const [projectLoading, setProjectLoading] = useState(false)
@@ -160,14 +172,11 @@ export function useMods(serverId: string): ModsState {
   }, [serverId, refreshInstalled])
 
   const loadCategories = useCallback(async () => {
-    setCategoriesLoading(true)
     try {
       const cats = (await ModCategories(serverId)) as string[]
       setCategories(cats ?? [])
     } catch {
       // best-effort; UI falls back gracefully
-    } finally {
-      setCategoriesLoading(false)
     }
   }, [serverId])
 
@@ -268,14 +277,12 @@ export function useMods(serverId: string): ModsState {
       const deps = (await ModResolveDependencies(serverId, latest.id)) as ResolvedDependency[]
       const nonTrivial = (deps ?? []).filter(d => !d.alreadyInstalled)
       if (nonTrivial.length > 0) {
-        // Surface the dependency dialog by throwing a special error shape —
-        // the caller (ContentDetailPanel) handles this by setting deps state.
         setInstalling(false)
-        throw { __deps: deps, __versionId: latest.id }
+        throw new DepsRequiredError(deps, latest.id)
       }
       await ModInstall(serverId, [latest.id])
-    } catch (e: any) {
-      if (e?.__deps) throw e // re-throw for dep dialog
+    } catch (e: unknown) {
+      if (isDepsRequiredError(e)) throw e // re-throw for dep dialog
       setInstallError(String(e))
       throw e
     } finally {
@@ -334,7 +341,7 @@ export function useMods(serverId: string): ModsState {
     setEnabled, uninstall, installLocal, changeVersion,
     updates, checkUpdates,
     searchResults, searchTotal, searchOffset, searchLoading, searchError, search,
-    categories, categoriesLoading,
+    categories,
     selectedProject, projectLoading, selectProject, clearProject,
     versions, versionsLoading, getVersions, getAllVersions,
     resolveDeps,

@@ -372,7 +372,6 @@ export namespace models {
 	    enabled: boolean;
 	    sizeBytes: number;
 	    installedAt: number;
-	    updateAvailable: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new InstalledMod(source);
@@ -394,7 +393,6 @@ export namespace models {
 	        this.enabled = source["enabled"];
 	        this.sizeBytes = source["sizeBytes"];
 	        this.installedAt = source["installedAt"];
-	        this.updateAvailable = source["updateAvailable"];
 	    }
 	}
 	export class LayoutPreset {

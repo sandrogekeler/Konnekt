@@ -86,3 +86,6 @@ export const DEFAULT_LAYOUT_PRESETS = [
 
 export const COLS = 6
 export const ROW_HEIGHT = 40
+
+// Mirrors loaderTargetFolder() in backend/services/modservice.go
+export const PLUGIN_LOADERS = ['paper', 'spigot', 'bukkit', 'purpur', 'velocity'] as const

@@ -1,33 +1,10 @@
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw'
 import type { ModProject, ModVersion, ResolvedDependency } from './useMods'
+import { isDepsRequiredError } from './useMods'
 import { DependencyDialog } from './DependencyDialog'
 import { ContentCard } from './ContentCard'
-
-function fmtCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k'
-  return String(n)
-}
-
-function relativeTime(iso: string): string {
-  if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
-  const days = Math.floor(diff / 86_400_000)
-  if (days < 1) return 'today'
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
-  return `${Math.floor(months / 12)}y ago`
-}
-
-function fmtBytes(b: number): string {
-  if (b < 1024) return b + ' B'
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB'
-  return (b / 1024 / 1024).toFixed(1) + ' MB'
-}
+import { ModAboutBody } from './ModAboutBody'
+import { fmtCount, fmtBytes, relativeTime } from '../../lib/format'
 
 interface Props {
   project: ModProject
@@ -90,10 +67,10 @@ export function ContentDetailPanel({
     setInstalling2(true)
     try {
       await onInstallLatest(project.id)
-    } catch (e: any) {
-      if (e?.__deps) {
-        setDeps(e.__deps)
-        setPendingVersionId(e.__versionId)
+    } catch (e: unknown) {
+      if (isDepsRequiredError(e)) {
+        setDeps(e.deps)
+        setPendingVersionId(e.versionId)
       }
     } finally {
       setInstalling2(false)
@@ -231,22 +208,7 @@ export function ContentDetailPanel({
           {/* About */}
           {tab === 'about' && (
             <div className="px-4 py-3">
-              {projectLoading && !project.body ? (
-                <div className="text-xs animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading details…</div>
-              ) : project.body ? (
-                <div className="mod-body">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                  >
-                    {project.body}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  {project.description}
-                </p>
-              )}
+              <ModAboutBody body={project.body} description={project.description} loading={projectLoading} />
             </div>
           )}
 

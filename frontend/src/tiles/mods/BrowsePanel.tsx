@@ -3,6 +3,9 @@ import type { ModProject, ModVersion, ResolvedDependency } from './useMods'
 import { ContentCard } from './ContentCard'
 import { ContentDetailPanel } from './ContentDetailPanel'
 import { Pagination } from './Pagination'
+import { Popover } from '../../components/ui/Popover'
+import { usePopover } from '../../hooks/usePopover'
+import { useGridPageAnimation, getTileStyle } from './useGridPageAnimation'
 
 interface Props {
   results: ModProject[]
@@ -32,13 +35,7 @@ interface Props {
 const DEFAULT_PANEL_WIDTH = 440
 const MIN_PANEL_WIDTH = 300   // narrowest the detail panel can get
 const MIN_GRID_WIDTH = 232    // narrowest the grid can get: 1 card (200px) + padding (24px) + gap (8px)
-const PANEL_DURATION = 280    // ms — detail panel slide
-const CARD_ANIM = 130         // ms — tile fade+scale for panel open/close & initial load
-
-// Page-turn animation timing
-const EXIT_MS = 160    // per-tile exit duration
-const ENTER_MS = 140   // per-tile enter duration
-const COL_DELAY = 22   // stagger step per column (ms) — subtle sweep
+const PANEL_SLIDE_MS = 280    // ms — detail panel slide-in/out
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: '',           label: 'Relevance' },
@@ -47,55 +44,6 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: 'newest',     label: 'Date published' },
   { value: 'updated',    label: 'Updated' },
 ]
-
-// Per-tile CSS driven by the current animation phase.
-//   idle  — panel open/close & initial load (scale from centre, random delay)
-//   exit  — page turn out: scale+translate left, left column first
-//   enter — page turn in:  scale+translate from right, right column first (inverse)
-function getTileStyle(
-  idleDelay: number,
-  col: number,
-  numCols: number,
-  phase: 'idle' | 'exit' | 'enter',
-  gridVisible: boolean,
-): React.CSSProperties {
-  if (phase === 'exit') {
-    const delay = col * COL_DELAY
-    return {
-      opacity: 0,
-      transform: 'scale(0.9) translateX(-16px)',
-      transition: `opacity ${EXIT_MS}ms ease ${delay}ms, transform ${EXIT_MS}ms ease ${delay}ms`,
-    }
-  }
-
-  if (phase === 'enter') {
-    const delay = (numCols - 1 - col) * COL_DELAY
-    return {
-      opacity: gridVisible ? 1 : 0,
-      transform: gridVisible ? 'none' : 'scale(0.9) translateX(16px)',
-      transition: gridVisible
-        ? `opacity ${ENTER_MS}ms ease ${delay}ms, transform ${ENTER_MS}ms ease ${delay}ms`
-        : 'none',
-    }
-  }
-
-  // idle — covers panel open/close, initial load, and grid reflow (all unified)
-  return {
-    opacity: gridVisible ? 1 : 0,
-    transform: gridVisible ? 'none' : 'scale(0.95)',
-    transition: `opacity ${CARD_ANIM}ms ease, transform ${CARD_ANIM}ms ease`,
-    transitionDelay: gridVisible ? `${idleDelay}ms` : '0ms',
-  }
-}
-
-// ─── Shared popover dismiss hook ──────────────────────────────────────────────
-
-function usePopover() {
-  const [open, setOpen] = useState(false)
-  const toggle = useCallback(() => setOpen(v => !v), [])
-  const close = useCallback(() => setOpen(false), [])
-  return { open, toggle, close }
-}
 
 // ─── Sort dropdown ─────────────────────────────────────────────────────────────
 
@@ -124,28 +72,7 @@ function SortMenu({ sort, onSort }: SortMenuProps) {
         {activeLabel}
       </button>
 
-      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
-
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          right: 0,
-          zIndex: 201,
-          minWidth: 160,
-          background: 'var(--bg-elevated)',
-          backdropFilter: 'blur(12px)',
-          border: '0.5px solid var(--border-subtle)',
-          borderRadius: 8,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-          overflow: 'hidden',
-          transformOrigin: 'top right',
-          transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
-        }}
-      >
+      <Popover open={open} onClose={close}>
         {SORT_OPTIONS.map(opt => {
           const active = opt.value === sort
           return (
@@ -165,7 +92,7 @@ function SortMenu({ sort, onSort }: SortMenuProps) {
             </button>
           )
         })}
-      </div>
+      </Popover>
     </div>
   )
 }
@@ -202,29 +129,7 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
         Categories{count > 0 ? ` · ${count}` : ''}
       </button>
 
-      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
-
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          right: 0,
-          zIndex: 201,
-          width: 200,
-          maxHeight: 300,
-          overflowY: 'auto',
-          background: 'var(--bg-elevated)',
-          backdropFilter: 'blur(12px)',
-          border: '0.5px solid var(--border-subtle)',
-          borderRadius: 8,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-          transformOrigin: 'top right',
-          transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
-        }}
-      >
+      <Popover open={open} onClose={close} width={200} maxHeight={300}>
         <button
           onClick={onClear}
           className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
@@ -258,7 +163,7 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
             </button>
           )
         })}
-      </div>
+      </Popover>
     </div>
   )
 }
@@ -283,6 +188,7 @@ export function BrowsePanel({
   const [resizeActive, setResizeActive] = useState(false)
   const [resizeHover, setResizeHover] = useState(false)
   const mainRowRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -309,221 +215,18 @@ export function BrowsePanel({
     document.addEventListener('mouseup', onMouseUp)
   }, [panelWidth])
 
-  const reflowTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  // ── Buffered results: hold old page during exit, swap in on commit ──────────
-  const [displayResults, setDisplayResults] = useState<ModProject[]>(results)
-  const [displayTotal, setDisplayTotal] = useState(total)
-
-  // ── Per-tile idle animation delays — fresh random values each results load ───
-  const tileDelaysRef = useRef<Record<string, number>>({})
-  useEffect(() => { tileDelaysRef.current = {} }, [displayResults])
-  const getTileDelay = useCallback((id: string) => {
-    if (!(id in tileDelaysRef.current)) {
-      tileDelaysRef.current[id] = Math.round(Math.random() * 55)
-    }
-    return tileDelaysRef.current[id]
-  }, [])
-
-  // ── Page-turn phase ─────────────────────────────────────────────────────────
-  // Stable wrappers keep refs in sync at call-time. ResizeObserver callbacks can
-  // fire between React commit and useEffect, so refs must be updated eagerly.
-  const [pagePhase, _setPagePhase] = useState<'idle' | 'exit' | 'enter'>('idle')
-  const pagePhaseRef = useRef<'idle' | 'exit' | 'enter'>('idle')
-  const setPagePhase = useCallback((p: 'idle' | 'exit' | 'enter') => {
-    pagePhaseRef.current = p; _setPagePhase(p)
-  }, [])
-
-  // ── Column count (measured from container width for accurate stagger) ───────
-  const [numCols, setNumCols] = useState(4)
-  const numColsRef = useRef(4)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  // ── Page-turn coordination refs ─────────────────────────────────────────────
-  // Both the exit-animation timer AND the network response must complete before
-  // we swap in new results and start the enter animation.
-  const exitDoneRef = useRef(false)
-  const resultsDoneRef = useRef(false)
-  const inPageTransRef = useRef(false)
-  const pendingRef = useRef<{ results: ModProject[]; total: number } | null>(null)
-  const transTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const prevLoadingRef = useRef(loading)
-
-  // ── Detail panel ─────────────────────────────────────────────────────────────
+  // ── Animation ──────────────────────────────────────────────────────────────
   const panelOpen = !!selectedProject
+  const { displayResults, displayTotal, numCols, gridVisible, layoutOpen, pagePhase, getTileDelay, handlePage } =
+    useGridPageAnimation({
+      results, total, loading, panelOpen, containerRef,
+      onSearch: (offset) => onSearch(query, selectedCats, offset, sortBy),
+    })
+
+  // Keep last project so the detail panel content doesn't blank during close animation
   const lastProjectRef = useRef<ModProject | null>(null)
   if (selectedProject) lastProjectRef.current = selectedProject
   const displayProject = selectedProject ?? lastProjectRef.current
-
-  const [layoutOpen, setLayoutOpen] = useState(false)
-  const [gridVisible, _setGridVisible] = useState(false)
-  const gridVisibleRef = useRef(false)
-  const setGridVisible = useCallback((v: boolean) => {
-    gridVisibleRef.current = v; _setGridVisible(v)
-  }, [])
-  const hasOpenedRef = useRef(false)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const cardAnimTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  // ── Measure column count; animate reflow when tiles are visible ──────────────
-  // Mount-only: panel open/close handlers update numCols themselves (in a double-rAF
-  // while tiles are hidden) so the observer never sees a stale mismatch after panel
-  // transitions — preventing the double-animation from Issue 1.
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const measure = () => Math.max(1, Math.floor((el.getBoundingClientRect().width - 16) / 208))
-
-    // Seed initial value — tiles are hidden at mount so no animation needed.
-    const init = measure()
-    setNumCols(init)
-    numColsRef.current = init
-
-    const obs = new ResizeObserver(() => {
-      const cols = measure()
-      if (cols === numColsRef.current) return
-
-      if (!gridVisibleRef.current || pagePhaseRef.current !== 'idle') {
-        // Tiles hidden or page-turning: update numCols silently (reflow is invisible).
-        setNumCols(cols)
-        numColsRef.current = cols
-        return
-      }
-
-      // Tiles visible and stable: animate — hide first so the CSS reflow is invisible.
-      clearTimeout(reflowTimerRef.current)
-      setGridVisible(false)
-      const target = cols
-      reflowTimerRef.current = setTimeout(() => {
-        setNumCols(target)
-        numColsRef.current = target
-        setGridVisible(true)
-      }, CARD_ANIM)
-    })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, []) // mount-only — see comment above
-
-  // ── commitEnter: swap in new results and start enter animation ───────────────
-  // Called after BOTH the exit timer fires AND the network results arrive.
-  const commitEnter = useCallback(() => {
-    if (!exitDoneRef.current || !resultsDoneRef.current || !pendingRef.current) return
-    const { results: r, total: t } = pendingRef.current
-    exitDoneRef.current = false
-    resultsDoneRef.current = false
-    inPageTransRef.current = false
-    pendingRef.current = null
-    // Batch: update display data + phase. Tiles render at enter-start state (invisible, shifted right).
-    setDisplayResults(r)
-    setDisplayTotal(t)
-    setPagePhase('enter')
-    setGridVisible(false)
-    // Two frames later: trigger the enter transition (start → end state).
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      setGridVisible(true)
-      clearTimeout(transTimerRef.current)
-      transTimerRef.current = setTimeout(
-        () => setPagePhase('idle'),
-        ENTER_MS + numColsRef.current * COL_DELAY + 60,
-      )
-    }))
-  }, []) // stable: only uses refs and stable state setters
-
-  // ── handlePage: kick off exit animation and fire the search ─────────────────
-  const handlePage = useCallback((o: number) => {
-    clearTimeout(transTimerRef.current)
-    exitDoneRef.current = false
-    resultsDoneRef.current = false
-    inPageTransRef.current = true
-    pendingRef.current = null
-    setPagePhase('exit')
-    onSearch(query, selectedCats, o, sortBy)
-    // Exit timer: after all tiles have animated out, try to commit
-    transTimerRef.current = setTimeout(() => {
-      exitDoneRef.current = true
-      commitEnter()
-    }, EXIT_MS + numColsRef.current * COL_DELAY + 30)
-  }, [onSearch, query, selectedCats, sortBy, commitEnter])
-
-  // ── Sync incoming results: buffer during page turn, apply directly otherwise ─
-  useEffect(() => {
-    const wasLoading = prevLoadingRef.current
-    prevLoadingRef.current = loading
-    if (inPageTransRef.current && wasLoading && !loading) {
-      // Network results just arrived during a page transition — store and try commit
-      pendingRef.current = { results, total }
-      resultsDoneRef.current = true
-      commitEnter()
-    } else if (!inPageTransRef.current) {
-      // Normal update: query change, category filter, sort, initial load
-      setDisplayResults(results)
-      setDisplayTotal(total)
-    }
-  }, [loading, results, total, commitEnter])
-
-  // ── Initial-load animation: Case A (remount with cached results) ─────────────
-  useEffect(() => {
-    if (results.length > 0) {
-      const t = setTimeout(() => setGridVisible(true), 16)
-      return () => clearTimeout(t)
-    }
-  }, []) // mount only
-
-  // ── Initial-load animation: Case B (first results arrive after mount) ────────
-  const prevDisplayLenRef = useRef(0)
-  useEffect(() => {
-    const prevLen = prevDisplayLenRef.current
-    prevDisplayLenRef.current = displayResults.length
-    if (prevLen === 0 && displayResults.length > 0 && !panelOpen && pagePhase === 'idle') {
-      const t = setTimeout(() => setGridVisible(true), 16)
-      return () => clearTimeout(t)
-    }
-  }, [displayResults.length]) // intentionally omit panelOpen, pagePhase
-
-  // ── Detail panel open/close ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (panelOpen) {
-      hasOpenedRef.current = true
-      clearTimeout(closeTimerRef.current)
-      clearTimeout(cardAnimTimerRef.current)
-      setGridVisible(false)
-      cardAnimTimerRef.current = setTimeout(() => {
-        setLayoutOpen(true)
-        // Double-rAF: first frame React commits layoutOpen=true and browser lays out;
-        // second frame the new container width is stable. Update numCols while tiles
-        // are still hidden so the ResizeObserver finds no mismatch when it fires.
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          if (containerRef.current) {
-            const cols = Math.max(1, Math.floor((containerRef.current.getBoundingClientRect().width - 16) / 208))
-            setNumCols(cols)
-            numColsRef.current = cols
-          }
-          setGridVisible(true)
-        }))
-      }, CARD_ANIM)
-    } else {
-      if (!hasOpenedRef.current) return
-      clearTimeout(cardAnimTimerRef.current)
-      closeTimerRef.current = setTimeout(() => {
-        setGridVisible(false)
-        cardAnimTimerRef.current = setTimeout(() => {
-          setLayoutOpen(false)
-          requestAnimationFrame(() => requestAnimationFrame(() => {
-            if (containerRef.current) {
-              const cols = Math.max(1, Math.floor((containerRef.current.getBoundingClientRect().width - 16) / 208))
-              setNumCols(cols)
-              numColsRef.current = cols
-            }
-            setGridVisible(true)
-          }))
-        }, CARD_ANIM)
-      }, PANEL_DURATION - CARD_ANIM)
-    }
-    return () => {
-      clearTimeout(closeTimerRef.current)
-      clearTimeout(cardAnimTimerRef.current)
-    }
-  }, [panelOpen])
 
   const gridCols = `repeat(${numCols}, 1fr)`
 
@@ -717,7 +420,7 @@ export function BrowsePanel({
               width: panelWidth,
               height: '100%',
               transform: panelOpen ? 'translateX(0)' : `translateX(${panelWidth}px)`,
-              transition: `transform ${PANEL_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+              transition: `transform ${PANEL_SLIDE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
               willChange: 'transform',
             }}
           >

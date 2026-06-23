@@ -1,26 +1,8 @@
 import { useState } from 'react'
 import type { ModProject, ResolvedDependency } from './useMods'
+import { isDepsRequiredError } from './useMods'
 import { DependencyDialog } from './DependencyDialog'
-
-function fmtCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k'
-  return String(n)
-}
-
-function relativeTime(iso: string): string {
-  if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
-  return `${Math.floor(months / 12)}y ago`
-}
+import { fmtCount, relativeTime } from '../../lib/format'
 
 interface ContentCardProps {
   project: ModProject
@@ -52,10 +34,10 @@ export function ContentCard({ project, selected, installing, alreadyInstalled, o
       await onInstallLatest(project.id)
       setDone(true)
       setTimeout(() => setDone(false), 2500)
-    } catch (err: any) {
-      if (err?.__deps) {
-        setDeps(err.__deps)
-        setPendingVersionId(err.__versionId)
+    } catch (err: unknown) {
+      if (isDepsRequiredError(err)) {
+        setDeps(err.deps)
+        setPendingVersionId(err.versionId)
       }
     } finally {
       setQuickInstalling(false)

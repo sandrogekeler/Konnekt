@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw'
 import type { InstalledMod, ModProject, ModVersion, ModUpdateInfo, ResolvedDependency } from './useMods'
 import { DependencyDialog } from './DependencyDialog'
+import { ModAboutBody } from './ModAboutBody'
+import { fmtCount, fmtBytes, relativeTime } from '../../lib/format'
 
 interface Props {
   mod: InstalledMod
@@ -25,29 +24,6 @@ interface Props {
 }
 
 type Tab = 'about' | 'versions'
-
-function fmtCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k'
-  return String(n)
-}
-
-function fmtBytes(b: number): string {
-  if (b < 1024) return b + ' B'
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB'
-  return (b / 1024 / 1024).toFixed(1) + ' MB'
-}
-
-function relativeTime(iso: string): string {
-  if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
-  const days = Math.floor(diff / 86_400_000)
-  if (days < 1) return 'today'
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
-  return `${Math.floor(months / 12)}y ago`
-}
 
 export function ModPreviewDialog({
   mod, updateInfo, project, projectLoading, versions, versionsLoading,
@@ -277,25 +253,8 @@ export function ModPreviewDialog({
               </div>
             </div>
           ) : tab === 'about' ? (
-            <div>
-              {projectLoading && !body ? (
-                <div className="px-4 py-6 text-xs" style={{ color: 'var(--text-muted)' }}>Loading…</div>
-              ) : body ? (
-                <div
-                  className="mod-body px-4 py-4 text-xs prose-sm max-w-none"
-                  style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                    {body}
-                  </ReactMarkdown>
-                </div>
-              ) : description ? (
-                <div className="px-4 py-4 text-xs" style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                  {description}
-                </div>
-              ) : (
-                <div className="px-4 py-6 text-xs" style={{ color: 'var(--text-muted)' }}>No description available.</div>
-              )}
+            <div className="px-4 py-4">
+              <ModAboutBody body={body} description={description} loading={projectLoading} />
             </div>
           ) : (
             // Versions tab

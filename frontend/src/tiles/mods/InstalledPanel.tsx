@@ -1,6 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Toggle } from '../../components/ui/Toggle'
+import { Popover } from '../../components/ui/Popover'
+import { usePopover } from '../../hooks/usePopover'
 import { ModPreviewDialog } from './ModPreviewDialog'
+import { fmtBytes } from '../../lib/format'
 import type {
   InstalledMod, InstallProgress, ModProject, ModVersion,
   ModUpdateInfo, ResolvedDependency,
@@ -43,20 +46,6 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'size', label: 'Size' },
 ]
 
-function fmtBytes(b: number) {
-  if (b < 1024) return b + ' B'
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB'
-  return (b / 1024 / 1024).toFixed(1) + ' MB'
-}
-
-// ─── Shared popover hook ──────────────────────────────────────────────────────
-
-function usePopover() {
-  const [open, setOpen] = useState(false)
-  const toggle = useCallback(() => setOpen(v => !v), [])
-  const close = useCallback(() => setOpen(false), [])
-  return { open, toggle, close }
-}
 
 // ─── Sort dropdown ────────────────────────────────────────────────────────────
 
@@ -79,27 +68,7 @@ function SortMenu({ sort, onSort }: { sort: SortKey; onSort: (v: SortKey) => voi
         <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>↕</span>
         {label}
       </button>
-      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          right: 0,
-          zIndex: 201,
-          minWidth: 160,
-          background: 'var(--bg-elevated)',
-          backdropFilter: 'blur(12px)',
-          border: '0.5px solid var(--border-subtle)',
-          borderRadius: 8,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-          overflow: 'hidden',
-          transformOrigin: 'top right',
-          transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
-        }}
-      >
+      <Popover open={open} onClose={close}>
         {SORT_OPTIONS.map(opt => {
           const active = opt.value === sort
           return (
@@ -119,7 +88,7 @@ function SortMenu({ sort, onSort }: { sort: SortKey; onSort: (v: SortKey) => voi
             </button>
           )
         })}
-      </div>
+      </Popover>
     </div>
   )
 }
@@ -152,32 +121,12 @@ function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter
         <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>☰</span>
         Filter{active ? ' ·' : ''}
       </button>
-      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          right: 0,
-          zIndex: 201,
-          minWidth: 160,
-          background: 'var(--bg-elevated)',
-          backdropFilter: 'blur(12px)',
-          border: '0.5px solid var(--border-subtle)',
-          borderRadius: 8,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-          overflow: 'hidden',
-          transformOrigin: 'top right',
-          transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
-        }}
-      >
+      <Popover open={open} onClose={close}>
         <div className="px-3 py-1.5 text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10, borderBottom: '0.5px solid var(--border-subtle)' }}>
           Status
         </div>
         {(['all', 'enabled', 'disabled'] as StatusFilter[]).map(v => {
-          const active = statusFilter === v
+          const isActive = statusFilter === v
           const label = v === 'all' ? 'All' : v.charAt(0).toUpperCase() + v.slice(1)
           return (
             <button
@@ -185,13 +134,13 @@ function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter
               onClick={() => onStatusFilter(v)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
               style={{
-                color: active ? 'var(--accent)' : 'var(--text-primary)',
-                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+                color: isActive ? 'var(--accent)' : 'var(--text-primary)',
+                background: isActive ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              <span style={{ width: 12, color: 'var(--accent)', opacity: isActive ? 1 : 0 }}>✓</span>
               {label}
             </button>
           )
@@ -200,7 +149,7 @@ function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter
           Source
         </div>
         {(['all', 'modrinth', 'local'] as SourceFilter[]).map(v => {
-          const active = sourceFilter === v
+          const isActive = sourceFilter === v
           const label = v === 'all' ? 'All' : v.charAt(0).toUpperCase() + v.slice(1)
           return (
             <button
@@ -208,18 +157,18 @@ function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter
               onClick={() => onSourceFilter(v)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
               style={{
-                color: active ? 'var(--accent)' : 'var(--text-primary)',
-                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+                color: isActive ? 'var(--accent)' : 'var(--text-primary)',
+                background: isActive ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              <span style={{ width: 12, color: 'var(--accent)', opacity: isActive ? 1 : 0 }}>✓</span>
               {label}
             </button>
           )
         })}
-      </div>
+      </Popover>
     </div>
   )
 }

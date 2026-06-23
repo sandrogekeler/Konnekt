@@ -393,7 +393,7 @@ func (s *ModService) ListInstalled(serverID string) ([]models.InstalledMod, erro
 			info, _ := e.Info()
 			jarPath := filepath.Join(dir, name)
 
-			meta, _ := parseJarMeta(jarPath, loader)
+			meta, _ := parseJarMetaCached(jarPath, loader)
 
 			var manifestItem *modManifestItem
 			if item, ok := manifestIndex[name]; ok {
@@ -614,12 +614,12 @@ func sandboxCheck(workDir, path string) error {
 
 // --- Manifest persistence ---
 
-func (s *ModService) manifestDir(serverID string) string {
+func (s *ModService) manifestDir() string {
 	return filepath.Join(s.dataDir, "mods")
 }
 
 func (s *ModService) manifestPath(serverID string) string {
-	return filepath.Join(s.manifestDir(serverID), serverID+".json")
+	return filepath.Join(s.manifestDir(), serverID+".json")
 }
 
 func (s *ModService) loadManifest(serverID string) (*modManifest, error) {
@@ -638,7 +638,7 @@ func (s *ModService) loadManifest(serverID string) (*modManifest, error) {
 }
 
 func (s *ModService) saveManifest(serverID string, m *modManifest) error {
-	dir := s.manifestDir(serverID)
+	dir := s.manifestDir()
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}

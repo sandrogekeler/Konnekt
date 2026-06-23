@@ -4,14 +4,43 @@ import (
 	"archive/zip"
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"konnekt/backend/models"
 )
+
+// jarCacheKey combines path, mtime and size so the cache self-invalidates on any change.
+type jarCacheKey struct {
+	path  string
+	mtime int64
+	size  int64
+}
+
+var jarMetaCache sync.Map // jarCacheKey → models.JarMeta
+
+// parseJarMetaCached wraps parseJarMeta with a file-stat cache so repeated
+// ListInstalled calls (polling every 10 s) don't re-open every zip.
+func parseJarMetaCached(jarPath, loaderHint string) (models.JarMeta, error) {
+	info, err := os.Stat(jarPath)
+	if err != nil {
+		return models.JarMeta{}, fmt.Errorf("stat %s: %w", jarPath, err)
+	}
+	key := jarCacheKey{path: jarPath, mtime: info.ModTime().UnixMilli(), size: info.Size()}
+	if cached, ok := jarMetaCache.Load(key); ok {
+		return cached.(models.JarMeta), nil
+	}
+	meta, parseErr := parseJarMeta(jarPath, loaderHint)
+	if parseErr == nil {
+		jarMetaCache.Store(key, meta)
+	}
+	return meta, parseErr
+}
 
 // parseJarMeta opens a .jar (which is a zip) and extracts mod/plugin identity
 // by inspecting loader-specific manifest files. loaderHint (from ServerConfig)
