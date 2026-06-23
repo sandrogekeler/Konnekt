@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import type { ModProject, ModVersion, ResolvedDependency } from './useMods'
 import { DependencyDialog } from './DependencyDialog'
 import { ContentCard } from './ContentCard'
@@ -231,11 +233,13 @@ export function ContentDetailPanel({
               {projectLoading && !project.body ? (
                 <div className="text-xs animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading details…</div>
               ) : project.body ? (
-                <div
-                  className="prose prose-sm max-w-none text-xs leading-relaxed"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  <ReactMarkdown>{project.body}</ReactMarkdown>
+                <div className="mod-body">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                  >
+                    {project.body}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
