@@ -65,13 +65,11 @@ interface SortMenuProps {
 
 function SortMenu({ sort, onSort }: SortMenuProps) {
   const { open, toggle, close } = usePopover()
-  const btnRef = useRef<HTMLButtonElement>(null)
   const activeLabel = SORT_OPTIONS.find(o => o.value === sort)?.label ?? 'Relevance'
 
   return (
     <div className="relative shrink-0">
       <button
-        ref={btnRef}
         onClick={toggle}
         className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
         style={{
@@ -85,49 +83,48 @@ function SortMenu({ sort, onSort }: SortMenuProps) {
         {activeLabel}
       </button>
 
-      {open && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 200 }}
-            onClick={close}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 4px)',
-              right: 0,
-              zIndex: 201,
-              minWidth: 160,
-              background: 'var(--bg-elevated)',
-              backdropFilter: 'blur(12px)',
-              border: '0.5px solid var(--border-subtle)',
-              borderRadius: 8,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-              overflow: 'hidden',
-            }}
-          >
-            {SORT_OPTIONS.map(opt => {
-              const active = opt.value === sort
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => { onSort(opt.value); close() }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-                  style={{
-                    color: active ? 'var(--accent)' : 'var(--text-primary)',
-                    background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
-                  }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
-                  {opt.label}
-                </button>
-              )
-            })}
-          </div>
-        </>
-      )}
+      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
+
+      <div
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 4px)',
+          right: 0,
+          zIndex: 201,
+          minWidth: 160,
+          background: 'var(--bg-elevated)',
+          backdropFilter: 'blur(12px)',
+          border: '0.5px solid var(--border-subtle)',
+          borderRadius: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          overflow: 'hidden',
+          transformOrigin: 'top right',
+          transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
+        }}
+      >
+        {SORT_OPTIONS.map(opt => {
+          const active = opt.value === sort
+          return (
+            <button
+              key={opt.value}
+              onClick={() => { onSort(opt.value); close() }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
+              style={{
+                color: active ? 'var(--accent)' : 'var(--text-primary)',
+                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -164,13 +161,9 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
         Categories{count > 0 ? ` · ${count}` : ''}
       </button>
 
-      {open && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 200 }}
-            onClick={close}
-          />
-          <div
+      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
+
+      <div
             style={{
               position: 'absolute',
               top: 'calc(100% + 4px)',
@@ -184,6 +177,11 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
               border: '0.5px solid var(--border-subtle)',
               borderRadius: 8,
               boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              transformOrigin: 'top right',
+              transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
+              opacity: open ? 1 : 0,
+              pointerEvents: open ? 'auto' : 'none',
+              transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
             }}
           >
             <button
@@ -220,8 +218,6 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
               )
             })}
           </div>
-        </>
-      )}
     </div>
   )
 }
