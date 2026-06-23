@@ -182,8 +182,8 @@ export function ModResolveDependencies(arg1, arg2) {
   return window['go']['main']['App']['ModResolveDependencies'](arg1, arg2);
 }
 
-export function ModSearch(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['ModSearch'](arg1, arg2, arg3, arg4);
+export function ModSearch(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ModSearch'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function ModSetEnabled(arg1, arg2, arg3) {

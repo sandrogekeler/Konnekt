@@ -60,6 +60,9 @@ func (c *ModrinthClient) Search(ctx context.Context, q models.ModSearchQuery, mc
 	if facets != "" {
 		params.Set("facets", facets)
 	}
+	if q.Sort != "" {
+		params.Set("index", q.Sort)
+	}
 
 	var raw mrSearchResponse
 	if err := c.doJSON(ctx, "/search?"+params.Encode(), &raw); err != nil {

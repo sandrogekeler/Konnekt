@@ -33,7 +33,7 @@ interface ModsState {
   searchOffset: number
   searchLoading: boolean
   searchError: string | null
-  search: (query: string, categories: string[], offset?: number) => Promise<void>
+  search: (query: string, categories: string[], offset?: number, sort?: string) => Promise<void>
 
   // Categories
   categories: string[]
@@ -151,12 +151,12 @@ export function useMods(serverId: string): ModsState {
   // Load categories once on mount
   useEffect(() => { loadCategories() }, [loadCategories])
 
-  const search = useCallback(async (query: string, cats: string[], offset = 0) => {
+  const search = useCallback(async (query: string, cats: string[], offset = 0, sort = '') => {
     setSearchLoading(true)
     setSearchError(null)
     setSearchOffset(offset)
     try {
-      const result = (await ModSearch(serverId, query, offset, cats)) as ModSearchResult
+      const result = (await ModSearch(serverId, query, offset, cats, sort)) as ModSearchResult
       setSearchResults(result?.hits ?? [])
       setSearchTotal(result?.total ?? 0)
     } catch (e) {

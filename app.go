@@ -486,8 +486,19 @@ func (a *App) PreviewScheduleNode(g models.Graph, nodeID string) (models.NodePre
 
 // --- Mods / Plugins ---
 
-func (a *App) ModSearch(serverID, query string, offset int, categories []string) (models.ModSearchResult, error) {
-	return a.modService.Search(serverID, query, offset, categories)
+var validModSortIndex = map[string]bool{
+	"relevance": true,
+	"newest":    true,
+	"updated":   true,
+	"downloads": true,
+	"follows":   true,
+}
+
+func (a *App) ModSearch(serverID, query string, offset int, categories []string, sort string) (models.ModSearchResult, error) {
+	if !validModSortIndex[sort] {
+		sort = ""
+	}
+	return a.modService.Search(serverID, query, offset, categories, sort)
 }
 
 func (a *App) ModGetProject(projectID string) (models.ModProject, error) {

@@ -17,7 +17,7 @@ interface Props {
   versionsLoading: boolean
   installing: boolean
   installError: string | null
-  onSearch: (query: string, categories: string[], offset?: number) => void
+  onSearch: (query: string, categories: string[], offset?: number, sort?: string) => void
   onSelectProject: (project: ModProject) => void
   onClearProject: () => void
   onGetVersions: (projectId: string) => void
@@ -32,12 +32,196 @@ const PANEL_WIDTH = 440
 const PANEL_DURATION = 280 // ms — panel slide
 const CARD_ANIM = 130    // ms — tile fade+scale each way
 
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: '',           label: 'Relevance' },
+  { value: 'downloads',  label: 'Downloads' },
+  { value: 'follows',    label: 'Popularity' },
+  { value: 'newest',     label: 'Date published' },
+  { value: 'updated',    label: 'Updated' },
+]
+
 // Stable per-card enter delay: looks random but doesn't change on re-render.
 function stableDelay(id: string): number {
   let h = 0
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
   return (h % 8) * 20 // 8 buckets: 0, 20, 40 … 140 ms
 }
+
+// ─── Shared popover dismiss hook ─────────────────────────────────────────────
+
+function usePopover() {
+  const [open, setOpen] = useState(false)
+  const toggle = useCallback(() => setOpen(v => !v), [])
+  const close = useCallback(() => setOpen(false), [])
+  return { open, toggle, close }
+}
+
+// ─── Sort dropdown ────────────────────────────────────────────────────────────
+
+interface SortMenuProps {
+  sort: string
+  onSort: (v: string) => void
+}
+
+function SortMenu({ sort, onSort }: SortMenuProps) {
+  const { open, toggle, close } = usePopover()
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const activeLabel = SORT_OPTIONS.find(o => o.value === sort)?.label ?? 'Relevance'
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
+        style={{
+          border: '0.5px solid var(--border-subtle)',
+          background: open ? 'var(--hover-surface)' : 'transparent',
+          color: sort ? 'var(--accent)' : 'var(--text-muted)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>↕</span>
+        {activeLabel}
+      </button>
+
+      {open && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 200 }}
+            onClick={close}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              left: 0,
+              zIndex: 201,
+              minWidth: 160,
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--border-subtle)',
+              borderRadius: 8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+            }}
+          >
+            {SORT_OPTIONS.map(opt => {
+              const active = opt.value === sort
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => { onSort(opt.value); close() }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
+                  style={{
+                    color: active ? 'var(--accent)' : 'var(--text-primary)',
+                    background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── Categories dropdown ──────────────────────────────────────────────────────
+
+interface CategoriesMenuProps {
+  categories: string[]
+  selectedCats: string[]
+  onToggle: (cat: string) => void
+  onClear: () => void
+}
+
+function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: CategoriesMenuProps) {
+  const { open, toggle, close } = usePopover()
+  const count = selectedCats.length
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        onClick={toggle}
+        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
+        style={{
+          border: '0.5px solid var(--border-subtle)',
+          background: open ? 'var(--hover-surface)' : 'transparent',
+          color: count > 0 ? 'var(--accent)' : 'var(--text-muted)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>☰</span>
+        Categories{count > 0 ? ` · ${count}` : ''}
+      </button>
+
+      {open && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 200 }}
+            onClick={close}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              right: 0,
+              zIndex: 201,
+              width: 200,
+              maxHeight: 300,
+              overflowY: 'auto',
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--border-subtle)',
+              borderRadius: 8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+            }}
+          >
+            <button
+              onClick={onClear}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
+              style={{
+                color: count === 0 ? 'var(--accent)' : 'var(--text-muted)',
+                borderBottom: '0.5px solid var(--border-subtle)',
+                background: 'transparent',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <span style={{ width: 12, color: 'var(--accent)', opacity: count === 0 ? 1 : 0 }}>✓</span>
+              All
+            </button>
+            {categories.map(cat => {
+              const active = selectedCats.includes(cat)
+              return (
+                <button
+                  key={cat}
+                  onClick={() => onToggle(cat)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
+                  style={{
+                    color: active ? 'var(--accent)' : 'var(--text-primary)',
+                    background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+                  {cat}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── BrowsePanel ──────────────────────────────────────────────────────────────
 
 export function BrowsePanel({
   results, total, offset, loading, error, categories,
@@ -49,6 +233,7 @@ export function BrowsePanel({
 }: Props) {
   const [query, setQuery] = useState('')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState('')
   const [moreProjects, setMoreProjects] = useState<ModProject[]>([])
 
   const panelOpen = !!selectedProject
@@ -58,17 +243,13 @@ export function BrowsePanel({
   if (selectedProject) lastProjectRef.current = selectedProject
   const displayProject = selectedProject ?? lastProjectRef.current
 
-  // `layoutOpen` controls wrapper width + grid columns.
-  // `gridVisible` drives the tile fade+scale animation.
   const [layoutOpen, setLayoutOpen] = useState(false)
   const [gridVisible, setGridVisible] = useState(false)
-  const hasOpenedRef = useRef(false) // prevents spurious close sequence on initial mount
+  const hasOpenedRef = useRef(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const cardAnimTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // Case A — remount with cached results (navigate away + back):
-  // results.length > 0 on mount, gridVisible starts false → animate in.
-  // The `results` value is captured at mount time; intentionally no dep.
+  // Case A — remount with cached results
   useEffect(() => {
     if (results.length > 0) {
       const t = setTimeout(() => setGridVisible(true), 16)
@@ -76,8 +257,7 @@ export function BrowsePanel({
     }
   }, []) // mount only
 
-  // Case B — first load: results arrive after mount (empty → non-empty).
-  // prevLen starts at 0 so the 0→N transition always triggers entrance.
+  // Case B — first load
   const prevResultsLenRef = useRef(0)
   useEffect(() => {
     const prevLen = prevResultsLenRef.current
@@ -91,20 +271,16 @@ export function BrowsePanel({
   useEffect(() => {
     if (panelOpen) {
       hasOpenedRef.current = true
-      // Cancel any pending close sequence
       clearTimeout(closeTimerRef.current)
       clearTimeout(cardAnimTimerRef.current)
-      // Tiles fade+scale out → layout switches to 2-col → tiles fade+scale in
       setGridVisible(false)
       cardAnimTimerRef.current = setTimeout(() => {
         setLayoutOpen(true)
         setGridVisible(true)
       }, CARD_ANIM)
     } else {
-      if (!hasOpenedRef.current) return // skip spurious close sequence on mount
+      if (!hasOpenedRef.current) return
       clearTimeout(cardAnimTimerRef.current)
-      // Start tile fade-out CARD_ANIM ms before panel finishes sliding,
-      // so both animations land at the same moment.
       closeTimerRef.current = setTimeout(() => {
         setGridVisible(false)
         cardAnimTimerRef.current = setTimeout(() => {
@@ -119,16 +295,15 @@ export function BrowsePanel({
     }
   }, [panelOpen])
 
-  // 2 columns while panel is open, auto-fill otherwise.
   const gridCols = layoutOpen
     ? 'repeat(2, 1fr)'
     : 'repeat(auto-fill, minmax(200px, 1fr))'
 
-  // Debounced search
+  // Debounced search — fires on query, categories, or sort changes
   useEffect(() => {
-    const t = setTimeout(() => onSearch(query, selectedCats, 0), 300)
+    const t = setTimeout(() => onSearch(query, selectedCats, 0, sortBy), 300)
     return () => clearTimeout(t)
-  }, [query, selectedCats]) // intentionally omit onSearch
+  }, [query, selectedCats, sortBy]) // intentionally omit onSearch
 
   // Load "more by author"
   useEffect(() => {
@@ -146,9 +321,11 @@ export function BrowsePanel({
     )
   }, [])
 
+  const clearCats = useCallback(() => setSelectedCats([]), [])
+
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Search bar */}
+      {/* Search bar + Sort + Categories controls */}
       <div
         className="flex items-center gap-2 px-3 py-2 shrink-0"
         style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
@@ -179,46 +356,49 @@ export function BrowsePanel({
             </button>
           )}
         </div>
+
+        <SortMenu sort={sortBy} onSort={setSortBy} />
+        {categories.length > 0 && (
+          <CategoriesMenu
+            categories={categories}
+            selectedCats={selectedCats}
+            onToggle={toggleCat}
+            onClear={clearCats}
+          />
+        )}
       </div>
 
-      {/* Category chips */}
-      {categories.length > 0 && (
+      {/* Active category chips — only shown when filters are active */}
+      {selectedCats.length > 0 && (
         <div
           className="flex items-center gap-1.5 px-3 py-2 shrink-0 flex-wrap"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
         >
+          {selectedCats.map(cat => (
+            <button
+              key={cat}
+              onClick={() => toggleCat(cat)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono transition-colors shrink-0"
+              style={{
+                background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+                color: 'var(--accent)',
+                border: '0.5px solid color-mix(in srgb, var(--accent) 35%, transparent)',
+                fontWeight: 600,
+              }}
+            >
+              {cat}
+              <span style={{ opacity: 0.7, fontSize: 10 }}>×</span>
+            </button>
+          ))}
           <button
-            onClick={() => setSelectedCats([])}
+            onClick={clearCats}
             className="px-2 py-0.5 rounded text-xs font-mono transition-colors shrink-0"
-            style={{
-              background: selectedCats.length === 0 ? 'var(--accent)' : 'transparent',
-              color: selectedCats.length === 0 ? 'var(--bg-base)' : 'var(--text-muted)',
-              border: '0.5px solid var(--border-subtle)',
-              fontWeight: selectedCats.length === 0 ? 600 : 400,
-            }}
+            style={{ color: 'var(--text-faint)', border: '0.5px solid transparent' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-faint)' }}
           >
-            All
+            Clear all
           </button>
-          {categories.map(cat => {
-            const active = selectedCats.includes(cat)
-            return (
-              <button
-                key={cat}
-                onClick={() => toggleCat(cat)}
-                className="px-2 py-0.5 rounded text-xs font-mono transition-colors shrink-0"
-                style={{
-                  background: active ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'transparent',
-                  color: active ? 'var(--accent)' : 'var(--text-muted)',
-                  border: active
-                    ? '0.5px solid color-mix(in srgb, var(--accent) 35%, transparent)'
-                    : '0.5px solid var(--border-subtle)',
-                  fontWeight: active ? 600 : 400,
-                }}
-              >
-                {cat}
-              </button>
-            )
-          })}
         </div>
       )}
 
@@ -254,7 +434,6 @@ export function BrowsePanel({
                       opacity: gridVisible ? 1 : 0,
                       transform: gridVisible ? 'none' : 'scale(0.94)',
                       transition: `opacity ${CARD_ANIM}ms ease, transform ${CARD_ANIM}ms ease`,
-                      // Stagger only on enter; exit is instant (0ms) so all tiles fade together
                       transitionDelay: gridVisible ? `${stableDelay(project.id)}ms` : '0ms',
                     }}
                   >
@@ -272,11 +451,11 @@ export function BrowsePanel({
           <Pagination
             total={total}
             offset={offset}
-            onPage={o => onSearch(query, selectedCats, o)}
+            onPage={o => onSearch(query, selectedCats, o, sortBy)}
           />
         </div>
 
-        {/* Detail panel wrapper — fixed width while layoutOpen, collapses after animation */}
+        {/* Detail panel wrapper */}
         <div
           style={{
             width: layoutOpen ? PANEL_WIDTH : 0,
@@ -286,7 +465,6 @@ export function BrowsePanel({
             borderLeft: layoutOpen ? '0.5px solid var(--border-subtle)' : 'none',
           }}
         >
-          {/* GPU-composited slide: panel translates in/out without touching layout */}
           <div
             style={{
               width: PANEL_WIDTH,

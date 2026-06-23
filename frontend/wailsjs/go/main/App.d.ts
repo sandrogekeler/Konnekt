@@ -92,7 +92,7 @@ export function ModMoreByAuthor(arg1:string,arg2:string,arg3:string):Promise<Arr
 
 export function ModResolveDependencies(arg1:string,arg2:string):Promise<Array<models.ResolvedDependency>>;
 
-export function ModSearch(arg1:string,arg2:string,arg3:number,arg4:Array<string>):Promise<models.ModSearchResult>;
+export function ModSearch(arg1:string,arg2:string,arg3:number,arg4:Array<string>,arg5:string):Promise<models.ModSearchResult>;
 
 export function ModSetEnabled(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 

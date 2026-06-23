@@ -66,12 +66,12 @@ func (s *ModService) SetBus(b *EventBus)             { s.bus = b }
 
 // --- Modrinth browse & install ---
 
-func (s *ModService) Search(serverID, query string, offset int, categories []string) (models.ModSearchResult, error) {
+func (s *ModService) Search(serverID, query string, offset int, categories []string, sort string) (models.ModSearchResult, error) {
 	cfg, err := s.serverConfig(serverID)
 	if err != nil {
 		return models.ModSearchResult{}, err
 	}
-	q := models.ModSearchQuery{Query: query, Offset: offset, Categories: categories}
+	q := models.ModSearchQuery{Query: query, Offset: offset, Categories: categories, Sort: sort}
 	return s.provider.Search(s.ctx, q, cfg.MCVersion, cfg.Loader)
 }
 

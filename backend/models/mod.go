@@ -5,6 +5,7 @@ type ModSearchQuery struct {
 	Query      string   `json:"query"`
 	Offset     int      `json:"offset"`
 	Categories []string `json:"categories"`
+	Sort       string   `json:"sort"` // Modrinth index: relevance|newest|updated|downloads|follows
 }
 
 // ModSearchResult is one page of Modrinth search results.
