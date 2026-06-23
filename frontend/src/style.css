@@ -13,7 +13,7 @@
 :root,
 [data-theme="dark"] {
   --bg-base: #05060a;
-  --bg-elevated: #13151e;
+  --bg-elevated: rgba(18, 20, 30, 0.82);
   --bg-surface: rgba(255, 255, 255, 0.025);
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-hover: rgba(255, 255, 255, 0.12);
@@ -37,7 +37,7 @@
 
 [data-theme="light"] {
   --bg-base: #f5f6fa;
-  --bg-elevated: #eceef5;
+  --bg-elevated: rgba(236, 238, 245, 0.82);
   --bg-surface: rgba(0, 0, 0, 0.03);
   --border-subtle: rgba(0, 0, 0, 0.09);
   --border-hover: rgba(0, 0, 0, 0.18);
