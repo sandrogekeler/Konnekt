@@ -44,6 +44,7 @@ interface Props {
   onInstallLatest: (projectId: string) => Promise<void>
   onClose: () => void
   onSelectProject: (project: ModProject) => void
+  installedProjectIds?: Set<string>
 }
 
 type DetailTab = 'about' | 'gallery' | 'versions'
@@ -54,7 +55,7 @@ export function ContentDetailPanel({
   installing, installError,
   moreByAuthorProjects,
   onGetVersions, onGetAllVersions, onResolveDeps, onInstall, onInstallLatest,
-  onClose, onSelectProject,
+  onClose, onSelectProject, installedProjectIds,
 }: Props) {
   const [tab, setTab] = useState<DetailTab>('about')
   const [galleryIdx, setGalleryIdx] = useState(0)
@@ -325,7 +326,11 @@ export function ContentDetailPanel({
                   <ContentCard
                     key={p.id}
                     project={p}
+                    installing={isInstalling}
+                    alreadyInstalled={installedProjectIds?.has(p.id)}
                     onClick={() => onSelectProject(p)}
+                    onInstallLatest={onInstallLatest}
+                    onInstall={onInstall}
                   />
                 ))}
               </div>

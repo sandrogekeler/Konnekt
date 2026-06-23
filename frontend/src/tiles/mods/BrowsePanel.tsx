@@ -26,6 +26,7 @@ interface Props {
   onInstall: (versionIds: string[]) => Promise<void>
   onInstallLatest: (projectId: string) => Promise<void>
   moreByAuthor: (username: string, excludeProjectId: string) => Promise<ModProject[]>
+  installedProjectIds?: Set<string>
 }
 
 const DEFAULT_PANEL_WIDTH = 440
@@ -35,9 +36,9 @@ const PANEL_DURATION = 280    // ms — detail panel slide
 const CARD_ANIM = 130         // ms — tile fade+scale for panel open/close & initial load
 
 // Page-turn animation timing
-const EXIT_MS = 180    // per-tile exit duration
-const ENTER_MS = 160   // per-tile enter duration
-const COL_DELAY = 45   // stagger step per column (ms)
+const EXIT_MS = 160    // per-tile exit duration
+const ENTER_MS = 140   // per-tile enter duration
+const COL_DELAY = 22   // stagger step per column (ms) — subtle sweep
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: '',           label: 'Relevance' },
@@ -47,19 +48,12 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: 'updated',    label: 'Updated' },
 ]
 
-// Stable per-card random-ish delay for initial-load / panel-toggle animation.
-function stableDelay(id: string): number {
-  let h = 0
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return (h % 8) * 20
-}
-
 // Per-tile CSS driven by the current animation phase.
-//   idle  — panel open/close & initial load (scale from centre, stable random delay)
+//   idle  — panel open/close & initial load (scale from centre, random delay)
 //   exit  — page turn out: scale+translate left, left column first
 //   enter — page turn in:  scale+translate from right, right column first (inverse)
 function getTileStyle(
-  projectId: string,
+  idleDelay: number,
   col: number,
   numCols: number,
   phase: 'idle' | 'exit' | 'enter',
@@ -69,7 +63,7 @@ function getTileStyle(
     const delay = col * COL_DELAY
     return {
       opacity: 0,
-      transform: 'scale(0.88) translateX(-22px)',
+      transform: 'scale(0.9) translateX(-16px)',
       transition: `opacity ${EXIT_MS}ms ease ${delay}ms, transform ${EXIT_MS}ms ease ${delay}ms`,
     }
   }
@@ -78,7 +72,7 @@ function getTileStyle(
     const delay = (numCols - 1 - col) * COL_DELAY
     return {
       opacity: gridVisible ? 1 : 0,
-      transform: gridVisible ? 'none' : 'scale(0.88) translateX(22px)',
+      transform: gridVisible ? 'none' : 'scale(0.9) translateX(16px)',
       transition: gridVisible
         ? `opacity ${ENTER_MS}ms ease ${delay}ms, transform ${ENTER_MS}ms ease ${delay}ms`
         : 'none',
@@ -88,9 +82,9 @@ function getTileStyle(
   // idle — covers panel open/close, initial load, and grid reflow (all unified)
   return {
     opacity: gridVisible ? 1 : 0,
-    transform: gridVisible ? 'none' : 'scale(0.94)',
+    transform: gridVisible ? 'none' : 'scale(0.95)',
     transition: `opacity ${CARD_ANIM}ms ease, transform ${CARD_ANIM}ms ease`,
-    transitionDelay: gridVisible ? `${stableDelay(projectId)}ms` : '0ms',
+    transitionDelay: gridVisible ? `${idleDelay}ms` : '0ms',
   }
 }
 
@@ -277,7 +271,7 @@ export function BrowsePanel({
   installing, installError,
   onSearch, onSelectProject, onClearProject,
   onGetVersions, onGetAllVersions, onResolveDeps, onInstall, onInstallLatest,
-  moreByAuthor,
+  moreByAuthor, installedProjectIds,
 }: Props) {
   const [query, setQuery] = useState('')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
@@ -320,6 +314,16 @@ export function BrowsePanel({
   // ── Buffered results: hold old page during exit, swap in on commit ──────────
   const [displayResults, setDisplayResults] = useState<ModProject[]>(results)
   const [displayTotal, setDisplayTotal] = useState(total)
+
+  // ── Per-tile idle animation delays — fresh random values each results load ───
+  const tileDelaysRef = useRef<Record<string, number>>({})
+  useEffect(() => { tileDelaysRef.current = {} }, [displayResults])
+  const getTileDelay = useCallback((id: string) => {
+    if (!(id in tileDelaysRef.current)) {
+      tileDelaysRef.current[id] = Math.round(Math.random() * 55)
+    }
+    return tileDelaysRef.current[id]
+  }, [])
 
   // ── Page-turn phase ─────────────────────────────────────────────────────────
   // Stable wrappers keep refs in sync at call-time. ResizeObserver callbacks can
@@ -652,13 +656,17 @@ export function BrowsePanel({
                     key={project.id}
                     style={{
                       minWidth: 0,
-                      ...getTileStyle(project.id, index % numCols, numCols, pagePhase, gridVisible),
+                      ...getTileStyle(getTileDelay(project.id), index % numCols, numCols, pagePhase, gridVisible),
                     }}
                   >
                     <ContentCard
                       project={project}
                       selected={selectedProject?.id === project.id}
+                      installing={installing}
+                      alreadyInstalled={installedProjectIds?.has(project.id)}
                       onClick={() => onSelectProject(project)}
+                      onInstallLatest={onInstallLatest}
+                      onInstall={onInstall}
                     />
                   </div>
                 ))}
@@ -729,6 +737,7 @@ export function BrowsePanel({
                 onInstallLatest={onInstallLatest}
                 onClose={onClearProject}
                 onSelectProject={onSelectProject}
+                installedProjectIds={installedProjectIds}
               />
             )}
           </div>

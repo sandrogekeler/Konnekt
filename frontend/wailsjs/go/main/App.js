@@ -154,6 +154,10 @@ export function ModCategories(arg1) {
   return window['go']['main']['App']['ModCategories'](arg1);
 }
 
+export function ModCheckUpdates(arg1) {
+  return window['go']['main']['App']['ModCheckUpdates'](arg1);
+}
+
 export function ModGetAllVersions(arg1) {
   return window['go']['main']['App']['ModGetAllVersions'](arg1);
 }
@@ -168,6 +172,10 @@ export function ModGetVersions(arg1, arg2) {
 
 export function ModInstall(arg1, arg2) {
   return window['go']['main']['App']['ModInstall'](arg1, arg2);
+}
+
+export function ModInstallLocal(arg1) {
+  return window['go']['main']['App']['ModInstallLocal'](arg1);
 }
 
 export function ModListInstalled(arg1) {

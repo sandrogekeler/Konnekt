@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TileProps } from '../../types'
 import { useMods } from './useMods'
+import type { InstalledMod } from './useMods'
 import { InstalledPanel } from './InstalledPanel'
 import { BrowsePanel } from './BrowsePanel'
 import { useServerStore } from '../../stores/useServerStore'
 import { useServerConfigStore } from '../../stores/useServerConfigStore'
+import { useProcessesStore } from '../../stores/useProcessesStore'
 import { DetectServerLoader, SaveServerConfig } from '../../../wailsjs/go/main/App'
+import { models } from '../../../wailsjs/go/models'
 
 const PLUGIN_LOADERS = ['paper', 'spigot', 'bukkit', 'purpur', 'velocity']
 
@@ -38,25 +41,27 @@ export function ModsTile({ serverId, maximized }: TileProps) {
   const { kind, detecting } = useServerKind(serverId)
 
   if (!maximized) {
-    return <ModsSummary mods={mods} running={running} kind={kind} detecting={detecting} />
+    return <ModsSummary serverId={serverId} mods={mods} running={running} kind={kind} detecting={detecting} />
   }
 
-  return <ModsExpanded mods={mods} running={running} kind={kind} />
+  return <ModsExpanded serverId={serverId} mods={mods} running={running} kind={kind} />
 }
 
 // --- Compact (non-maximized) view ---
 
 function ModsSummary({
-  mods, running, kind, detecting,
+  serverId, mods, running, kind, detecting,
 }: {
+  serverId: string
   mods: ReturnType<typeof useMods>
   running: boolean
   kind: 'mods' | 'plugins'
   detecting: boolean
 }) {
-  const { installed, installedLoading, installProgress, setEnabled, uninstall } = mods
+  const { installed, installedLoading, installProgress, setEnabled, uninstall, updates } = mods
   const noun = kind === 'plugins' ? 'plugin' : 'mod'
   const nounPlural = kind === 'plugins' ? 'plugins' : 'mods'
+  const modProcess = useProcessesStore(s => s.processes['mod:' + serverId])
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -72,6 +77,11 @@ function ModsSummary({
           </span>
         )}
       </div>
+      {modProcess?.status === 'running' && (
+        <div className="shrink-0 w-full" style={{ height: 2, background: 'var(--border-subtle)' }}>
+          <div className="h-full transition-all duration-300" style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }} />
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto min-h-0">
         <InstalledPanel
           mods={installed}
@@ -81,8 +91,22 @@ function ModsSummary({
           installing={mods.installing}
           serverRunning={running}
           kind={kind}
+          updates={updates}
           onSetEnabled={setEnabled}
           onUninstall={uninstall}
+          onChangeVersion={mods.changeVersion}
+          selectedProject={mods.selectedProject}
+          projectLoading={mods.projectLoading}
+          versions={mods.versions}
+          versionsLoading={mods.versionsLoading}
+          installError={mods.installError}
+          onSelectProject={mod => mods.selectProject(modToProject(mod))}
+          onClearProject={mods.clearProject}
+          onGetVersions={mods.getVersions}
+          onGetAllVersions={mods.getAllVersions}
+          onResolveDeps={mods.resolveDeps}
+          onInstall={mods.install}
+          onOpenInBrowser={() => {/* no-op in compact view */}}
         />
       </div>
     </div>
@@ -94,14 +118,17 @@ function ModsSummary({
 type ModsView = 'library' | 'browse'
 
 function ModsExpanded({
-  mods, running, kind,
+  serverId, mods, running, kind,
 }: {
+  serverId: string
   mods: ReturnType<typeof useMods>
   running: boolean
   kind: 'mods' | 'plugins'
 }) {
   const [view, setView] = useState<ModsView>('library')
+  const [refreshing, setRefreshing] = useState(false)
   const noun = kind === 'plugins' ? 'Plugin' : 'Mod'
+  const modProcess = useProcessesStore(s => s.processes['mod:' + serverId])
 
   function openBrowse() {
     setView('browse')
@@ -111,6 +138,27 @@ function ModsExpanded({
   function openLibrary() {
     setView('library')
     mods.clearProject()
+  }
+
+  async function handleAddFiles() {
+    await mods.installLocal()
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    try {
+      await mods.refreshInstalled()
+      await mods.checkUpdates()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  function openInBrowser(mod: InstalledMod) {
+    if (!mod.projectId) return
+    // Switch to browse, then select the project to open the detail panel.
+    setView('browse')
+    mods.selectProject(modToProject(mod))
   }
 
   return (
@@ -145,6 +193,38 @@ function ModsExpanded({
                 restart needed for changes
               </span>
             )}
+            {/* Refresh button */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
+              style={{
+                border: '0.5px solid var(--border-subtle)',
+                color: 'var(--text-muted)',
+                background: 'transparent',
+                opacity: refreshing ? 0.5 : 1,
+              }}
+              title="Refresh"
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            >
+              {refreshing ? '…' : '↺'}
+            </button>
+            {/* Add Files button */}
+            <button
+              onClick={handleAddFiles}
+              className="px-3 py-1 rounded text-xs font-semibold transition-colors shrink-0"
+              style={{
+                border: '0.5px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
+                background: 'transparent',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            >
+              Add Files
+            </button>
+            {/* Add Content button */}
             <button
               onClick={openBrowse}
               className="px-3 py-1 rounded text-xs font-semibold transition-colors shrink-0"
@@ -161,6 +241,13 @@ function ModsExpanded({
         )}
       </div>
 
+      {/* Download progress bar */}
+      {modProcess?.status === 'running' && (
+        <div className="shrink-0 w-full" style={{ height: 2, background: 'var(--border-subtle)' }}>
+          <div className="h-full transition-all duration-300" style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }} />
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {view === 'library' ? (
@@ -172,8 +259,22 @@ function ModsExpanded({
             installing={mods.installing}
             serverRunning={running}
             kind={kind}
+            updates={mods.updates}
             onSetEnabled={mods.setEnabled}
             onUninstall={mods.uninstall}
+            onChangeVersion={mods.changeVersion}
+            selectedProject={mods.selectedProject}
+            projectLoading={mods.projectLoading}
+            versions={mods.versions}
+            versionsLoading={mods.versionsLoading}
+            installError={mods.installError}
+            onSelectProject={mod => mods.selectProject(modToProject(mod))}
+            onClearProject={mods.clearProject}
+            onGetVersions={mods.getVersions}
+            onGetAllVersions={mods.getAllVersions}
+            onResolveDeps={mods.resolveDeps}
+            onInstall={mods.install}
+            onOpenInBrowser={openInBrowser}
           />
         ) : (
           <BrowsePanel
@@ -198,9 +299,30 @@ function ModsExpanded({
             onInstall={mods.install}
             onInstallLatest={mods.installLatest}
             moreByAuthor={mods.moreByAuthor}
+            installedProjectIds={new Set(mods.installed.map(m => m.projectId).filter(Boolean))}
           />
         )}
       </div>
     </div>
   )
+}
+
+// Build a minimal ModProject shell from an InstalledMod so useMods.selectProject
+// can show the mod in the detail panel / content browser.
+function modToProject(mod: InstalledMod) {
+  return models.ModProject.createFrom({
+    id: mod.projectId,
+    slug: mod.projectId,
+    title: mod.displayName,
+    description: '',
+    body: '',
+    iconUrl: mod.iconUrl || '',
+    author: '',
+    projectType: mod.targetFolder === 'plugins' ? 'plugin' : 'mod',
+    downloads: 0,
+    follows: 0,
+    dateModified: '',
+    categories: [],
+    gallery: [],
+  })
 }

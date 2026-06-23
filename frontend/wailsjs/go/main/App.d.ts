@@ -78,6 +78,8 @@ export function ListWorlds(arg1:string):Promise<Array<models.WorldSystem>>;
 
 export function ModCategories(arg1:string):Promise<Array<string>>;
 
+export function ModCheckUpdates(arg1:string):Promise<Record<string, models.ModUpdateInfo>>;
+
 export function ModGetAllVersions(arg1:string):Promise<Array<models.ModVersion>>;
 
 export function ModGetProject(arg1:string):Promise<models.ModProject>;
@@ -85,6 +87,8 @@ export function ModGetProject(arg1:string):Promise<models.ModProject>;
 export function ModGetVersions(arg1:string,arg2:string):Promise<Array<models.ModVersion>>;
 
 export function ModInstall(arg1:string,arg2:Array<string>):Promise<void>;
+
+export function ModInstallLocal(arg1:string):Promise<void>;
 
 export function ModListInstalled(arg1:string):Promise<Array<models.InstalledMod>>;
 

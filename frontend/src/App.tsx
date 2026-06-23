@@ -127,6 +127,34 @@ function App() {
     }
   }, [])
 
+  // Mod install progress → sidebar ActiveProcesses + tile top bar
+  useEffect(() => {
+    let c1: (() => void) | undefined
+    let c2: (() => void) | undefined
+    let c3: (() => void) | undefined
+    try {
+      c1 = EventsOn(EVENTS.MOD_INSTALL_PROGRESS, (d?: { serverID?: string; fileName?: string; percent?: number }) => {
+        const key = 'mod:' + (d?.serverID ?? '')
+        const store = useProcessesStore.getState()
+        if (!store.processes[key]) {
+          store.start(key, `Downloading ${d?.fileName ?? 'mod'}…`)
+        }
+        store.updateProgress(key, d?.percent ?? 0)
+      })
+      c2 = EventsOn(EVENTS.MOD_INSTALLED, (d?: { serverID?: string }) => {
+        useProcessesStore.getState().finish('mod:' + (d?.serverID ?? ''), 'done')
+      })
+      c3 = EventsOn(EVENTS.MOD_INSTALL_FAILED, (d?: { serverID?: string }) => {
+        useProcessesStore.getState().finish('mod:' + (d?.serverID ?? ''), 'failed')
+      })
+    } catch { /* non-Wails context */ }
+    return () => {
+      try { c1?.() } catch { }
+      try { c2?.() } catch { }
+      try { c3?.() } catch { }
+    }
+  }, [])
+
   // Scheduler notify block → in-app notification
   useEffect(() => {
     let cleanup: (() => void) | undefined

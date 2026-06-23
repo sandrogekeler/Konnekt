@@ -541,6 +541,23 @@ func (a *App) ModMoreByAuthor(serverID, username, excludeProjectID string) ([]mo
 	return a.modService.MoreByAuthor(serverID, username, excludeProjectID)
 }
 
+func (a *App) ModCheckUpdates(serverID string) (map[string]models.ModUpdateInfo, error) {
+	return a.modService.CheckUpdates(serverID)
+}
+
+func (a *App) ModInstallLocal(serverID string) error {
+	paths, err := runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Mod/Plugin Files",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "JAR Files (*.jar)", Pattern: "*.jar"},
+		},
+	})
+	if err != nil || len(paths) == 0 {
+		return err
+	}
+	return a.modService.InstallLocal(serverID, paths)
+}
+
 func (a *App) DetectServerLoader(serverID string) (models.ServerConfig, error) {
 	return a.modService.DetectServerLoader(serverID)
 }

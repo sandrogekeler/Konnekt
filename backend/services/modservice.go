@@ -27,6 +27,7 @@ type modManifest struct {
 type modManifestItem struct {
 	FileName      string   `json:"fileName"`
 	DisplayName   string   `json:"displayName"`
+	IconURL       string   `json:"iconUrl,omitempty"`
 	ModID         string   `json:"modId"`
 	Source        string   `json:"source"`       // "modrinth" | "local"
 	Provider      string   `json:"provider"`     // "modrinth" | ""
@@ -41,15 +42,24 @@ type modManifestItem struct {
 	DependencyOf  []string `json:"dependencyOf,omitempty"`
 }
 
+const updateCacheTTL = 10 * time.Minute
+
+type updateCacheEntry struct {
+	result    map[string]models.ModUpdateInfo
+	fetchedAt time.Time
+}
+
 // ModService manages mod/plugin installation, listing, and lifecycle.
 type ModService struct {
-	cfg      *ConfigService
-	srv      *ServerService
-	provider ModProvider
-	ctx      context.Context
-	dataDir  string
-	bus      *EventBus
-	mu       sync.Mutex // serializes installs + manifest writes
+	cfg         *ConfigService
+	srv         *ServerService
+	provider    ModProvider
+	ctx         context.Context
+	dataDir     string
+	bus         *EventBus
+	mu          sync.Mutex // serializes installs + manifest writes
+	cacheMu     sync.Mutex
+	updateCache map[string]updateCacheEntry // serverID → cached update results
 }
 
 func NewModService(cfg *ConfigService, srv *ServerService) *ModService {
@@ -80,14 +90,13 @@ func (s *ModService) Categories(serverID string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg, _ := s.serverConfig(serverID)
-	projectType := ""
-	if info, ok := loaderProjectType[cfg.Loader]; ok {
-		projectType = info.projectType
-	}
 	var names []string
 	for _, c := range all {
-		if projectType == "" || c.ProjectType == projectType {
+		// Only surface actual content categories (header=="categories"), not loaders
+		// or resolution/feature tags. Modrinth doesn't publish content categories for
+		// project_type=="plugin", so skip the projectType filter — the search already
+		// applies a project-type facet via buildFacets().
+		if c.Header == "categories" {
 			names = append(names, c.Name)
 		}
 	}
@@ -179,6 +188,10 @@ func (s *ModService) Install(serverID string, versionIDs []string) error {
 		manifest = &modManifest{Version: 1}
 	}
 
+	// Cache project title + icon per project ID to avoid duplicate API calls.
+	type projectMeta struct{ title, iconURL string }
+	projectCache := make(map[string]projectMeta)
+
 	for _, versionID := range versionIDs {
 		version, err := s.provider.GetVersion(s.ctx, versionID)
 		if err != nil {
@@ -207,10 +220,27 @@ func (s *ModService) Install(serverID string, versionIDs []string) error {
 			return err
 		}
 
+		// Resolve the real mod name (project title) and icon URL.
+		displayName := version.Name
+		iconURL := ""
+		if version.ProjectID != "" {
+			if pm, ok := projectCache[version.ProjectID]; ok {
+				displayName = pm.title
+				iconURL = pm.iconURL
+			} else {
+				if proj, perr := s.provider.GetProject(s.ctx, version.ProjectID); perr == nil && proj.Title != "" {
+					projectCache[version.ProjectID] = projectMeta{proj.Title, proj.IconURL}
+					displayName = proj.Title
+					iconURL = proj.IconURL
+				}
+			}
+		}
+
 		// Record in manifest
 		manifest.upsert(modManifestItem{
 			FileName:      safeFileName,
-			DisplayName:   version.Name,
+			DisplayName:   displayName,
+			IconURL:       iconURL,
 			Source:        "modrinth",
 			Provider:      "modrinth",
 			ProjectID:     version.ProjectID,
@@ -229,6 +259,7 @@ func (s *ModService) Install(serverID string, versionIDs []string) error {
 		})
 	}
 
+	s.clearUpdateCache(serverID)
 	return s.saveManifest(serverID, manifest)
 }
 
@@ -364,33 +395,33 @@ func (s *ModService) ListInstalled(serverID string) ([]models.InstalledMod, erro
 
 			meta, _ := parseJarMeta(jarPath, loader)
 
-			mod := models.InstalledMod{
-				FileName:    name,
-				DisplayName: meta.Name,
-				ModID:       meta.ID,
-				Source:      "local",
-				TargetFolder: folder,
-				Loader:      meta.Loader,
-				Enabled:     enabled,
-				SizeBytes:   info.Size(),
+			var manifestItem *modManifestItem
+			if item, ok := manifestIndex[name]; ok {
+				manifestItem = item
 			}
-			if mod.DisplayName == "" {
-				mod.DisplayName = name
+
+			mod := models.InstalledMod{
+				FileName:     name,
+				DisplayName:  bestDisplayName(manifestItem, meta.Name, name),
+				ModID:        meta.ID,
+				Source:       "local",
+				TargetFolder: folder,
+				Loader:       meta.Loader,
+				Enabled:      enabled,
+				SizeBytes:    info.Size(),
 			}
 
 			// Merge manifest data if available
-			if item, ok := manifestIndex[name]; ok {
-				mod.Source = item.Source
-				mod.Provider = item.Provider
-				mod.ProjectID = item.ProjectID
-				mod.VersionID = item.VersionID
-				mod.VersionNumber = item.VersionNumber
-				mod.InstalledAt = item.InstalledAt
-				if item.DisplayName != "" {
-					mod.DisplayName = item.DisplayName
-				}
-				if item.Loader != "" {
-					mod.Loader = item.Loader
+			if manifestItem != nil {
+				mod.Source = manifestItem.Source
+				mod.Provider = manifestItem.Provider
+				mod.ProjectID = manifestItem.ProjectID
+				mod.VersionID = manifestItem.VersionID
+				mod.VersionNumber = manifestItem.VersionNumber
+				mod.InstalledAt = manifestItem.InstalledAt
+				mod.IconURL = manifestItem.IconURL
+				if manifestItem.Loader != "" {
+					mod.Loader = manifestItem.Loader
 				}
 			}
 
@@ -500,6 +531,7 @@ func (s *ModService) Uninstall(serverID, fileName string) error {
 		_ = s.saveManifest(serverID, manifest)
 	}
 
+	s.clearUpdateCache(serverID)
 	s.bus.Emit(EventModChanged, map[string]any{"serverID": serverID})
 	return nil
 }
@@ -627,6 +659,186 @@ func (s *ModService) saveManifest(serverID string, m *modManifest) error {
 	}
 	tmp.Close()
 	return os.Rename(tmpPath, s.manifestPath(serverID))
+}
+
+// CheckUpdates fetches the latest compatible version for each Modrinth-sourced
+// installed mod and returns a map[fileName]ModUpdateInfo. Results are cached for
+// updateCacheTTL to avoid hammering the Modrinth API on every library open/poll.
+func (s *ModService) CheckUpdates(serverID string) (map[string]models.ModUpdateInfo, error) {
+	s.cacheMu.Lock()
+	if s.updateCache != nil {
+		if entry, ok := s.updateCache[serverID]; ok && time.Since(entry.fetchedAt) < updateCacheTTL {
+			result := entry.result
+			s.cacheMu.Unlock()
+			return result, nil
+		}
+	}
+	s.cacheMu.Unlock()
+
+	installed, err := s.ListInstalled(serverID)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := s.serverConfig(serverID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]models.ModUpdateInfo, len(installed))
+	for _, mod := range installed {
+		if mod.Source != "modrinth" || mod.ProjectID == "" || mod.VersionID == "" {
+			continue
+		}
+		versions, verr := s.provider.GetVersions(s.ctx, mod.ProjectID, cfg.MCVersion, cfg.Loader)
+		if verr != nil || len(versions) == 0 {
+			continue
+		}
+		latest := versions[0]
+		result[mod.FileName] = models.ModUpdateInfo{
+			UpdateAvailable:     latest.ID != mod.VersionID,
+			LatestVersionID:     latest.ID,
+			LatestVersionNumber: latest.VersionNumber,
+		}
+	}
+
+	s.cacheMu.Lock()
+	if s.updateCache == nil {
+		s.updateCache = make(map[string]updateCacheEntry)
+	}
+	s.updateCache[serverID] = updateCacheEntry{result: result, fetchedAt: time.Now()}
+	s.cacheMu.Unlock()
+
+	return result, nil
+}
+
+func (s *ModService) clearUpdateCache(serverID string) {
+	s.cacheMu.Lock()
+	delete(s.updateCache, serverID)
+	s.cacheMu.Unlock()
+}
+
+// InstallLocal copies local jar files into the server's mods/plugins directory and
+// records them in the manifest as source "local".
+func (s *ModService) InstallLocal(serverID string, filePaths []string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	workDir, err := s.workingDir(serverID)
+	if err != nil {
+		return err
+	}
+	loader, err := s.loaderForServer(serverID)
+	if err != nil {
+		return err
+	}
+	targetFolder := loaderTargetFolder(loader)
+	targetDir := filepath.Join(workDir, targetFolder)
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return fmt.Errorf("create %s dir: %w", targetFolder, err)
+	}
+
+	manifest, err := s.loadManifest(serverID)
+	if err != nil {
+		manifest = &modManifest{Version: 1}
+	}
+
+	for _, srcPath := range filePaths {
+		safeFileName := filepath.Base(srcPath)
+		if !strings.HasSuffix(safeFileName, ".jar") {
+			continue
+		}
+		finalPath := filepath.Join(targetDir, safeFileName)
+		if err := sandboxCheck(workDir, finalPath); err != nil {
+			return err
+		}
+		if err := atomicCopyFile(srcPath, finalPath); err != nil {
+			return fmt.Errorf("copy %s: %w", safeFileName, err)
+		}
+
+		meta, _ := parseJarMeta(finalPath, loader)
+		displayName := meta.Name
+		if displayName == "" {
+			displayName = strings.TrimSuffix(safeFileName, ".jar")
+		}
+
+		manifest.upsert(modManifestItem{
+			FileName:     safeFileName,
+			DisplayName:  displayName,
+			ModID:        meta.ID,
+			Source:       "local",
+			Provider:     "",
+			Loader:       loader,
+			TargetFolder: targetFolder,
+			Enabled:      true,
+			InstalledAt:  time.Now().UnixMilli(),
+		})
+
+		s.bus.Emit(EventModInstalled, map[string]any{
+			"serverID": serverID,
+			"fileName": safeFileName,
+		})
+	}
+
+	if err := s.saveManifest(serverID, manifest); err != nil {
+		return err
+	}
+	s.clearUpdateCache(serverID)
+	s.bus.Emit(EventModChanged, map[string]any{"serverID": serverID})
+	return nil
+}
+
+// atomicCopyFile copies src to dst using a temp file in the same directory for atomicity.
+func atomicCopyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	tmp, err := os.CreateTemp(filepath.Dir(dst), ".konnekt-local-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	cleanup := true
+	defer func() {
+		if cleanup {
+			tmp.Close()
+			os.Remove(tmpPath)
+		}
+	}()
+
+	if _, err := io.Copy(tmp, in); err != nil {
+		return err
+	}
+	tmp.Close()
+	cleanup = false
+	return os.Rename(tmpPath, dst)
+}
+
+// bestDisplayName picks the most human-readable name for an installed mod.
+// It detects the old bug where the version label (e.g. "5.0.3") was stored as
+// DisplayName and falls back to the jar-parsed name in that case.
+func bestDisplayName(item *modManifestItem, metaName, fileName string) string {
+	mName, vNum := "", ""
+	if item != nil {
+		mName = item.DisplayName
+		vNum = item.VersionNumber
+	}
+	// Detect old-style bad manifest: DisplayName starts with the VersionNumber.
+	isBadName := mName != "" &&
+		((vNum != "" && strings.HasPrefix(mName, vNum)) ||
+			(vNum == "" && len(mName) > 0 && mName[0] >= '0' && mName[0] <= '9'))
+	if isBadName && metaName != "" {
+		return metaName
+	}
+	if mName != "" {
+		return mName
+	}
+	if metaName != "" {
+		return metaName
+	}
+	return fileName
 }
 
 // upsert adds or updates a manifest item by FileName.

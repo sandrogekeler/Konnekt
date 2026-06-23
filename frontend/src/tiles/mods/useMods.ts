@@ -4,6 +4,7 @@ import {
   ModSearch, ModGetProject, ModGetVersions, ModGetAllVersions,
   ModResolveDependencies, ModInstall, ModListInstalled,
   ModSetEnabled, ModUninstall, ModCategories, ModMoreByAuthor,
+  ModCheckUpdates, ModInstallLocal,
 } from '../../../wailsjs/go/main/App'
 import { models } from '../../../wailsjs/go/models'
 import { EVENTS } from '../../lib/constants'
@@ -13,6 +14,12 @@ export type ModVersion = models.ModVersion
 export type ModSearchResult = models.ModSearchResult
 export type ResolvedDependency = models.ResolvedDependency
 export type InstalledMod = models.InstalledMod
+
+export interface ModUpdateInfo {
+  updateAvailable: boolean
+  latestVersionId: string
+  latestVersionNumber: string
+}
 
 export interface InstallProgress {
   [fileName: string]: number // 0–100
@@ -26,6 +33,12 @@ interface ModsState {
   refreshInstalled: () => Promise<void>
   setEnabled: (fileName: string, enabled: boolean) => Promise<void>
   uninstall: (fileName: string) => Promise<void>
+  installLocal: () => Promise<void>
+  changeVersion: (oldFileName: string, newVersionId: string) => Promise<void>
+
+  // Update checks
+  updates: Record<string, ModUpdateInfo>
+  checkUpdates: () => Promise<void>
 
   // Browse panel
   searchResults: ModProject[]
@@ -69,6 +82,7 @@ export function useMods(serverId: string): ModsState {
   const [installed, setInstalled] = useState<InstalledMod[]>([])
   const [installedLoading, setInstalledLoading] = useState(false)
   const [installedError, setInstalledError] = useState<string | null>(null)
+  const [updates, setUpdates] = useState<Record<string, ModUpdateInfo>>({})
 
   const [searchResults, setSearchResults] = useState<ModProject[]>([])
   const [searchTotal, setSearchTotal] = useState(0)
@@ -111,9 +125,18 @@ export function useMods(serverId: string): ModsState {
     }
   }, [serverId])
 
+  const checkUpdates = useCallback(async () => {
+    try {
+      const result = (await ModCheckUpdates(serverId)) as Record<string, ModUpdateInfo>
+      setUpdates(result ?? {})
+    } catch {
+      // best-effort; UI degrades gracefully (no dots shown)
+    }
+  }, [serverId])
+
   // Initial load + polling + event-driven refresh
   useEffect(() => {
-    refreshInstalled()
+    refreshInstalled().then(() => checkUpdates())
     pollTimer.current = setInterval(() => refreshInstalled(true), 10_000)
 
     const offChanged = EventsOn(EVENTS.MOD_CHANGED, (d?: { serverID?: string }) => {
@@ -269,6 +292,37 @@ export function useMods(serverId: string): ModsState {
     await ModUninstall(serverId, fileName)
   }, [serverId])
 
+  const installLocal = useCallback(async () => {
+    await ModInstallLocal(serverId)
+  }, [serverId])
+
+  const changeVersion = useCallback(async (oldFileName: string, newVersionId: string) => {
+    setInstalling(true)
+    setInstallError(null)
+    setInstallProgress({})
+    try {
+      await ModInstall(serverId, [newVersionId])
+      // After installing the new version, remove the old file if names differ.
+      // The newly installed file name comes from the manifest refresh.
+      const updated = (await ModListInstalled(serverId) as InstalledMod[]) ?? []
+      const newMod = updated.find(m => m.versionId === newVersionId)
+      if (newMod && newMod.fileName !== oldFileName) {
+        await ModUninstall(serverId, oldFileName)
+      }
+    } catch (e) {
+      setInstallError(String(e))
+      throw e
+    } finally {
+      setInstalling(false)
+      setInstallProgress({})
+      setUpdates(prev => {
+        const next = { ...prev }
+        delete next[oldFileName]
+        return next
+      })
+    }
+  }, [serverId])
+
   const moreByAuthor = useCallback(async (username: string, excludeProjectId: string): Promise<ModProject[]> => {
     if (!username) return []
     const result = (await ModMoreByAuthor(serverId, username, excludeProjectId)) as ModProject[]
@@ -277,7 +331,8 @@ export function useMods(serverId: string): ModsState {
 
   return {
     installed, installedLoading, installedError, refreshInstalled,
-    setEnabled, uninstall,
+    setEnabled, uninstall, installLocal, changeVersion,
+    updates, checkUpdates,
     searchResults, searchTotal, searchOffset, searchLoading, searchError, search,
     categories, categoriesLoading,
     selectedProject, projectLoading, selectProject, clearProject,

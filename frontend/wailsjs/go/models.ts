@@ -360,6 +360,7 @@ export namespace models {
 	export class InstalledMod {
 	    fileName: string;
 	    displayName: string;
+	    iconUrl: string;
 	    modId: string;
 	    source: string;
 	    provider: string;
@@ -381,6 +382,7 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.fileName = source["fileName"];
 	        this.displayName = source["displayName"];
+	        this.iconUrl = source["iconUrl"];
 	        this.modId = source["modId"];
 	        this.source = source["source"];
 	        this.provider = source["provider"];

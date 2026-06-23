@@ -83,21 +83,28 @@ type ResolvedDependency struct {
 
 // InstalledMod is one item in the installed list (merged from manifest + disk scan).
 type InstalledMod struct {
-	FileName      string `json:"fileName"`
-	DisplayName   string `json:"displayName"`
-	ModID         string `json:"modId"`
-	Source        string `json:"source"`        // "modrinth" | "local"
-	Provider      string `json:"provider"`      // "modrinth" | ""
-	ProjectID     string `json:"projectId"`
-	VersionID     string `json:"versionId"`
-	VersionNumber string `json:"versionNumber"`
-	Loader        string `json:"loader"`
-	TargetFolder  string `json:"targetFolder"` // "mods" | "plugins"
-	Enabled       bool   `json:"enabled"`
-	SizeBytes     int64  `json:"sizeBytes"`
-	InstalledAt   int64  `json:"installedAt"` // unix ms; 0 for local/unknown
-	// Reserved for update-check phase; always false this phase.
-	UpdateAvailable bool `json:"updateAvailable"`
+	FileName        string `json:"fileName"`
+	DisplayName     string `json:"displayName"`
+	IconURL         string `json:"iconUrl"`       // Modrinth project icon (empty for local)
+	ModID           string `json:"modId"`
+	Source          string `json:"source"`        // "modrinth" | "local"
+	Provider        string `json:"provider"`      // "modrinth" | ""
+	ProjectID       string `json:"projectId"`
+	VersionID       string `json:"versionId"`
+	VersionNumber   string `json:"versionNumber"`
+	Loader          string `json:"loader"`
+	TargetFolder    string `json:"targetFolder"` // "mods" | "plugins"
+	Enabled         bool   `json:"enabled"`
+	SizeBytes       int64  `json:"sizeBytes"`
+	InstalledAt     int64  `json:"installedAt"` // unix ms; 0 for local/unknown
+	UpdateAvailable bool   `json:"updateAvailable"`
+}
+
+// ModUpdateInfo holds the result of an update check for one installed mod.
+type ModUpdateInfo struct {
+	UpdateAvailable     bool   `json:"updateAvailable"`
+	LatestVersionID     string `json:"latestVersionId"`
+	LatestVersionNumber string `json:"latestVersionNumber"`
 }
 
 // JarMeta is the parsed identity info extracted from a mod/plugin jar.
