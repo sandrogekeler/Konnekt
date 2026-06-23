@@ -21,4 +21,11 @@ const (
 	EventScheduleNodeFinished = "schedule:node-finished"
 	EventScheduleRunFinished  = "schedule:run-finished"
 	EventScheduleNotify       = "schedule:notify"
+
+	// Mod / plugin install lifecycle.
+	EventModInstallStarted  = "mod:install-started"  // {serverID, fileName}
+	EventModInstallProgress = "mod:install-progress" // {serverID, fileName, percent}
+	EventModInstalled       = "mod:installed"        // {serverID, fileName}
+	EventModInstallFailed   = "mod:install-failed"   // {serverID, fileName, error}
+	EventModChanged         = "mod:changed"          // {serverID} — list changed (enable/disable/uninstall)
 )

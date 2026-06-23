@@ -6,6 +6,8 @@ type ServerConfig struct {
 	JarPath    string   `json:"jarPath"`
 	JvmArgs    []string `json:"jvmArgs"`
 	WorkingDir string   `json:"workingDir"`
+	MCVersion  string   `json:"mcVersion"` // e.g. "1.20.1"; empty = undetected
+	Loader     string   `json:"loader"`    // fabric|forge|neoforge|quilt|paper|spigot|bukkit|purpur|velocity|vanilla
 }
 
 type ServerStatus struct {

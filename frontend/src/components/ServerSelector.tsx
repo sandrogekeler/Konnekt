@@ -93,7 +93,12 @@ export function ServerSelector() {
       : mergeRamIntoArgs(form.jvmArgs, form.minRam, form.maxRam)
     const jvmArgs = finalArgs.trim() ? finalArgs.trim().split(/\s+/) : []
 
-    await saveConfig({ id, name, jarPath, jvmArgs, workingDir })
+    const existing = configs.find(c => c.id === id)
+    await saveConfig({
+      id, name, jarPath, jvmArgs, workingDir,
+      mcVersion: existing?.mcVersion ?? '',
+      loader: existing?.loader ?? '',
+    })
     setEditing(null)
   }
 

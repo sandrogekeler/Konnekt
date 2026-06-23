@@ -45,6 +45,8 @@ export interface ServerConfig {
   jarPath: string
   jvmArgs: string[]
   workingDir: string
+  mcVersion: string
+  loader: string
 }
 
 export interface Player {

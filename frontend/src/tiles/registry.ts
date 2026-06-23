@@ -1,5 +1,6 @@
 import type { TileDefinition } from '../types'
 import { ConsoleTile } from './console'
+import { ModsTile } from './mods'
 import { StatsTile } from './stats'
 import { PlayersTile } from './players'
 import { QuickCommandsTile } from './quick-commands'
@@ -118,5 +119,16 @@ export const TILE_REGISTRY: TileDefinition[] = [
     minH: 2,
     maximizable: true,
     component: NotificationsTile,
+  },
+  {
+    id: 'mods',
+    label: 'Plugins & Mods',
+    icon: '<>',
+    defaultW: 4,
+    defaultH: 8,
+    minW: 2,
+    minH: 4,
+    maximizable: true,
+    component: ModsTile,
   },
 ]

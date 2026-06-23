@@ -357,6 +357,44 @@ export namespace models {
 		    return a;
 		}
 	}
+	export class InstalledMod {
+	    fileName: string;
+	    displayName: string;
+	    modId: string;
+	    source: string;
+	    provider: string;
+	    projectId: string;
+	    versionId: string;
+	    versionNumber: string;
+	    loader: string;
+	    targetFolder: string;
+	    enabled: boolean;
+	    sizeBytes: number;
+	    installedAt: number;
+	    updateAvailable: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new InstalledMod(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.fileName = source["fileName"];
+	        this.displayName = source["displayName"];
+	        this.modId = source["modId"];
+	        this.source = source["source"];
+	        this.provider = source["provider"];
+	        this.projectId = source["projectId"];
+	        this.versionId = source["versionId"];
+	        this.versionNumber = source["versionNumber"];
+	        this.loader = source["loader"];
+	        this.targetFolder = source["targetFolder"];
+	        this.enabled = source["enabled"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.installedAt = source["installedAt"];
+	        this.updateAvailable = source["updateAvailable"];
+	    }
+	}
 	export class LayoutPreset {
 	    name: string;
 	    layout: string;
@@ -370,6 +408,182 @@ export namespace models {
 	        this.name = source["name"];
 	        this.layout = source["layout"];
 	    }
+	}
+	export class ModDependency {
+	    projectId: string;
+	    versionId: string;
+	    dependencyType: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModDependency(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.projectId = source["projectId"];
+	        this.versionId = source["versionId"];
+	        this.dependencyType = source["dependencyType"];
+	    }
+	}
+	export class ModGalleryImg {
+	    url: string;
+	    title: string;
+	    description: string;
+	    featured: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModGalleryImg(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.title = source["title"];
+	        this.description = source["description"];
+	        this.featured = source["featured"];
+	    }
+	}
+	export class ModProject {
+	    id: string;
+	    slug: string;
+	    title: string;
+	    description: string;
+	    body: string;
+	    iconUrl: string;
+	    author: string;
+	    projectType: string;
+	    downloads: number;
+	    follows: number;
+	    dateModified: string;
+	    categories: string[];
+	    gallery: ModGalleryImg[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ModProject(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.slug = source["slug"];
+	        this.title = source["title"];
+	        this.description = source["description"];
+	        this.body = source["body"];
+	        this.iconUrl = source["iconUrl"];
+	        this.author = source["author"];
+	        this.projectType = source["projectType"];
+	        this.downloads = source["downloads"];
+	        this.follows = source["follows"];
+	        this.dateModified = source["dateModified"];
+	        this.categories = source["categories"];
+	        this.gallery = this.convertValues(source["gallery"], ModGalleryImg);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ModSearchResult {
+	    hits: ModProject[];
+	    total: number;
+	    offset: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModSearchResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.hits = this.convertValues(source["hits"], ModProject);
+	        this.total = source["total"];
+	        this.offset = source["offset"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ModVersion {
+	    id: string;
+	    projectId: string;
+	    name: string;
+	    versionNumber: string;
+	    versionType: string;
+	    gameVersions: string[];
+	    loaders: string[];
+	    fileName: string;
+	    fileUrl: string;
+	    sha512: string;
+	    fileSize: number;
+	    dependencies: ModDependency[];
+	    datePublished: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModVersion(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.projectId = source["projectId"];
+	        this.name = source["name"];
+	        this.versionNumber = source["versionNumber"];
+	        this.versionType = source["versionType"];
+	        this.gameVersions = source["gameVersions"];
+	        this.loaders = source["loaders"];
+	        this.fileName = source["fileName"];
+	        this.fileUrl = source["fileUrl"];
+	        this.sha512 = source["sha512"];
+	        this.fileSize = source["fileSize"];
+	        this.dependencies = this.convertValues(source["dependencies"], ModDependency);
+	        this.datePublished = source["datePublished"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	
 	export class NodePreview {
@@ -465,6 +679,44 @@ export namespace models {
 	    }
 	}
 	
+	export class ResolvedDependency {
+	    projectId: string;
+	    projectTitle: string;
+	    version: ModVersion;
+	    required: boolean;
+	    alreadyInstalled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResolvedDependency(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.projectId = source["projectId"];
+	        this.projectTitle = source["projectTitle"];
+	        this.version = this.convertValues(source["version"], ModVersion);
+	        this.required = source["required"];
+	        this.alreadyInstalled = source["alreadyInstalled"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class RunRecord {
 	    id: string;
 	    graphId: string;
@@ -517,6 +769,8 @@ export namespace models {
 	    jarPath: string;
 	    jvmArgs: string[];
 	    workingDir: string;
+	    mcVersion: string;
+	    loader: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ServerConfig(source);
@@ -529,6 +783,8 @@ export namespace models {
 	        this.jarPath = source["jarPath"];
 	        this.jvmArgs = source["jvmArgs"];
 	        this.workingDir = source["workingDir"];
+	        this.mcVersion = source["mcVersion"];
+	        this.loader = source["loader"];
 	    }
 	}
 	export class ServerStatus {

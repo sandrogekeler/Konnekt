@@ -270,7 +270,7 @@ function AppearancePane({ settings, update }: {
             [
               { label: 'Success', key: 'successColor' as const, presets: SUCCESS_PRESETS },
               { label: 'Warning', key: 'warningColor' as const, presets: WARNING_PRESETS },
-              { label: 'Danger',  key: 'dangerColor'  as const, presets: DANGER_PRESETS  },
+              { label: 'Error',   key: 'dangerColor'  as const, presets: DANGER_PRESETS  },
             ] as const
           ).map(({ label, key, presets }) => (
             <div key={key} className="flex items-center justify-between gap-4">

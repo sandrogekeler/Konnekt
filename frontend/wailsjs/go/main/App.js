@@ -46,6 +46,10 @@ export function DeleteWorld(arg1, arg2) {
   return window['go']['main']['App']['DeleteWorld'](arg1, arg2);
 }
 
+export function DetectServerLoader(arg1) {
+  return window['go']['main']['App']['DetectServerLoader'](arg1);
+}
+
 export function DuplicateWorld(arg1, arg2, arg3) {
   return window['go']['main']['App']['DuplicateWorld'](arg1, arg2, arg3);
 }
@@ -144,6 +148,50 @@ export function ListConfigFiles(arg1) {
 
 export function ListWorlds(arg1) {
   return window['go']['main']['App']['ListWorlds'](arg1);
+}
+
+export function ModCategories(arg1) {
+  return window['go']['main']['App']['ModCategories'](arg1);
+}
+
+export function ModGetAllVersions(arg1) {
+  return window['go']['main']['App']['ModGetAllVersions'](arg1);
+}
+
+export function ModGetProject(arg1) {
+  return window['go']['main']['App']['ModGetProject'](arg1);
+}
+
+export function ModGetVersions(arg1, arg2) {
+  return window['go']['main']['App']['ModGetVersions'](arg1, arg2);
+}
+
+export function ModInstall(arg1, arg2) {
+  return window['go']['main']['App']['ModInstall'](arg1, arg2);
+}
+
+export function ModListInstalled(arg1) {
+  return window['go']['main']['App']['ModListInstalled'](arg1);
+}
+
+export function ModMoreByAuthor(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ModMoreByAuthor'](arg1, arg2, arg3);
+}
+
+export function ModResolveDependencies(arg1, arg2) {
+  return window['go']['main']['App']['ModResolveDependencies'](arg1, arg2);
+}
+
+export function ModSearch(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ModSearch'](arg1, arg2, arg3, arg4);
+}
+
+export function ModSetEnabled(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ModSetEnabled'](arg1, arg2, arg3);
+}
+
+export function ModUninstall(arg1, arg2) {
+  return window['go']['main']['App']['ModUninstall'](arg1, arg2);
 }
 
 export function OpenBackupDir(arg1) {

@@ -1,38 +1,6 @@
-import { useRef, useEffect, useState, type RefObject } from 'react'
+import { useRef, useEffect, type RefObject } from 'react'
 import type { Backup } from './useBackups'
 import { BackupCard } from './BackupCard'
-import { WireframeSphere } from './WireframeSphere'
-
-// Mounts hidden, rises into view on the next frame via CSS transition.
-// Declared at module scope so React sees a stable component type — never
-// remounts due to a parent re-render.
-function SpherePeek({ size }: { size: number }) {
-  const [risen,   setRisen]   = useState(false)
-  const [hovered, setHovered] = useState(false)
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setRisen(true))
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return (
-    <div
-      style={{
-        transform: risen ? 'translateY(0)' : 'translateY(115%)',
-        transition: risen ? 'transform 300ms cubic-bezier(0.34,1.56,0.64,1)' : 'none',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div style={{
-        transform: `scale(${hovered ? 1.13 : 1})`,
-        transformOrigin: 'bottom center',
-        transition: 'transform 350ms cubic-bezier(0.34,1.56,0.64,1)',
-      }}>
-        <WireframeSphere size={size} />
-      </div>
-    </div>
-  )
-}
 
 const VISIBLE_RADIUS = 3
 const SCALE_FALLOFF = 0.12
@@ -216,22 +184,6 @@ export function BackupCarousel({
               }}
               onClick={() => { if (offset !== 0) onFocusChange(i) }}
             >
-              {offset === 0 && (
-                <div
-                  className="absolute left-1/2"
-                  style={{
-                    bottom: '100%',
-                    transform: 'translateX(-50%)',
-                    width: 120,
-                    height: 65,
-                    // Clips at the container's bottom edge (hides lower sphere half)
-                    // but allows glow to bleed freely upward and sideways.
-                    clipPath: 'inset(-300px -300px 0 -300px)',
-                  }}
-                >
-                  <SpherePeek size={120} />
-                </div>
-              )}
               <BackupCard
                 backup={backup}
                 focused={offset === 0}

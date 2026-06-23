@@ -24,6 +24,8 @@ export function DeleteServerConfig(arg1:string):Promise<void>;
 
 export function DeleteWorld(arg1:string,arg2:string):Promise<void>;
 
+export function DetectServerLoader(arg1:string):Promise<models.ServerConfig>;
+
 export function DuplicateWorld(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function GetActiveLayout():Promise<string>;
@@ -73,6 +75,28 @@ export function ListBackups(arg1:string):Promise<Array<models.Backup>>;
 export function ListConfigFiles(arg1:string):Promise<Array<models.ConfigFile>>;
 
 export function ListWorlds(arg1:string):Promise<Array<models.WorldSystem>>;
+
+export function ModCategories(arg1:string):Promise<Array<string>>;
+
+export function ModGetAllVersions(arg1:string):Promise<Array<models.ModVersion>>;
+
+export function ModGetProject(arg1:string):Promise<models.ModProject>;
+
+export function ModGetVersions(arg1:string,arg2:string):Promise<Array<models.ModVersion>>;
+
+export function ModInstall(arg1:string,arg2:Array<string>):Promise<void>;
+
+export function ModListInstalled(arg1:string):Promise<Array<models.InstalledMod>>;
+
+export function ModMoreByAuthor(arg1:string,arg2:string,arg3:string):Promise<Array<models.ModProject>>;
+
+export function ModResolveDependencies(arg1:string,arg2:string):Promise<Array<models.ResolvedDependency>>;
+
+export function ModSearch(arg1:string,arg2:string,arg3:number,arg4:Array<string>):Promise<models.ModSearchResult>;
+
+export function ModSetEnabled(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
+export function ModUninstall(arg1:string,arg2:string):Promise<void>;
 
 export function OpenBackupDir(arg1:string):Promise<void>;
 

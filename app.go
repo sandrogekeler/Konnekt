@@ -23,6 +23,7 @@ type App struct {
 	backupService       *services.BackupService
 	schedulerService    *services.SchedulerService
 	worldService        *services.WorldService
+	modService          *services.ModService
 	bus                 *services.EventBus
 	dataDir             string
 }
@@ -40,6 +41,8 @@ func NewApp() *App {
 	backup.SetBus(bus)
 	sched := services.NewSchedulerService(srv, backup, rcon, cfg)
 	sched.SetBus(bus)
+	mods := services.NewModService(cfg, srv)
+	mods.SetBus(bus)
 	return &App{
 		serverService:       srv,
 		configService:       cfg,
@@ -50,6 +53,7 @@ func NewApp() *App {
 		backupService:       backup,
 		schedulerService:    sched,
 		worldService:        services.NewWorldService(cfg, srv, backup),
+		modService:          mods,
 		bus:                 bus,
 	}
 }
@@ -80,6 +84,8 @@ func (a *App) startup(ctx context.Context) {
 	a.backupService.SetDataDir(a.dataDir)
 	a.schedulerService.SetDataDir(a.dataDir)
 	a.schedulerService.SetContext(ctx)
+	a.modService.SetContext(ctx)
+	a.modService.SetDataDir(a.dataDir)
 }
 
 // --- File dialogs ---
@@ -476,4 +482,54 @@ func (a *App) ImportScheduleGraphJSON(raw string) (models.Graph, error) {
 
 func (a *App) PreviewScheduleNode(g models.Graph, nodeID string) (models.NodePreview, error) {
 	return a.schedulerService.PreviewNode(g, nodeID)
+}
+
+// --- Mods / Plugins ---
+
+func (a *App) ModSearch(serverID, query string, offset int, categories []string) (models.ModSearchResult, error) {
+	return a.modService.Search(serverID, query, offset, categories)
+}
+
+func (a *App) ModGetProject(projectID string) (models.ModProject, error) {
+	return a.modService.GetProject(projectID)
+}
+
+func (a *App) ModGetVersions(serverID, projectID string) ([]models.ModVersion, error) {
+	return a.modService.GetVersions(serverID, projectID)
+}
+
+func (a *App) ModGetAllVersions(projectID string) ([]models.ModVersion, error) {
+	return a.modService.GetAllVersions(projectID)
+}
+
+func (a *App) ModResolveDependencies(serverID, versionID string) ([]models.ResolvedDependency, error) {
+	return a.modService.ResolveDependencies(serverID, versionID)
+}
+
+func (a *App) ModInstall(serverID string, versionIDs []string) error {
+	return a.modService.Install(serverID, versionIDs)
+}
+
+func (a *App) ModListInstalled(serverID string) ([]models.InstalledMod, error) {
+	return a.modService.ListInstalled(serverID)
+}
+
+func (a *App) ModSetEnabled(serverID, fileName string, enabled bool) error {
+	return a.modService.SetEnabled(serverID, fileName, enabled)
+}
+
+func (a *App) ModUninstall(serverID, fileName string) error {
+	return a.modService.Uninstall(serverID, fileName)
+}
+
+func (a *App) ModCategories(serverID string) ([]string, error) {
+	return a.modService.Categories(serverID)
+}
+
+func (a *App) ModMoreByAuthor(serverID, username, excludeProjectID string) ([]models.ModProject, error) {
+	return a.modService.MoreByAuthor(serverID, username, excludeProjectID)
+}
+
+func (a *App) DetectServerLoader(serverID string) (models.ServerConfig, error) {
+	return a.modService.DetectServerLoader(serverID)
 }

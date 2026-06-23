@@ -11,11 +11,13 @@ import { useBackups } from './useBackups'
 import type { Backup } from './useBackups'
 import { fmtBytes, fmtDate, extractID } from './format'
 import { BackupCarousel } from './BackupCarousel'
-import { PlanetPreview } from './PlanetPreview'
+import { SolarSystem } from './SolarSystem'
 import { useBackupWorlds } from './useBackupWorlds'
 import type { WorldSystem } from './useBackupWorlds'
 import { WorldInfoPanel } from './WorldInfoPanel'
+import { ServerInfoPanel } from './ServerInfoPanel'
 import { Segmented } from '../../components/ui/Segmented'
+import type { FocusTarget } from './focusLayout'
 
 // ─── Confirm dialog ────────────────────────────────────────────────────────
 
@@ -249,6 +251,9 @@ function BackupRow({ backup, serverRunning, inProgress, onRequestRestore, onRequ
   )
 }
 
+// ─── Focus state ───────────────────────────────────────────────────────────
+// FocusTarget is defined in focusLayout.ts and re-exported from there.
+
 // ─── Tile ──────────────────────────────────────────────────────────────────
 
 export function BackupsTile({ serverId, maximized }: TileProps) {
@@ -313,10 +318,13 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
 
   const focusedFilename = filtered[clampedFocused]?.filename
   const previewWorlds = useBackupWorlds(serverId, focusedFilename)
-  const [focusedWorld, setFocusedWorld] = useState<WorldSystem | null>(null)
+  const [focus, setFocus] = useState<FocusTarget>(null)
+  // Clear focus when the selected backup changes.
+  useEffect(() => {
+    setFocus(null)
+  }, [focusedFilename])
 
-  // Clear world panel when the focused backup changes.
-  useEffect(() => { setFocusedWorld(null) }, [focusedFilename])
+  const anyFocus = focus !== null
 
   // Keep the highlighted list row visible when navigating with the keyboard,
   // scrolling ONLY within the list panel (never ancestors — scrollIntoView
@@ -495,22 +503,25 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
           <div
             ref={stageRef}
             className="relative flex-1 min-h-0 overflow-hidden"
-            onMouseLeave={() => setPanelOpen(false)}
           >
-            {/* Dim overlay — fades in behind planets and panel when a planet is focused */}
+            {/* Dim overlay — fades in behind planets and panel when a panel is focused.
+                Made clickable when active so clicking outside the HUD closes it. */}
             <div
               className="absolute inset-0"
               style={{
                 background: 'rgba(0,0,0,0.55)',
                 zIndex: 2,
-                opacity: focusedWorld ? 1 : 0,
+                opacity: anyFocus ? 1 : 0,
                 transition: 'opacity 300ms ease',
-                pointerEvents: 'none',
+                pointerEvents: anyFocus ? 'auto' : 'none',
+                cursor: anyFocus ? 'pointer' : 'default',
               }}
+              onClick={() => setFocus(null)}
             />
 
-            {/* Planet preview — scales down from top-center when the panel opens so
-                planets stay above the rising carousel (sky shrinks from ~64% to ~22%). */}
+            {/* Solar system — sun + orbiting worlds.
+                Scales down from top-center when the list panel opens so the sky
+                tucks above the rising carousel. */}
             <div
               style={{
                 position: 'absolute',
@@ -522,16 +533,24 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
                 pointerEvents: 'none',
               }}
             >
-              <PlanetPreview
+              <SolarSystem
                 key={focusedFilename}
                 worlds={previewWorlds}
-                focusedWorldName={focusedWorld?.name ?? null}
-                onPlanetClick={(w) => {
-                  if (focusedWorld?.name === w.name) {
-                    setFocusedWorld(null)
+                focus={focus}
+                onWorldClick={(w) => {
+                  if (focus?.kind === 'world' && focus.world.name === w.name) {
+                    setFocus(null)
                   } else {
                     setPanelOpen(false)
-                    setFocusedWorld(w)
+                    setFocus({ kind: 'world', world: w })
+                  }
+                }}
+                onServerClick={() => {
+                  if (focus?.kind === 'server') {
+                    setFocus(null)
+                  } else {
+                    setPanelOpen(false)
+                    setFocus({ kind: 'server' })
                   }
                 }}
               />
@@ -558,10 +577,10 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
                 background: 'rgba(255,255,255,0.025)',
                 borderTop: '0.5px solid var(--border-subtle)',
                 zIndex: 5,
-                opacity: panelOpen || focusedWorld ? 0 : 1,
+                opacity: panelOpen || anyFocus ? 0 : 1,
                 transition: 'opacity 180ms ease',
                 cursor: 'pointer',
-                pointerEvents: !panelOpen && !focusedWorld ? 'auto' : 'none',
+                pointerEvents: !panelOpen && !anyFocus ? 'auto' : 'none',
               }}
               onMouseEnter={() => setPanelOpen(true)}
             >
@@ -583,7 +602,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
                 height: '36%',
                 bottom: panelOpen ? '42%' : '7%',
                 transition: 'bottom 220ms ease',
-                zIndex: focusedWorld ? 1 : 4,
+                zIndex: anyFocus ? 1 : 4,
               }}
             >
               {loading && (
@@ -665,10 +684,20 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
               ))}
             </div>
 
-            {/* World info panel — slides in from the right over the stage */}
-            {focusedWorld && (
-              <WorldInfoPanel world={focusedWorld} onClose={() => setFocusedWorld(null)} />
+            {/* World info panel — slides in from the right when a planet is focused */}
+            {focus?.kind === 'world' && (
+              <WorldInfoPanel world={focus.world} onClose={() => setFocus(null)} />
             )}
+
+            {/* Server info panel — slides in when the server sphere is focused */}
+            {focus?.kind === 'server' && filtered[clampedFocused] && (
+              <ServerInfoPanel
+                backup={filtered[clampedFocused]}
+                worlds={previewWorlds}
+                onClose={() => setFocus(null)}
+              />
+            )}
+
           </div>
         </>
       )}

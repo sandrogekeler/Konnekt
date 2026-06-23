@@ -18,6 +18,11 @@ export const EVENTS = {
   SCHEDULE_NODE_FINISHED: 'schedule:node-finished',
   SCHEDULE_RUN_FINISHED:  'schedule:run-finished',
   SCHEDULE_NOTIFY:        'schedule:notify',
+  MOD_INSTALL_STARTED:  'mod:install-started',
+  MOD_INSTALL_PROGRESS: 'mod:install-progress',
+  MOD_INSTALLED:        'mod:installed',
+  MOD_INSTALL_FAILED:   'mod:install-failed',
+  MOD_CHANGED:          'mod:changed',
 } as const
 
 export const DEFAULT_LAYOUT_PRESETS = [

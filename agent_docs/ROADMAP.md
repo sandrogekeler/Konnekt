@@ -136,7 +136,7 @@ were shipped early during Alpha. Their status below reflects reality.
     only ships when the tile is maximized.
 
 - [x] Backups tile
-  - [x] Manual backup button (zip world folder → {dataDir}/backups/{serverID}/)
+  - [x] Manual backup button (zip full server dir → {dataDir}/backups/{serverID}/)
   - [x] Save-flush coordination: issues save-off/save-all/save-on via RCON when the server is running so the zip is consistent
   - [x] Backup list with timestamp, size, restore and delete actions; summary view when not maximised (BackupsSummary)
   - [x] Live progress UI: backup:started/progress events drive a shared ActiveProcesses bar (useProcessesStore) + BackupRunningDialog
@@ -176,13 +176,21 @@ Beta work begins only after all Alpha tiles are complete and stable.
 
 ### Backups — beta hardening
 
+- [x] Full-server snapshot (entire working dir: jar, plugins, configs, world) vs world-only
+  — Backups tile now zips `cfg.WorkingDir`; backups tagged `kind: "server" | "world"` in
+  meta.json; restore branches on kind; legacy backups derived from filename convention
+- [ ] Worlds tile: create / list / restore / delete **per-world** backups (currently only
+  create exists via `CreateWorldBackup`; world backups land in the shared backup dir but
+  are not surfaced in the Worlds tile)
+- [ ] Backups tile: view and manage **all world-specific backups** in the "World-specific"
+  segment (currently a note-only placeholder; replaces it with carousel + list)
+- [ ] Scheduler tile: world-specific backup action (choose target world, not just full-server)
 - [ ] Multi-dimension worlds: also back up `world_nether` / `world_the_end`
   (Paper/Spigot/Bukkit split dimensions into sibling folders; `worldPath()`
   currently zips only the single `level-name` folder — silent data loss on
   those server types)
 - [ ] Retention / pruning policy: auto-delete backups by count, total size, or age
 - [ ] Cancel an in-progress backup
-- [ ] Full-server snapshot option (mods, configs, server.properties) vs world-only
 - [ ] Concurrency guard in `CreateBackup` to prevent overlapping scheduled + manual runs
 - [ ] Integrity check / corrupt-zip detection on restore (beyond `zip.OpenReader` error)
 - [ ] Import / restore from an external backup file (drag-in or file picker)

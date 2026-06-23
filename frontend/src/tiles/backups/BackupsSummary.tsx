@@ -64,23 +64,24 @@ export function BackupsSummary({ serverId }: Props) {
     )
   }
 
-  const latest = backups[0]
+  const serverBackups = backups.filter((b) => b.kind === 'server')
+  const latest = serverBackups[0]
 
   return (
     <div className="relative flex flex-col h-full px-3 py-2 gap-2">
       <div className="flex-1 min-h-0 flex flex-col justify-center gap-1">
         {latest ? (
           <>
-            <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>Last backup</div>
+            <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>Last full backup</div>
             <div className="text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
               {fmtRelTime(latest.createdAt)}
             </div>
             <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
-              {fmtBytes(latest.sizeBytes)} · {backups.length} total
+              {fmtBytes(latest.sizeBytes)} · {serverBackups.length} total
             </div>
           </>
         ) : (
-          <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>No backups yet</div>
+          <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>No full-server backups yet</div>
         )}
       </div>
       <button
