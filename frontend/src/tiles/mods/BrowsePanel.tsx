@@ -29,8 +29,13 @@ interface Props {
 }
 
 const PANEL_WIDTH = 440
-const PANEL_DURATION = 280 // ms — panel slide
-const CARD_ANIM = 130    // ms — tile fade+scale each way
+const PANEL_DURATION = 280  // ms — detail panel slide
+const CARD_ANIM = 130       // ms — tile fade+scale for panel open/close & initial load
+
+// Page-turn animation timing
+const EXIT_MS = 180    // per-tile exit duration
+const ENTER_MS = 160   // per-tile enter duration
+const COL_DELAY = 45   // stagger step per column (ms)
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: '',           label: 'Relevance' },
@@ -40,14 +45,55 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: 'updated',    label: 'Updated' },
 ]
 
-// Stable per-card enter delay: looks random but doesn't change on re-render.
+// Stable per-card random-ish delay for initial-load / panel-toggle animation.
 function stableDelay(id: string): number {
   let h = 0
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return (h % 8) * 20 // 8 buckets: 0, 20, 40 … 140 ms
+  return (h % 8) * 20
 }
 
-// ─── Shared popover dismiss hook ─────────────────────────────────────────────
+// Per-tile CSS driven by the current animation phase.
+//   idle  — panel open/close & initial load (scale from centre, stable random delay)
+//   exit  — page turn out: scale+translate left, left column first
+//   enter — page turn in:  scale+translate from right, right column first (inverse)
+function getTileStyle(
+  projectId: string,
+  col: number,
+  numCols: number,
+  phase: 'idle' | 'exit' | 'enter',
+  gridVisible: boolean,
+): React.CSSProperties {
+  if (phase === 'exit') {
+    const delay = col * COL_DELAY
+    return {
+      opacity: 0,
+      transform: 'scale(0.88) translateX(-22px)',
+      transition: `opacity ${EXIT_MS}ms ease ${delay}ms, transform ${EXIT_MS}ms ease ${delay}ms`,
+    }
+  }
+
+  if (phase === 'enter') {
+    // Right-most column enters first → delay decreases as col increases
+    const delay = (numCols - 1 - col) * COL_DELAY
+    return {
+      opacity: gridVisible ? 1 : 0,
+      transform: gridVisible ? 'none' : 'scale(0.88) translateX(22px)',
+      transition: gridVisible
+        ? `opacity ${ENTER_MS}ms ease ${delay}ms, transform ${ENTER_MS}ms ease ${delay}ms`
+        : 'none',
+    }
+  }
+
+  // idle — existing panel/initial-load animation
+  return {
+    opacity: gridVisible ? 1 : 0,
+    transform: gridVisible ? 'none' : 'scale(0.94)',
+    transition: `opacity ${CARD_ANIM}ms ease, transform ${CARD_ANIM}ms ease`,
+    transitionDelay: gridVisible ? `${stableDelay(projectId)}ms` : '0ms',
+  }
+}
+
+// ─── Shared popover dismiss hook ──────────────────────────────────────────────
 
 function usePopover() {
   const [open, setOpen] = useState(false)
@@ -56,7 +102,7 @@ function usePopover() {
   return { open, toggle, close }
 }
 
-// ─── Sort dropdown ────────────────────────────────────────────────────────────
+// ─── Sort dropdown ─────────────────────────────────────────────────────────────
 
 interface SortMenuProps {
   sort: string
@@ -129,7 +175,7 @@ function SortMenu({ sort, onSort }: SortMenuProps) {
   )
 }
 
-// ─── Categories dropdown ──────────────────────────────────────────────────────
+// ─── Categories dropdown ───────────────────────────────────────────────────────
 
 interface CategoriesMenuProps {
   categories: string[]
@@ -164,65 +210,65 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
       {open && <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={close} />}
 
       <div
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 4px)',
-              right: 0,
-              zIndex: 201,
-              width: 200,
-              maxHeight: 300,
-              overflowY: 'auto',
-              background: 'var(--bg-elevated)',
-              backdropFilter: 'blur(12px)',
-              border: '0.5px solid var(--border-subtle)',
-              borderRadius: 8,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-              transformOrigin: 'top right',
-              transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
-              opacity: open ? 1 : 0,
-              pointerEvents: open ? 'auto' : 'none',
-              transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
-            }}
-          >
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 4px)',
+          right: 0,
+          zIndex: 201,
+          width: 200,
+          maxHeight: 300,
+          overflowY: 'auto',
+          background: 'var(--bg-elevated)',
+          backdropFilter: 'blur(12px)',
+          border: '0.5px solid var(--border-subtle)',
+          borderRadius: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          transformOrigin: 'top right',
+          transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
+        }}
+      >
+        <button
+          onClick={onClear}
+          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
+          style={{
+            color: count === 0 ? 'var(--accent)' : 'var(--text-muted)',
+            borderBottom: '0.5px solid var(--border-subtle)',
+            background: 'transparent',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+        >
+          <span style={{ width: 12, color: 'var(--accent)', opacity: count === 0 ? 1 : 0 }}>✓</span>
+          All
+        </button>
+        {categories.map(cat => {
+          const active = selectedCats.includes(cat)
+          return (
             <button
-              onClick={onClear}
+              key={cat}
+              onClick={() => onToggle(cat)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
               style={{
-                color: count === 0 ? 'var(--accent)' : 'var(--text-muted)',
-                borderBottom: '0.5px solid var(--border-subtle)',
-                background: 'transparent',
+                color: active ? 'var(--accent)' : 'var(--text-primary)',
+                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: count === 0 ? 1 : 0 }}>✓</span>
-              All
+              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              {cat}
             </button>
-            {categories.map(cat => {
-              const active = selectedCats.includes(cat)
-              return (
-                <button
-                  key={cat}
-                  onClick={() => onToggle(cat)}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-                  style={{
-                    color: active ? 'var(--accent)' : 'var(--text-primary)',
-                    background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
-                  }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
-                  {cat}
-                </button>
-              )
-            })}
-          </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-// ─── BrowsePanel ──────────────────────────────────────────────────────────────
+// ─── BrowsePanel ───────────────────────────────────────────────────────────────
 
 export function BrowsePanel({
   results, total, offset, loading, error, categories,
@@ -237,9 +283,30 @@ export function BrowsePanel({
   const [sortBy, setSortBy] = useState('')
   const [moreProjects, setMoreProjects] = useState<ModProject[]>([])
 
-  const panelOpen = !!selectedProject
+  // ── Buffered results: hold old page during exit, swap in on commit ──────────
+  const [displayResults, setDisplayResults] = useState<ModProject[]>(results)
+  const [displayTotal, setDisplayTotal] = useState(total)
 
-  // Keep last selected project alive so the panel has content to slide out with.
+  // ── Page-turn phase ─────────────────────────────────────────────────────────
+  const [pagePhase, setPagePhase] = useState<'idle' | 'exit' | 'enter'>('idle')
+
+  // ── Column count (measured from container width for accurate stagger) ───────
+  const [numCols, setNumCols] = useState(4)
+  const numColsRef = useRef(4)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // ── Page-turn coordination refs ─────────────────────────────────────────────
+  // Both the exit-animation timer AND the network response must complete before
+  // we swap in new results and start the enter animation.
+  const exitDoneRef = useRef(false)
+  const resultsDoneRef = useRef(false)
+  const inPageTransRef = useRef(false)
+  const pendingRef = useRef<{ results: ModProject[]; total: number } | null>(null)
+  const transTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const prevLoadingRef = useRef(loading)
+
+  // ── Detail panel ─────────────────────────────────────────────────────────────
+  const panelOpen = !!selectedProject
   const lastProjectRef = useRef<ModProject | null>(null)
   if (selectedProject) lastProjectRef.current = selectedProject
   const displayProject = selectedProject ?? lastProjectRef.current
@@ -250,7 +317,83 @@ export function BrowsePanel({
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const cardAnimTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // Case A — remount with cached results
+  // ── Measure actual column count from container width ─────────────────────────
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      // auto-fill minmax(200px,1fr) + 8px gap: N cols fit when N*200+(N-1)*8 ≤ width-24
+      // Solving: N ≤ (width - 16) / 208
+      const cols = layoutOpen
+        ? 2
+        : Math.max(1, Math.floor((el.getBoundingClientRect().width - 16) / 208))
+      setNumCols(cols)
+      numColsRef.current = cols
+    }
+    update()
+    const obs = new ResizeObserver(update)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [layoutOpen])
+
+  // ── commitEnter: swap in new results and start enter animation ───────────────
+  // Called after BOTH the exit timer fires AND the network results arrive.
+  const commitEnter = useCallback(() => {
+    if (!exitDoneRef.current || !resultsDoneRef.current || !pendingRef.current) return
+    const { results: r, total: t } = pendingRef.current
+    exitDoneRef.current = false
+    resultsDoneRef.current = false
+    inPageTransRef.current = false
+    pendingRef.current = null
+    // Batch: update display data + phase. Tiles render at enter-start state (invisible, shifted right).
+    setDisplayResults(r)
+    setDisplayTotal(t)
+    setPagePhase('enter')
+    setGridVisible(false)
+    // Two frames later: trigger the enter transition (start → end state).
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setGridVisible(true)
+      clearTimeout(transTimerRef.current)
+      transTimerRef.current = setTimeout(
+        () => setPagePhase('idle'),
+        ENTER_MS + numColsRef.current * COL_DELAY + 60,
+      )
+    }))
+  }, []) // stable: only uses refs and stable state setters
+
+  // ── handlePage: kick off exit animation and fire the search ─────────────────
+  const handlePage = useCallback((o: number) => {
+    clearTimeout(transTimerRef.current)
+    exitDoneRef.current = false
+    resultsDoneRef.current = false
+    inPageTransRef.current = true
+    pendingRef.current = null
+    setPagePhase('exit')
+    onSearch(query, selectedCats, o, sortBy)
+    // Exit timer: after all tiles have animated out, try to commit
+    transTimerRef.current = setTimeout(() => {
+      exitDoneRef.current = true
+      commitEnter()
+    }, EXIT_MS + numColsRef.current * COL_DELAY + 30)
+  }, [onSearch, query, selectedCats, sortBy, commitEnter])
+
+  // ── Sync incoming results: buffer during page turn, apply directly otherwise ─
+  useEffect(() => {
+    const wasLoading = prevLoadingRef.current
+    prevLoadingRef.current = loading
+    if (inPageTransRef.current && wasLoading && !loading) {
+      // Network results just arrived during a page transition — store and try commit
+      pendingRef.current = { results, total }
+      resultsDoneRef.current = true
+      commitEnter()
+    } else if (!inPageTransRef.current) {
+      // Normal update: query change, category filter, sort, initial load
+      setDisplayResults(results)
+      setDisplayTotal(total)
+    }
+  }, [loading, results, total, commitEnter])
+
+  // ── Initial-load animation: Case A (remount with cached results) ─────────────
   useEffect(() => {
     if (results.length > 0) {
       const t = setTimeout(() => setGridVisible(true), 16)
@@ -258,17 +401,18 @@ export function BrowsePanel({
     }
   }, []) // mount only
 
-  // Case B — first load
-  const prevResultsLenRef = useRef(0)
+  // ── Initial-load animation: Case B (first results arrive after mount) ────────
+  const prevDisplayLenRef = useRef(0)
   useEffect(() => {
-    const prevLen = prevResultsLenRef.current
-    prevResultsLenRef.current = results.length
-    if (prevLen === 0 && results.length > 0 && !panelOpen) {
+    const prevLen = prevDisplayLenRef.current
+    prevDisplayLenRef.current = displayResults.length
+    if (prevLen === 0 && displayResults.length > 0 && !panelOpen && pagePhase === 'idle') {
       const t = setTimeout(() => setGridVisible(true), 16)
       return () => clearTimeout(t)
     }
-  }, [results.length]) // intentionally omit panelOpen
+  }, [displayResults.length]) // intentionally omit panelOpen, pagePhase
 
+  // ── Detail panel open/close ──────────────────────────────────────────────────
   useEffect(() => {
     if (panelOpen) {
       hasOpenedRef.current = true
@@ -300,13 +444,13 @@ export function BrowsePanel({
     ? 'repeat(2, 1fr)'
     : 'repeat(auto-fill, minmax(200px, 1fr))'
 
-  // Debounced search — fires on query, categories, or sort changes
+  // ── Debounced search — query / categories / sort changes ─────────────────────
   useEffect(() => {
     const t = setTimeout(() => onSearch(query, selectedCats, 0, sortBy), 300)
     return () => clearTimeout(t)
   }, [query, selectedCats, sortBy]) // intentionally omit onSearch
 
-  // Load "more by author"
+  // ── More by author ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedProject?.author) { setMoreProjects([]); return }
     let cancelled = false
@@ -405,17 +549,16 @@ export function BrowsePanel({
         <div className="px-3 py-1.5 text-xs shrink-0" style={{ color: 'var(--danger)' }}>{error}</div>
       )}
 
-      {/* Main area: grid (left) + detail panel (right, flex sibling) */}
+      {/* Main area: grid (left) + detail panel (right) */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Results list — stable column count during panel animation */}
-        <div className="flex flex-col min-h-0 overflow-hidden" style={{ flex: 1, minWidth: 0 }}>
+        <div ref={containerRef} className="flex flex-col min-h-0 overflow-hidden" style={{ flex: 1, minWidth: 0 }}>
           <div className="flex-1 overflow-y-auto min-h-0 p-3">
-            {loading && results.length === 0 && (
+            {loading && displayResults.length === 0 && (
               <div className="text-xs py-4 text-center animate-pulse" style={{ color: 'var(--text-muted)' }}>
                 Searching…
               </div>
             )}
-            {!loading && !error && results.length === 0 && (
+            {!loading && !error && displayResults.length === 0 && (
               <div className="text-xs py-4 text-center" style={{ color: 'var(--text-muted)' }}>
                 {query || selectedCats.length > 0
                   ? 'No results. Try different keywords or categories.'
@@ -423,17 +566,14 @@ export function BrowsePanel({
               </div>
             )}
 
-            {results.length > 0 && (
+            {displayResults.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 8 }}>
-                {results.map(project => (
+                {displayResults.map((project, index) => (
                   <div
                     key={project.id}
                     style={{
                       minWidth: 0,
-                      opacity: gridVisible ? 1 : 0,
-                      transform: gridVisible ? 'none' : 'scale(0.94)',
-                      transition: `opacity ${CARD_ANIM}ms ease, transform ${CARD_ANIM}ms ease`,
-                      transitionDelay: gridVisible ? `${stableDelay(project.id)}ms` : '0ms',
+                      ...getTileStyle(project.id, index % numCols, numCols, pagePhase, gridVisible),
                     }}
                   >
                     <ContentCard
@@ -448,9 +588,9 @@ export function BrowsePanel({
           </div>
 
           <Pagination
-            total={total}
+            total={displayTotal}
             offset={offset}
-            onPage={o => onSearch(query, selectedCats, o, sortBy)}
+            onPage={handlePage}
           />
         </div>
 
