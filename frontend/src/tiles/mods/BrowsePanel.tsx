@@ -315,12 +315,6 @@ export function BrowsePanel({
     document.addEventListener('mouseup', onMouseUp)
   }, [panelWidth])
 
-  // ── Reflow animation refs ────────────────────────────────────────────────────
-  // gridVisibleRef lets the numCols effect read a fresh value without a stale closure.
-  // Declared before the numCols effect so the sync effect always runs first in the
-  // same flush, guaranteeing a fresh read when both gridVisible and numCols change.
-  const gridVisibleRef = useRef(false)
-  const prevNumColsRef = useRef(0)
   const reflowTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // ── Buffered results: hold old page during exit, swap in on commit ──────────
@@ -328,7 +322,13 @@ export function BrowsePanel({
   const [displayTotal, setDisplayTotal] = useState(total)
 
   // ── Page-turn phase ─────────────────────────────────────────────────────────
-  const [pagePhase, setPagePhase] = useState<'idle' | 'exit' | 'enter'>('idle')
+  // Stable wrappers keep refs in sync at call-time. ResizeObserver callbacks can
+  // fire between React commit and useEffect, so refs must be updated eagerly.
+  const [pagePhase, _setPagePhase] = useState<'idle' | 'exit' | 'enter'>('idle')
+  const pagePhaseRef = useRef<'idle' | 'exit' | 'enter'>('idle')
+  const setPagePhase = useCallback((p: 'idle' | 'exit' | 'enter') => {
+    pagePhaseRef.current = p; _setPagePhase(p)
+  }, [])
 
   // ── Column count (measured from container width for accurate stagger) ───────
   const [numCols, setNumCols] = useState(4)
@@ -352,41 +352,53 @@ export function BrowsePanel({
   const displayProject = selectedProject ?? lastProjectRef.current
 
   const [layoutOpen, setLayoutOpen] = useState(false)
-  const [gridVisible, setGridVisible] = useState(false)
+  const [gridVisible, _setGridVisible] = useState(false)
+  const gridVisibleRef = useRef(false)
+  const setGridVisible = useCallback((v: boolean) => {
+    gridVisibleRef.current = v; _setGridVisible(v)
+  }, [])
   const hasOpenedRef = useRef(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const cardAnimTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // ── Measure actual column count from container width ─────────────────────────
+  // ── Measure column count; animate reflow when tiles are visible ──────────────
+  // Mount-only: panel open/close handlers update numCols themselves (in a double-rAF
+  // while tiles are hidden) so the observer never sees a stale mismatch after panel
+  // transitions — preventing the double-animation from Issue 1.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const update = () => {
-      // auto-fill minmax(200px,1fr) + 8px gap: N ≤ (width - 16) / 208
-      const cols = Math.max(1, Math.floor((el.getBoundingClientRect().width - 16) / 208))
-      setNumCols(cols)
-      numColsRef.current = cols
-    }
-    update()
-    const obs = new ResizeObserver(update)
+    const measure = () => Math.max(1, Math.floor((el.getBoundingClientRect().width - 16) / 208))
+
+    // Seed initial value — tiles are hidden at mount so no animation needed.
+    const init = measure()
+    setNumCols(init)
+    numColsRef.current = init
+
+    const obs = new ResizeObserver(() => {
+      const cols = measure()
+      if (cols === numColsRef.current) return
+
+      if (!gridVisibleRef.current || pagePhaseRef.current !== 'idle') {
+        // Tiles hidden or page-turning: update numCols silently (reflow is invisible).
+        setNumCols(cols)
+        numColsRef.current = cols
+        return
+      }
+
+      // Tiles visible and stable: animate — hide first so the CSS reflow is invisible.
+      clearTimeout(reflowTimerRef.current)
+      setGridVisible(false)
+      const target = cols
+      reflowTimerRef.current = setTimeout(() => {
+        setNumCols(target)
+        numColsRef.current = target
+        setGridVisible(true)
+      }, CARD_ANIM)
+    })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [layoutOpen])
-
-  // Keep gridVisibleRef fresh — must be declared before the numCols reflow effect
-  // so it runs first in the same flush (effects fire in declaration order).
-  useEffect(() => { gridVisibleRef.current = gridVisible }, [gridVisible])
-
-  // Animate tiles on column count change — same gridVisible toggle as panel open/close.
-  // Reads gridVisibleRef (not stale closure) to skip when another animation owns tiles.
-  useEffect(() => {
-    const prev = prevNumColsRef.current
-    prevNumColsRef.current = numCols
-    if (prev === 0 || prev === numCols || pagePhase !== 'idle' || !gridVisibleRef.current) return
-    clearTimeout(reflowTimerRef.current)
-    setGridVisible(false)
-    reflowTimerRef.current = setTimeout(() => setGridVisible(true), CARD_ANIM)
-  }, [numCols]) // intentionally omit pagePhase — only numCols change should trigger this
+  }, []) // mount-only — see comment above
 
   // ── commitEnter: swap in new results and start enter animation ───────────────
   // Called after BOTH the exit timer fires AND the network results arrive.
@@ -473,7 +485,17 @@ export function BrowsePanel({
       setGridVisible(false)
       cardAnimTimerRef.current = setTimeout(() => {
         setLayoutOpen(true)
-        setGridVisible(true)
+        // Double-rAF: first frame React commits layoutOpen=true and browser lays out;
+        // second frame the new container width is stable. Update numCols while tiles
+        // are still hidden so the ResizeObserver finds no mismatch when it fires.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (containerRef.current) {
+            const cols = Math.max(1, Math.floor((containerRef.current.getBoundingClientRect().width - 16) / 208))
+            setNumCols(cols)
+            numColsRef.current = cols
+          }
+          setGridVisible(true)
+        }))
       }, CARD_ANIM)
     } else {
       if (!hasOpenedRef.current) return
@@ -482,7 +504,14 @@ export function BrowsePanel({
         setGridVisible(false)
         cardAnimTimerRef.current = setTimeout(() => {
           setLayoutOpen(false)
-          setGridVisible(true)
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (containerRef.current) {
+              const cols = Math.max(1, Math.floor((containerRef.current.getBoundingClientRect().width - 16) / 208))
+              setNumCols(cols)
+              numColsRef.current = cols
+            }
+            setGridVisible(true)
+          }))
         }, CARD_ANIM)
       }, PANEL_DURATION - CARD_ANIM)
     }
@@ -492,7 +521,7 @@ export function BrowsePanel({
     }
   }, [panelOpen])
 
-  const gridCols = 'repeat(auto-fill, minmax(200px, 1fr))'
+  const gridCols = `repeat(${numCols}, 1fr)`
 
   // ── Debounced search — query / categories / sort changes ─────────────────────
   useEffect(() => {
