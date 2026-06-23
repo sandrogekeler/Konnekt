@@ -120,7 +120,7 @@ export function ContentDetailPanel({
       <div
         className="flex flex-col overflow-hidden"
         style={{
-          width: 440,
+          width: '100%',
           height: '100%',
           background: 'color-mix(in srgb, var(--bg-base) 97%, white)',
         }}

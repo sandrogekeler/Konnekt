@@ -28,9 +28,11 @@ interface Props {
   moreByAuthor: (username: string, excludeProjectId: string) => Promise<ModProject[]>
 }
 
-const PANEL_WIDTH = 440
-const PANEL_DURATION = 280  // ms — detail panel slide
-const CARD_ANIM = 130       // ms — tile fade+scale for panel open/close & initial load
+const DEFAULT_PANEL_WIDTH = 440
+const MIN_PANEL_WIDTH = 300   // narrowest the detail panel can get
+const MIN_GRID_WIDTH = 232    // narrowest the grid can get: 1 card (200px) + padding (24px) + gap (8px)
+const PANEL_DURATION = 280    // ms — detail panel slide
+const CARD_ANIM = 130         // ms — tile fade+scale for panel open/close & initial load
 
 // Page-turn animation timing
 const EXIT_MS = 180    // per-tile exit duration
@@ -282,6 +284,37 @@ export function BrowsePanel({
   const [selectedCats, setSelectedCats] = useState<string[]>([])
   const [sortBy, setSortBy] = useState('')
   const [moreProjects, setMoreProjects] = useState<ModProject[]>([])
+
+  // ── Detail panel width (resizable) ──────────────────────────────────────────
+  const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH)
+  const [resizeActive, setResizeActive] = useState(false)
+  const [resizeHover, setResizeHover] = useState(false)
+  const mainRowRef = useRef<HTMLDivElement>(null)
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = panelWidth
+    setResizeActive(true)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX // drag left → panel grows
+      const totalWidth = mainRowRef.current?.offsetWidth ?? 800
+      const maxWidth = totalWidth - MIN_GRID_WIDTH
+      setPanelWidth(Math.max(MIN_PANEL_WIDTH, Math.min(startWidth + delta, maxWidth)))
+    }
+    const onMouseUp = () => {
+      setResizeActive(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [panelWidth])
 
   // ── Buffered results: hold old page during exit, swap in on commit ──────────
   const [displayResults, setDisplayResults] = useState<ModProject[]>(results)
@@ -550,7 +583,7 @@ export function BrowsePanel({
       )}
 
       {/* Main area: grid (left) + detail panel (right) */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div ref={mainRowRef} className="flex flex-1 min-h-0 overflow-hidden">
         <div ref={containerRef} className="flex flex-col min-h-0 overflow-hidden" style={{ flex: 1, minWidth: 0 }}>
           <div className="flex-1 overflow-y-auto min-h-0 p-3">
             {loading && displayResults.length === 0 && (
@@ -594,21 +627,42 @@ export function BrowsePanel({
           />
         </div>
 
-        {/* Detail panel wrapper */}
+        {/* Detail panel wrapper — width is user-resizable */}
         <div
           style={{
-            width: layoutOpen ? PANEL_WIDTH : 0,
+            width: layoutOpen ? panelWidth : 0,
             minWidth: 0,
             flexShrink: 0,
             overflow: 'hidden',
+            position: 'relative',
             borderLeft: layoutOpen ? '0.5px solid var(--border-subtle)' : 'none',
           }}
         >
+          {/* Drag handle — sits on top of the left border */}
+          {layoutOpen && (
+            <div
+              onMouseDown={handleResizeMouseDown}
+              onMouseEnter={() => setResizeHover(true)}
+              onMouseLeave={() => setResizeHover(false)}
+              style={{
+                position: 'absolute',
+                left: -3,
+                top: 0,
+                bottom: 0,
+                width: 6,
+                cursor: 'col-resize',
+                zIndex: 10,
+                borderLeft: `2px solid ${resizeHover || resizeActive ? 'var(--accent)' : 'transparent'}`,
+                transition: 'border-color 150ms ease',
+              }}
+            />
+          )}
+
           <div
             style={{
-              width: PANEL_WIDTH,
+              width: panelWidth,
               height: '100%',
-              transform: panelOpen ? 'translateX(0)' : `translateX(${PANEL_WIDTH}px)`,
+              transform: panelOpen ? 'translateX(0)' : `translateX(${panelWidth}px)`,
               transition: `transform ${PANEL_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`,
               willChange: 'transform',
             }}
