@@ -185,13 +185,37 @@ todo list, not a target.
   a dedicated pass with test coverage in place first.
 
 **P1 — Test coverage + gate**
-- Add `vitest` + `@testing-library/react` to the frontend; start with store
-  logic and critical hooks.
-- Expand Go tests beyond `nbt_test.go` / `scheduler_expr_test.go` to cover
-  RCON, the Modrinth client, backup create/restore, and config path-traversal
-  guards.
-- Enforce a coverage floor in CI once a baseline exists, and ratchet it up
-  over time.
+- ✅ Stood up the frontend test harness: `vitest` (pinned to `^3` — `vitest@4`
+  requires Vite 6+, this repo is still on `vite@^5.4.21`) + `jsdom` +
+  `@testing-library/react`/`dom`, wired via a `test` block in
+  `frontend/vite.config.ts` and a `pnpm test` script. Added to the CI
+  `frontend` job (`.github/workflows/ci.yml`), after `pnpm lint`.
+- ✅ Frontend: 39 tests covering the pure/no-Wails-mocking logic —
+  `lib/format.ts`, `lib/layout.ts` (`collapseEmptyRows`), and three stores'
+  pure logic: `useConsoleStore` (`classifyLine` + buffer-cap eviction on
+  `appendLine`/`batchAppend`), `useNotificationsStore` (200-item cap),
+  `useProcessesStore` (state machine + the 3s auto-remove timer via
+  `vi.useFakeTimers`).
+- ✅ Backend: 21 new tests (up from 2 pre-existing) —
+  `rcon_test.go` (packet marshal/unmarshal round-trip over `net.Pipe`, the
+  10–4096 byte length-bounds guard, colour-code stripping),
+  `backup_test.go` (`validateFilename`, zip create/restore round-trip, and
+  the zip-slip extraction guard — confirmed this test actually fails when the
+  guard is removed, then restored it),
+  `config_editor_test.go` (the path-traversal `sandbox()` guard),
+  `modrinth_test.go` (`buildFacets` facet-string assembly).
+- Deferred follow-up — **Wails-mocked store tests**: `useTileStore`,
+  `useLayoutStore`, `useServerConfigStore`, `useSettingsStore` all call
+  generated `wailsjs/go/main/App` bindings directly; testing their
+  load/save/CRUD logic needs `vi.mock('../../wailsjs/go/main/App')`. Also
+  untested: the two custom hooks (`useWailsCall`, `usePopover`).
+- Deferred follow-up — **Modrinth HTTP-path coverage**: `ModrinthClient`
+  hardcodes `modrinthBase = "https://api.modrinth.com/v2"` with no injectable
+  base URL, so the 429/`Retry-After` retry logic and search-hit dedup can't be
+  driven by an `httptest.Server` yet. Needs a small constructor refactor
+  (injectable base URL) before those paths are testable.
+- Deferred follow-up — **coverage floor**: still no numeric threshold in CI;
+  add one once a stable baseline is established across both suites.
 
 **P1 — Code-split heavy tiles**
 - Apply the Worlds `React.lazy` pattern to the performance tile (recharts) and
