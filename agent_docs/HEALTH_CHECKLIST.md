@@ -187,7 +187,8 @@ todo list, not a target.
   in `frontend/eslint.config.js` (as a config object placed *after* the global
   rules block — flat-config applies later array entries' matching rules on
   top of earlier ones, opposite of what might be assumed). This is the
-  reusable template for future per-directory passes.
+  reusable template for future per-directory passes. Confirmed green on
+  `main`: https://github.com/sandrogekeler/Konnekt/actions/runs/28628543709
   - Two conversion rules established during this pass: (1) Tailwind v4's JIT
     scanner only sees literal class-name strings in source — a
     template-interpolated arbitrary class (e.g. `` `min-w-[${width}px]` ``) is
