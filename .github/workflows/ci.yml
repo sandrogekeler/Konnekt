@@ -43,6 +43,23 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      # main.go's //go:embed all:frontend/dist requires the built bundle to
+      # exist before go vet/test/build (they compile the embed directive).
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: pnpm build
+        working-directory: frontend
+
       - name: gofmt
         shell: pwsh
         run: |
