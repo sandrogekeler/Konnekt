@@ -74,12 +74,16 @@ wails build              # Production build smoke test
 
 ## 3. Scalable / Future-proof
 
-- [ ] Heavy per-tile dependencies are lazy-loaded on demand, following the
+- [x] Heavy per-tile dependencies are lazy-loaded on demand, following the
       existing pattern in `frontend/src/tiles/worlds/index.tsx` (`React.lazy`
-      + `Suspense`) — check that recharts (performance tile) and three.js
-      (backups tile) use the same approach rather than loading eagerly.
-- [ ] Production bundle size stays within an agreed budget (define one, e.g.
-      main chunk size in KB gzip), checked in CI.
+      + `Suspense`): worlds' three.js/@react-three scene, and now recharts
+      (performance tile — see backlog). The backups tile has **no** three.js
+      dependency — its "planets" are pure SVG/CSS (`WireframeSphere.tsx`,
+      `SolarSystem.tsx`); a repo-wide grep confirms `three`/`@react-three`
+      appear only under `worlds/scene/`.
+- [x] Production bundle size stays within an agreed budget (550 KB gzip on the
+      entry chunk, ~12% headroom over the measured post-split size), checked
+      in CI (`frontend/scripts/check-bundle-size.mjs`, `pnpm check-bundle`).
 - [ ] `frontend/src/tiles/registry.ts` was extended, not restructured, when
       new tiles were added.
 - [ ] Each Zustand store still owns exactly one domain — no cross-domain state
@@ -110,8 +114,9 @@ wails build              # Production build smoke test
       `useCallback`) so parent re-renders don't cascade into them — pay
       particular attention to the 3D scenes (backups sphere, worlds planetary
       system) and chart-heavy tiles.
-- [ ] Production bundle has been profiled recently (e.g. `vite build` output
-      or a bundle analyzer) and heavy libraries remain lazy rather than eager.
+- [x] Production bundle has been profiled recently (e.g. `vite build` output
+      or a bundle analyzer) and heavy libraries remain lazy rather than eager
+      (three.js via Worlds, recharts via Performance — see Scalable pillar).
 
 ---
 
@@ -220,9 +225,41 @@ todo list, not a target.
   add one once a stable baseline is established across both suites.
 
 **P1 — Code-split heavy tiles**
-- Apply the Worlds `React.lazy` pattern to the performance tile (recharts) and
-  backups tile (three.js).
-- Add a bundle-size budget check to CI.
+- ✅ **Correction to this item's original premise**: exploration found the
+  backups tile has no three.js dependency at all — its "planets" are pure
+  SVG/CSS (`frontend/src/tiles/backups/WireframeSphere.tsx`,
+  `SolarSystem.tsx`). three.js/@react-three only appear under
+  `frontend/src/tiles/worlds/scene/`, already lazy-loaded. So recharts (only
+  in the performance tile) was the sole remaining eager heavy dependency.
+- ✅ Split recharts out of `frontend/src/tiles/performance/index.tsx` into a
+  new `charts.tsx` (the tile's only `recharts` import), lazy-loaded via
+  `React.lazy` + `Suspense` for both the compact `SparkChart` and the
+  expanded `HistoryChart` — same pattern as Worlds. Shared pure helpers
+  (`fmtTime`, `fmtTps`, `tpsColor`, `tpsStrokeColor`) moved to `helpers.ts` to
+  avoid duplication between `index.tsx` and `charts.tsx`.
+  Effect: entry chunk gzip dropped from 595.00 KB → 490.53 KB (Vite's own
+  report); recharts now ships as its own ~103 KB gzip chunk, fetched only
+  once real chart data exists (confirmed in a dev-mode network trace — the
+  `charts.tsx` module is never requested while the history buffer is empty).
+- ✅ Added `frontend/scripts/check-bundle-size.mjs` (no new dependency — uses
+  `node:zlib`): gzips each `dist/assets/*.js`, asserts the entry
+  (`index-*.js`) chunk stays under a 550 KB budget, prints a per-chunk table.
+  Wired in as `pnpm check-bundle`, run in the CI `frontend` job right after
+  `pnpm build`. Verified the gate actually fails when the budget is
+  temporarily set below the real size, then restored it.
+- Not independently verified: live chart rendering with real streaming data
+  in a browser. The Wails IPC bridge (`window.go`/`window.runtime`) only
+  exists inside the native `wails dev` process — unreachable from the
+  headless-Chrome preview tooling used for this pass, which can only run the
+  bare Vite dev server (no backend). Confirmed the code-split mechanism
+  itself is sound (chunk separation, on-demand fetch, all typecheck/lint/test
+  gates green); a full data-driven visual check needs `wails dev` with a
+  configured Minecraft server.
+- Noted aside, not fixed here: `uplot` and `skinview3d` are dependencies in
+  `frontend/package.json` but are imported nowhere under `src/` (dead code —
+  `skinview3d` is presumably for the not-yet-built Beta skin-preview tile).
+  They don't affect bundle size since unimported code isn't bundled; flag as
+  a future dependency-hygiene cleanup.
 
 **P2 — Structured logging**
 - Replace ad-hoc `fmt.Errorf`-only error reporting on the backend with
