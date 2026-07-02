@@ -29,8 +29,8 @@ type modManifestItem struct {
 	DisplayName   string   `json:"displayName"`
 	IconURL       string   `json:"iconUrl,omitempty"`
 	ModID         string   `json:"modId"`
-	Source        string   `json:"source"`       // "modrinth" | "local"
-	Provider      string   `json:"provider"`     // "modrinth" | ""
+	Source        string   `json:"source"`   // "modrinth" | "local"
+	Provider      string   `json:"provider"` // "modrinth" | ""
 	ProjectID     string   `json:"projectId"`
 	VersionID     string   `json:"versionId"`
 	VersionNumber string   `json:"versionNumber"`

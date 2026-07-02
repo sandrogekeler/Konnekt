@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"konnekt/backend/models"
 	"konnekt/backend/services"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type App struct {

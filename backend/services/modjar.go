@@ -431,13 +431,13 @@ func readVersionJSON(f *zip.File) string {
 }
 
 var (
-	reLogMCVersion    = regexp.MustCompile(`\(MC:\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)\)`)
-	reLogFabric       = regexp.MustCompile(`(?i)fabric\s+loader`)
-	reLogPaper        = regexp.MustCompile(`(?i)This server is running (Paper|Spigot|Purpur|CraftBukkit)`)
-	reLogForge        = regexp.MustCompile(`(?i)Forge\s+mod\s+loader`)
-	reLogNeoForge     = regexp.MustCompile(`(?i)NeoForge`)
-	reLogMCVersion2   = regexp.MustCompile(`(?i)Starting minecraft server version ([0-9]+\.[0-9]+(?:\.[0-9]+)?)`)
-	reLogLoadingMC    = regexp.MustCompile(`(?i)Loading Minecraft\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)`)
+	reLogMCVersion  = regexp.MustCompile(`\(MC:\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)\)`)
+	reLogFabric     = regexp.MustCompile(`(?i)fabric\s+loader`)
+	reLogPaper      = regexp.MustCompile(`(?i)This server is running (Paper|Spigot|Purpur|CraftBukkit)`)
+	reLogForge      = regexp.MustCompile(`(?i)Forge\s+mod\s+loader`)
+	reLogNeoForge   = regexp.MustCompile(`(?i)NeoForge`)
+	reLogMCVersion2 = regexp.MustCompile(`(?i)Starting minecraft server version ([0-9]+\.[0-9]+(?:\.[0-9]+)?)`)
+	reLogLoadingMC  = regexp.MustCompile(`(?i)Loading Minecraft\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)`)
 )
 
 func detectFromLog(workingDir string) (mcVersion, loader string) {

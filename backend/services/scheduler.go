@@ -300,14 +300,14 @@ func (s *SchedulerService) writeGraphs(graphs []models.Graph) error {
 // declarative manifest blocks. New primitives require a native code change.
 func (s *SchedulerService) primitiveMap() map[string]ExecFunc {
 	return map[string]ExecFunc{
-		"rcon":           execRcon,
-		"command":        execCommand,
-		"http":           execHTTP,
-		"backup":         execBackup,
-		"write-attr":     execWriteAttribute,
-		"delay":          execDelay,
-		"condition":      execCondition,
-		"notify":         execNotify,
+		"rcon":       execRcon,
+		"command":    execCommand,
+		"http":       execHTTP,
+		"backup":     execBackup,
+		"write-attr": execWriteAttribute,
+		"delay":      execDelay,
+		"condition":  execCondition,
+		"notify":     execNotify,
 	}
 }
 

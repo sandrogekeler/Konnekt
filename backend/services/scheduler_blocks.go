@@ -178,15 +178,15 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "action.backup", Category: "action", Label: "Create Backup",
 		Description:   "Creates a backup of the active server's world.",
 		ControlInputs: []string{"trigger"}, ControlOutputs: []string{"onComplete", "onFailed"},
-		DataOutputs:   []models.DataPort{{ID: "filename", Label: "Backup filename", Type: "string"}},
-		Source:        "native",
+		DataOutputs: []models.DataPort{{ID: "filename", Label: "Backup filename", Type: "string"}},
+		Source:      "native",
 	}, execBackup))
 
 	must(r.RegisterBlock(models.BlockDef{
 		ID: "data.writeAttribute", Category: "data", Label: "Write Attribute",
 		Description:   "Writes a server attribute (e.g. @server.motd) or defines a custom in-flow attribute (@myvalue). Value may be an expression like @{ @players.count * 2 }.",
 		ControlInputs: []string{"trigger"}, ControlOutputs: []string{"onComplete", "onFailed"},
-		DataInputs:  []models.DataPort{{ID: "value", Label: "Value", Type: "string"}},
+		DataInputs: []models.DataPort{{ID: "value", Label: "Value", Type: "string"}},
 		ConfigSchema: []models.ConfigField{
 			{Key: "attribute", Label: "Attribute", Type: "attribute", Default: "server.motd", Required: true,
 				Options: []models.FieldOption{
@@ -246,7 +246,7 @@ func registerBuiltins(r *BlockRegistry) {
 		ID: "action.notify", Category: "notify", Label: "Notify",
 		Description:   "Sends an in-app notification.",
 		ControlInputs: []string{"trigger"}, ControlOutputs: []string{"onComplete"},
-		DataInputs:  []models.DataPort{{ID: "message", Label: "Message", Type: "string"}},
+		DataInputs: []models.DataPort{{ID: "message", Label: "Message", Type: "string"}},
 		ConfigSchema: []models.ConfigField{
 			{Key: "kind", Label: "Kind", Type: "select", Default: "info",
 				Options: []models.FieldOption{

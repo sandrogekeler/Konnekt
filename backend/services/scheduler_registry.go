@@ -81,9 +81,9 @@ func (e *ExecContext) GetFloat(key string, def float64) float64 {
 	return def
 }
 
-func (e *ExecContext) Server() *ServerService { return e.svc.server }
-func (e *ExecContext) Backup() *BackupService { return e.svc.backup }
-func (e *ExecContext) Rcon() *RconService     { return e.svc.rcon }
+func (e *ExecContext) Server() *ServerService  { return e.svc.server }
+func (e *ExecContext) Backup() *BackupService  { return e.svc.backup }
+func (e *ExecContext) Rcon() *RconService      { return e.svc.rcon }
 func (e *ExecContext) Config_() *ConfigService { return e.svc.config }
 func (e *ExecContext) Emit(event string, data any) {
 	e.svc.bus.Emit(event, data)

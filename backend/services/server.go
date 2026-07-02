@@ -39,14 +39,14 @@ type playerSession struct {
 }
 
 type ServerService struct {
-	ctx      context.Context
-	mu       sync.Mutex
-	cmd      *exec.Cmd
-	stdin    io.WriteCloser
-	running  bool
+	ctx       context.Context
+	mu        sync.Mutex
+	cmd       *exec.Cmd
+	stdin     io.WriteCloser
+	running   bool
 	startTime time.Time
-	serverID string
-	exited   chan struct{} // closed by waitForExit when the child process exits
+	serverID  string
+	exited    chan struct{} // closed by waitForExit when the child process exits
 
 	playersMu  sync.RWMutex
 	players    map[string]playerSession // online players

@@ -39,7 +39,7 @@ type Edge struct {
 
 type BlockDef struct {
 	ID             string        `json:"id"`
-	Category       string        `json:"category"`       // "trigger" | "action" | "control" | "notify"
+	Category       string        `json:"category"` // "trigger" | "action" | "control" | "notify"
 	Label          string        `json:"label"`
 	Description    string        `json:"description"`
 	IsTrigger      bool          `json:"isTrigger"`
@@ -48,7 +48,7 @@ type BlockDef struct {
 	DataInputs     []DataPort    `json:"dataInputs"`
 	DataOutputs    []DataPort    `json:"dataOutputs"`
 	ConfigSchema   []ConfigField `json:"configSchema"`
-	Source         string        `json:"source"`             // "native" | "manifest"
+	Source         string        `json:"source"`              // "native" | "manifest"
 	Primitive      string        `json:"primitive,omitempty"` // manifest blocks only
 }
 
@@ -61,7 +61,7 @@ type DataPort struct {
 type ConfigField struct {
 	Key      string        `json:"key"`
 	Label    string        `json:"label"`
-	Type     string        `json:"type"`            // "string"|"number"|"bool"|"select"|"server"|"command"
+	Type     string        `json:"type"` // "string"|"number"|"bool"|"select"|"server"|"command"
 	Default  interface{}   `json:"default,omitempty"`
 	Required bool          `json:"required,omitempty"`
 	Options  []FieldOption `json:"options,omitempty"` // for "select"
@@ -78,10 +78,10 @@ type RunRecord struct {
 	ID         string          `json:"id"`
 	GraphID    string          `json:"graphId"`
 	GraphName  string          `json:"graphName"`
-	Trigger    string          `json:"trigger"`    // "manual" | "time" | "event:player:joined" etc
+	Trigger    string          `json:"trigger"` // "manual" | "time" | "event:player:joined" etc
 	StartedAt  int64           `json:"startedAt"`
 	FinishedAt int64           `json:"finishedAt"`
-	Status     string          `json:"status"`     // "running" | "success" | "failed" | "skipped"
+	Status     string          `json:"status"` // "running" | "success" | "failed" | "skipped"
 	Error      string          `json:"error,omitempty"`
 	Nodes      []NodeRunRecord `json:"nodes"`
 }

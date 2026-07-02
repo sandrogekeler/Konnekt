@@ -122,10 +122,18 @@ Concrete, prioritized follow-ups based on the most recent review. This section
 todo list, not a target.
 
 **P0 — CI foundation**
-- Add `.github/workflows/ci.yml` running on push/PR: `go vet ./...` +
-  `go test ./...`, `pnpm typecheck`, `pnpm lint`, and a `wails build` (or
-  `pnpm build`) smoke check. Cache Go modules and the pnpm store. (Not yet
-  done — the tooling below now exists locally, still needs to run in CI.)
+- ✅ Added `.github/workflows/ci.yml`: `frontend` job (ubuntu-latest —
+  `pnpm typecheck` + `pnpm lint` + `pnpm build`) and `backend` job
+  (windows-latest, matching the shipping target — `gofmt -l` + `go vet ./...` +
+  `go test ./...` + `go build ./...`), both with dependency caching
+  (`setup-node`'s `cache: pnpm`, `setup-go`'s `cache: true`). Runs on push to
+  `main` and on every PR. `wails build` packaging deferred (see below) — the
+  light `go build`/`pnpm build` smoke check was judged sufficient for now.
+  Fixed the 14 Go files that weren't `gofmt`-clean as a prerequisite.
+  Still needs: a first real run confirmed green in the Actions tab.
+- Follow-up (not yet done): a release-tag-gated full `wails build` packaging
+  job, for stronger end-to-end confidence than the `go build`/`pnpm build`
+  smoke check gives.
 
 **Done — Lint/format enforcement (frontend)**
 - ✅ Migrated `frontend/` from Tailwind v3 (barely used) to v4, mapped the

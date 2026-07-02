@@ -5,10 +5,10 @@ package models
 // Paper/Spigot splits dimensions into sibling folders (world_nether, world_the_end);
 // vanilla keeps them as DIM-1/DIM1 subfolders. Both layouts are normalized here.
 type WorldSystem struct {
-	Name       string           `json:"name"`       // base level-name, e.g. "world"
-	Active     bool             `json:"active"`     // matches server.properties level-name
-	TotalSize  int64            `json:"totalSize"`  // bytes across all dimensions
-	Modified   int64            `json:"modified"`   // newest mtime across dimensions (unix ms)
+	Name       string           `json:"name"`      // base level-name, e.g. "world"
+	Active     bool             `json:"active"`    // matches server.properties level-name
+	TotalSize  int64            `json:"totalSize"` // bytes across all dimensions
+	Modified   int64            `json:"modified"`  // newest mtime across dimensions (unix ms)
 	Dimensions []WorldDimension `json:"dimensions"`
 	Meta       WorldMeta        `json:"meta"`
 }

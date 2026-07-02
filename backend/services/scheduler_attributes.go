@@ -18,12 +18,12 @@ type attrMeta struct {
 // Writable entries must have a corresponding case in execWriteAttribute.
 var builtinAttrs = map[string]attrMeta{
 	// Read-only
-	"tps":            {Type: "number", Writable: false},
-	"players.count":  {Type: "number", Writable: false},
-	"ram.used":       {Type: "number", Writable: false},
-	"ram.left":       {Type: "number", Writable: false},
-	"ram.total":      {Type: "number", Writable: false},
-	"server.status":  {Type: "bool", Writable: false},
+	"tps":           {Type: "number", Writable: false},
+	"players.count": {Type: "number", Writable: false},
+	"ram.used":      {Type: "number", Writable: false},
+	"ram.left":      {Type: "number", Writable: false},
+	"ram.total":     {Type: "number", Writable: false},
+	"server.status": {Type: "bool", Writable: false},
 	// Read & write
 	"players.max":      {Type: "number", Writable: true},
 	"server.whitelist": {Type: "bool", Writable: true},

@@ -30,12 +30,12 @@ const (
 
 // nbtValue is a parsed NBT node. Compounds are map[string]*nbtValue, lists are []*nbtValue.
 type nbtValue struct {
-	tagType byte
-	str     string
-	i64     int64
-	f64     float64
+	tagType  byte
+	str      string
+	i64      int64
+	f64      float64
 	compound map[string]*nbtValue
-	list    []*nbtValue
+	list     []*nbtValue
 }
 
 // readLevelDat opens a gzip-compressed level.dat and extracts world metadata.

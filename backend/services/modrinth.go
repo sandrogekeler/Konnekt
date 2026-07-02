@@ -23,16 +23,16 @@ const (
 // loaderProjectType maps a server loader string to the Modrinth project_type facet
 // and the loader string Modrinth expects in version queries.
 var loaderProjectType = map[string]struct{ projectType, modrinthLoader string }{
-	"fabric":    {"mod", "fabric"},
-	"forge":     {"mod", "forge"},
-	"neoforge":  {"mod", "neoforge"},
-	"quilt":     {"mod", "quilt"},
-	"paper":     {"plugin", "paper"},
-	"spigot":    {"plugin", "spigot"},
-	"bukkit":    {"plugin", "bukkit"},
-	"purpur":    {"plugin", "purpur"},
-	"velocity":  {"plugin", "velocity"},
-	"vanilla":   {"mod", ""},
+	"fabric":   {"mod", "fabric"},
+	"forge":    {"mod", "forge"},
+	"neoforge": {"mod", "neoforge"},
+	"quilt":    {"mod", "quilt"},
+	"paper":    {"plugin", "paper"},
+	"spigot":   {"plugin", "spigot"},
+	"bukkit":   {"plugin", "bukkit"},
+	"purpur":   {"plugin", "purpur"},
+	"velocity": {"plugin", "velocity"},
+	"vanilla":  {"mod", ""},
 }
 
 // ModrinthClient implements ModProvider for the Modrinth v2 API.
@@ -180,7 +180,7 @@ func (c *ModrinthClient) ResolveDependencies(
 	versionID, mcVersion, loader string,
 	installed map[string]bool,
 ) ([]models.ResolvedDependency, error) {
-	seen := map[string]bool{}       // projectIDs already queued
+	seen := map[string]bool{} // projectIDs already queued
 	var result []models.ResolvedDependency
 
 	// BFS queue of (versionID, required)
@@ -363,19 +363,19 @@ type mrSearchHit struct {
 }
 
 type mrProject struct {
-	ID           string      `json:"id"`
-	Slug         string      `json:"slug"`
-	Title        string      `json:"title"`
-	Description  string      `json:"description"`
-	Body         string      `json:"body"`
-	IconURL      string      `json:"icon_url"`
-	ProjectType  string      `json:"project_type"`
-	Downloads    int         `json:"downloads"`
-	Followers    int         `json:"followers"`
-	Updated      string      `json:"updated"`
-	Categories   []string    `json:"categories"`
-	Gallery      []mrGallery `json:"gallery"`
-	Team         string      `json:"team"`
+	ID          string      `json:"id"`
+	Slug        string      `json:"slug"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Body        string      `json:"body"`
+	IconURL     string      `json:"icon_url"`
+	ProjectType string      `json:"project_type"`
+	Downloads   int         `json:"downloads"`
+	Followers   int         `json:"followers"`
+	Updated     string      `json:"updated"`
+	Categories  []string    `json:"categories"`
+	Gallery     []mrGallery `json:"gallery"`
+	Team        string      `json:"team"`
 }
 
 type mrMember struct {
@@ -399,16 +399,16 @@ type mrGallery struct {
 }
 
 type mrVersion struct {
-	ID            string        `json:"id"`
-	ProjectID     string        `json:"project_id"`
-	Name          string        `json:"name"`
-	VersionNumber string        `json:"version_number"`
-	VersionType   string        `json:"version_type"`
-	GameVersions  []string      `json:"game_versions"`
-	Loaders       []string      `json:"loaders"`
-	Files         []mrFile      `json:"files"`
+	ID            string         `json:"id"`
+	ProjectID     string         `json:"project_id"`
+	Name          string         `json:"name"`
+	VersionNumber string         `json:"version_number"`
+	VersionType   string         `json:"version_type"`
+	GameVersions  []string       `json:"game_versions"`
+	Loaders       []string       `json:"loaders"`
+	Files         []mrFile       `json:"files"`
 	Dependencies  []mrDependency `json:"dependencies"`
-	DatePublished string        `json:"date_published"`
+	DatePublished string         `json:"date_published"`
 }
 
 type mrFile struct {

@@ -49,25 +49,25 @@ type ModGalleryImg struct {
 
 // ModVersion is one release of a Modrinth project.
 type ModVersion struct {
-	ID            string         `json:"id"`
-	ProjectID     string         `json:"projectId"`
-	Name          string         `json:"name"`
-	VersionNumber string         `json:"versionNumber"`
-	VersionType   string         `json:"versionType"` // "release" | "beta" | "alpha"
-	GameVersions  []string       `json:"gameVersions"`
-	Loaders       []string       `json:"loaders"`
-	FileName      string         `json:"fileName"`
-	FileURL       string         `json:"fileUrl"`
-	SHA512        string         `json:"sha512"`
-	FileSize      int64          `json:"fileSize"`
+	ID            string          `json:"id"`
+	ProjectID     string          `json:"projectId"`
+	Name          string          `json:"name"`
+	VersionNumber string          `json:"versionNumber"`
+	VersionType   string          `json:"versionType"` // "release" | "beta" | "alpha"
+	GameVersions  []string        `json:"gameVersions"`
+	Loaders       []string        `json:"loaders"`
+	FileName      string          `json:"fileName"`
+	FileURL       string          `json:"fileUrl"`
+	SHA512        string          `json:"sha512"`
+	FileSize      int64           `json:"fileSize"`
 	Dependencies  []ModDependency `json:"dependencies"`
-	DatePublished string         `json:"datePublished"`
+	DatePublished string          `json:"datePublished"`
 }
 
 // ModDependency describes a mod that another mod depends on.
 type ModDependency struct {
 	ProjectID      string `json:"projectId"`
-	VersionID      string `json:"versionId"` // may be empty; only projectId guaranteed
+	VersionID      string `json:"versionId"`      // may be empty; only projectId guaranteed
 	DependencyType string `json:"dependencyType"` // "required" | "optional" | "incompatible" | "embedded"
 }
 
@@ -83,20 +83,20 @@ type ResolvedDependency struct {
 
 // InstalledMod is one item in the installed list (merged from manifest + disk scan).
 type InstalledMod struct {
-	FileName        string `json:"fileName"`
-	DisplayName     string `json:"displayName"`
-	IconURL         string `json:"iconUrl"`       // Modrinth project icon (empty for local)
-	ModID           string `json:"modId"`
-	Source          string `json:"source"`        // "modrinth" | "local"
-	Provider        string `json:"provider"`      // "modrinth" | ""
-	ProjectID       string `json:"projectId"`
-	VersionID       string `json:"versionId"`
-	VersionNumber   string `json:"versionNumber"`
-	Loader          string `json:"loader"`
-	TargetFolder    string `json:"targetFolder"` // "mods" | "plugins"
-	Enabled     bool  `json:"enabled"`
-	SizeBytes   int64 `json:"sizeBytes"`
-	InstalledAt int64 `json:"installedAt"` // unix ms; 0 for local/unknown
+	FileName      string `json:"fileName"`
+	DisplayName   string `json:"displayName"`
+	IconURL       string `json:"iconUrl"` // Modrinth project icon (empty for local)
+	ModID         string `json:"modId"`
+	Source        string `json:"source"`   // "modrinth" | "local"
+	Provider      string `json:"provider"` // "modrinth" | ""
+	ProjectID     string `json:"projectId"`
+	VersionID     string `json:"versionId"`
+	VersionNumber string `json:"versionNumber"`
+	Loader        string `json:"loader"`
+	TargetFolder  string `json:"targetFolder"` // "mods" | "plugins"
+	Enabled       bool   `json:"enabled"`
+	SizeBytes     int64  `json:"sizeBytes"`
+	InstalledAt   int64  `json:"installedAt"` // unix ms; 0 for local/unknown
 }
 
 // ModUpdateInfo holds the result of an update check for one installed mod.
