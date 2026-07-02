@@ -177,13 +177,44 @@ todo list, not a target.
   known `three`/`@react-three/fiber` cross-package type mismatch).
 
 **P1 — Inline styles → Tailwind utilities (Milestone 2)**
-- ~724 `style={{}}` usages remain across the codebase (baseline: 665/60 files
-  at the start of this work; count grew slightly as the ESLint rule reformats
-  reveal more). Migrate tile-by-tile, static values only — genuinely dynamic
-  ones (computed transforms, animation delays, RGL positions) stay inline and
-  are exempt. Start with `frontend/src/components/ui/*` (shared primitives),
-  then per-tile. Flip the `no-restricted-syntax` rule from `warn` → `error` in
-  `frontend/eslint.config.js` per directory as each is cleared.
+- ✅ First slice done: `frontend/src/components/ui/*` (5 files —
+  `SettingRow`, `Toggle`, `Segmented` fully migrated; `ColorSwatch` and the
+  animation-driven parts of `Popover` correctly stay inline as documented
+  `eslint-disable-next-line no-restricted-syntax` exceptions — arbitrary hex
+  colors and open/close-animation transforms aren't visible to Tailwind's
+  static class scanner). Global warning count: 725 → 711. Ratcheted
+  `no-restricted-syntax` from `warn` → `error` for `src/components/ui/**/*.tsx`
+  in `frontend/eslint.config.js` (as a config object placed *after* the global
+  rules block — flat-config applies later array entries' matching rules on
+  top of earlier ones, opposite of what might be assumed). This is the
+  reusable template for future per-directory passes.
+  - Two conversion rules established during this pass: (1) Tailwind v4's JIT
+    scanner only sees literal class-name strings in source — a
+    template-interpolated arbitrary class (e.g. `` `min-w-[${width}px]` ``) is
+    invisible to it and produces no CSS, so prop/state-driven numeric values
+    must stay inline; (2) a boolean ternary between two *static* values (e.g.
+    `checked ? 'var(--accent)' : 'var(--border-hover)'`) is not "genuinely
+    dynamic" — convert to a conditional `className`, reserving `style={{}}`
+    for values that are actually computed/interpolated.
+  - Verified in-browser via the Settings modal (gear icon — pure client
+    state, no Wails backend needed): `Toggle`'s checked/unchecked colors and
+    slide animation, `Segmented`'s Light/Dark/System pill, and `ColorSwatch`
+    all confirmed pixel-correct via computed-style inspection (e.g. the
+    selected pill's `background-color` resolved to `rgb(74, 222, 128)` =
+    `#4ade80`, the accent color, exactly as expected from the `@theme inline`
+    token mapping). `Popover` could not be live-verified the same way — its
+    only real consumers are in the Mods tile (`BrowsePanel.tsx`,
+    `InstalledPanel.tsx`), which calls `EventsOn` on mount and crashes without
+    the Wails bridge (same pre-existing environment limitation as the
+    performance-tile check in the prior session, unrelated to this change).
+    Indirect confirmation instead: `Popover`'s `shadow-[...]` arbitrary-value
+    syntax is identical in form to `Toggle`'s, which *was* verified live
+    (`box-shadow` computed to `rgba(0,0,0,0.3) 0px 1px 3px 0px`, matching the
+    class exactly).
+- ~711 `style={{}}` usages remain across the rest of the codebase (~55 files).
+  Continue tile-by-tile, static values only — genuinely dynamic ones stay
+  inline. Repeat the pattern: convert, then ratchet that directory's
+  `no-restricted-syntax` to `error` with documented exceptions for the rest.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/

@@ -46,4 +46,23 @@ export default tseslint.config(
       ],
     },
   },
+  // Milestone 2 ratchet: components/ui/* has been migrated off inline styles
+  // (agent_docs/HEALTH_CHECKLIST.md), so new ones there are a hard error.
+  // Remaining justified exceptions (genuinely dynamic values) carry a
+  // documented eslint-disable-next-line. Flip more directories to 'error'
+  // here as each is cleared. Flat config applies later entries' matching
+  // rules on top of earlier ones, so this must come after the global block.
+  {
+    files: ['src/components/ui/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='style']",
+          message:
+            'Prefer Tailwind utility classes over inline style={{}}. Inline styles are only for dynamic/computed values.',
+        },
+      ],
+    },
+  },
 )

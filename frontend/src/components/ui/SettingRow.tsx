@@ -8,12 +8,10 @@ interface SettingRowProps {
 
 export function SettingRow({ label, description, children }: SettingRowProps) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{label}</span>
-        {description && (
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{description}</span>
-        )}
+    <div className="border-border-subtle flex items-center justify-between gap-4 border-b-[0.5px] py-3">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-text-primary text-sm">{label}</span>
+        {description && <span className="text-text-muted text-xs">{description}</span>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>

@@ -11,26 +11,23 @@ interface SegmentedProps<T extends string> {
   slide?: boolean
 }
 
-export function Segmented<T extends string>({ options, value, onChange, compact, slide }: SegmentedProps<T>) {
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  compact,
+  slide,
+}: SegmentedProps<T>) {
   const activeIndex = options.findIndex((o) => o.value === value)
 
   if (slide) {
     return (
-      <div
-        className="relative flex shrink-0"
-        style={{
-          border: '0.5px solid var(--border-subtle)',
-          background: 'var(--hover-surface)',
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}
-      >
+      <div className="border-border-subtle bg-hover relative flex shrink-0 overflow-hidden rounded-lg border-[0.5px]">
         <div
-          className="absolute top-0 bottom-0"
+          className="bg-accent absolute top-0 bottom-0 rounded-[7px]"
+          // eslint-disable-next-line no-restricted-syntax -- width/transform computed from options.length and activeIndex, not visible to Tailwind's static scanner
           style={{
             width: `${100 / options.length}%`,
-            background: 'var(--accent)',
-            borderRadius: 7,
             transform: `translateX(${activeIndex * 100}%)`,
             transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)',
           }}
@@ -41,14 +38,9 @@ export function Segmented<T extends string>({ options, value, onChange, compact,
             <button
               key={opt.value}
               onClick={() => onChange(opt.value)}
-              className={`relative z-10 flex-1 ${compact ? 'px-2 py-px' : 'px-3 py-1'} text-xs`}
-              style={{
-                color: active ? 'var(--bg-base)' : 'var(--text-muted)',
-                fontWeight: active ? 600 : 400,
-                background: 'transparent',
-                transition: 'color 200ms',
-                whiteSpace: 'nowrap',
-              }}
+              className={`relative z-10 flex-1 bg-transparent text-xs whitespace-nowrap transition-colors duration-200 ${
+                compact ? 'px-2 py-px' : 'px-3 py-1'
+              } ${active ? 'text-canvas font-semibold' : 'text-text-muted font-normal'}`}
             >
               {opt.label}
             </button>
@@ -59,22 +51,18 @@ export function Segmented<T extends string>({ options, value, onChange, compact,
   }
 
   return (
-    <div
-      className="flex rounded-lg overflow-hidden shrink-0"
-      style={{ border: '0.5px solid var(--border-subtle)', background: 'var(--hover-surface)' }}
-    >
+    <div className="border-border-subtle bg-hover flex shrink-0 overflow-hidden rounded-lg border-[0.5px]">
       {options.map((opt) => {
         const active = opt.value === value
         return (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            className={`${compact ? 'px-2 py-px' : 'px-3 py-1'} text-xs transition-colors`}
-            style={{
-              background: active ? 'var(--accent)' : 'transparent',
-              color: active ? 'var(--bg-base)' : 'var(--text-muted)',
-              fontWeight: active ? 600 : 400,
-            }}
+            className={`text-xs transition-colors ${compact ? 'px-2 py-px' : 'px-3 py-1'} ${
+              active
+                ? 'bg-accent text-canvas font-semibold'
+                : 'text-text-muted bg-transparent font-normal'
+            }`}
           >
             {opt.label}
           </button>

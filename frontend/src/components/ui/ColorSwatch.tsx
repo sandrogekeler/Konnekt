@@ -10,7 +10,8 @@ export function ColorSwatch({ hex, selected, onClick, label }: ColorSwatchProps)
     <button
       onClick={onClick}
       title={label ?? hex}
-      className="w-7 h-7 rounded-full transition-transform hover:scale-110 shrink-0"
+      className="h-7 w-7 shrink-0 rounded-full transition-transform hover:scale-110"
+      // eslint-disable-next-line no-restricted-syntax -- hex is an arbitrary runtime color, not a static token
       style={{
         background: hex,
         outline: selected ? `2.5px solid ${hex}` : '2.5px solid transparent',
