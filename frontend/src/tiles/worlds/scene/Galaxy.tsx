@@ -24,12 +24,16 @@ function planetRadius(totalSize: number): number {
 const GALAXY_SPREAD = 11
 
 export function Galaxy({
-  worlds, focusName, positionsRef, selectedDimension,
-  onSelectWorld, onSelectDimension,
+  worlds,
+  focusName,
+  positionsRef,
+  selectedDimension,
+  onSelectWorld,
+  onSelectDimension,
 }: Props) {
   const spread = GALAXY_SPREAD
-  const step   = worlds.length > 1 ? spread / worlds.length : spread
-  const speedBase  = 0.035
+  const step = worlds.length > 1 ? spread / worlds.length : spread
+  const speedBase = 0.035
   const speedDecay = 0.88
 
   return (
@@ -41,13 +45,12 @@ export function Galaxy({
       <Sun radius={0.55} />
 
       {worlds.map((w, i) => {
-        const orbitRX  = 1.8 + (i + 0.5) * step
-        const orbitRZ  = orbitRX * 0.55
-        const speed    = speedBase * Math.pow(speedDecay, i)
-        const offset   = (i / Math.max(worlds.length, 1)) * Math.PI * 2
-        const r        = planetRadius(w.totalSize)
-        const overworld = w.dimensions.find(d => d.kind === 'overworld')
-        const focused  = focusName === w.name
+        const orbitRX = 1.8 + (i + 0.5) * step
+        const orbitRZ = orbitRX * 0.55
+        const speed = speedBase * Math.pow(speedDecay, i)
+        const offset = (i / Math.max(worlds.length, 1)) * Math.PI * 2
+        const r = planetRadius(w.totalSize)
+        const focused = focusName === w.name
 
         return (
           <group key={w.name}>

@@ -1,6 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/* Semantic tokens exposed as Tailwind utilities (bg-canvas, text-primary, ...).
+   Point at the CSS vars below rather than baking in values, so applySkin()'s
+   runtime overrides (theme/skin/accent) keep working unchanged.
+   Note: don't name a token "base" — it collides with Tailwind's built-in
+   `--text-base` font-size scale key and silently hijacks the `text-base`
+   utility into a text-color rule instead of a font-size rule. */
+@theme inline {
+  --color-canvas: var(--bg-base);
+  --color-elevated: var(--bg-elevated);
+  --color-surface: var(--bg-surface);
+  --color-hover: var(--hover-surface);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-hover: var(--border-hover);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-sun: var(--sun);
+}
 
 @font-face {
   font-family: 'Satoshi';
@@ -11,7 +33,7 @@
 }
 
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   --bg-base: #05060a;
   --bg-elevated: rgba(18, 20, 30, 0.82);
   --bg-surface: rgba(255, 255, 255, 0.025);
@@ -35,7 +57,7 @@
   --sun: rgb(var(--sun-rgb));
 }
 
-[data-theme="light"] {
+[data-theme='light'] {
   --bg-base: #f5f6fa;
   --bg-elevated: rgba(236, 238, 245, 0.82);
   --bg-surface: rgba(0, 0, 0, 0.03);
@@ -44,7 +66,7 @@
   --text-primary: #0b0d12;
   --text-secondary: rgba(0, 0, 0, 0.65);
   --text-muted: rgba(0, 0, 0, 0.45);
-  --text-faint: rgba(0, 0, 0, 0.30);
+  --text-faint: rgba(0, 0, 0, 0.3);
   --hover-surface: rgba(0, 0, 0, 0.05);
   --sun-rgb: 255 216 77;
   --sun: rgb(var(--sun-rgb));
@@ -58,12 +80,12 @@
    CSS variables work in Chromium/WebView2 but rgba surfaces do not, so we use the
    base color directly. */
 :root option,
-[data-theme="dark"] option {
+[data-theme='dark'] option {
   background: #0d0f14;
   color: #ffffff;
 }
 
-[data-theme="light"] option {
+[data-theme='light'] option {
   background: #f5f6fa;
   color: #0b0d12;
 }
@@ -79,7 +101,12 @@ body {
   background-color: var(--bg-base);
   background-image: var(--bg-gradient-overlay);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   height: 100%;
 }
 
@@ -107,8 +134,8 @@ body {
 }
 
 /* Hide native number input spinners — custom ▲▼ buttons used instead */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -133,14 +160,28 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Tile flash: spinning gradient border + outer glow on shift-click / utility placement */
 @keyframes flash-ring-spin {
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 @keyframes flash-ring-fade {
-  0%   { opacity: 0; box-shadow: none; }
-  6%   { opacity: 1; box-shadow: 0 0 20px 4px rgb(var(--accent-rgb) / 0.2); }
-  72%  { opacity: 1; box-shadow: 0 0 20px 4px rgb(var(--accent-rgb) / 0.2); }
-  100% { opacity: 0; box-shadow: none; }
+  0% {
+    opacity: 0;
+    box-shadow: none;
+  }
+  6% {
+    opacity: 1;
+    box-shadow: 0 0 20px 4px rgb(var(--accent-rgb) / 0.2);
+  }
+  72% {
+    opacity: 1;
+    box-shadow: 0 0 20px 4px rgb(var(--accent-rgb) / 0.2);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: none;
+  }
 }
 
 .tile-outer {
@@ -205,17 +246,36 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Startup splash animation */
 @keyframes splash-overlay-fade {
-  0%   { opacity: 1; }
-  75%  { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes splash-word-in {
-  0%   { opacity: 0; transform: scale(0.97); text-shadow: none; }
-  25%  { opacity: 1; transform: scale(1);
-         text-shadow: 0 0 32px rgb(var(--accent-rgb) / 0.5); }
-  75%  { opacity: 1; text-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.35); }
-  100% { opacity: 1; text-shadow: 0 0 16px rgb(var(--accent-rgb) / 0.2); }
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+    text-shadow: none;
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+    text-shadow: 0 0 32px rgb(var(--accent-rgb) / 0.5);
+  }
+  75% {
+    opacity: 1;
+    text-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.35);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 16px rgb(var(--accent-rgb) / 0.2);
+  }
 }
 
 .splash-overlay {
@@ -232,20 +292,55 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Backup carousel — wireframe sphere idle spin */
 @keyframes backup-sphere-spin {
-  0%   { transform: scaleX(1);    }
-  25%  { transform: scaleX(0.05); }
-  50%  { transform: scaleX(-1);   }
-  75%  { transform: scaleX(-0.05);}
-  100% { transform: scaleX(1);    }
+  0% {
+    transform: scaleX(1);
+  }
+  25% {
+    transform: scaleX(0.05);
+  }
+  50% {
+    transform: scaleX(-1);
+  }
+  75% {
+    transform: scaleX(-0.05);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }
 
-@keyframes planet-float-0 { from { transform: translateY(0);    } to { transform: translateY(-5px); } }
-@keyframes planet-float-1 { from { transform: translateY(-3px); } to { transform: translateY(3px);  } }
-@keyframes planet-float-2 { from { transform: translateY(0);    } to { transform: translateY(4px);  } }
+@keyframes planet-float-0 {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-5px);
+  }
+}
+@keyframes planet-float-1 {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(3px);
+  }
+}
+@keyframes planet-float-2 {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .backup-sphere-meridian { animation: none !important; }
-  .backup-planet          { animation: none !important; }
+  .backup-sphere-meridian {
+    animation: none !important;
+  }
+  .backup-planet {
+    animation: none !important;
+  }
 }
 
 .splash-word {
@@ -268,21 +363,24 @@ input[type="number"]::-webkit-outer-spin-button {
   word-break: break-word;
 }
 
-.mod-body h1, .mod-body h2 {
+.mod-body h1,
+.mod-body h2 {
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 1.1em 0 0.4em;
   line-height: 1.3;
 }
-.mod-body h3, .mod-body h4 {
+.mod-body h3,
+.mod-body h4 {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0.9em 0 0.3em;
   line-height: 1.3;
 }
-.mod-body h5, .mod-body h6 {
+.mod-body h5,
+.mod-body h6 {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -302,8 +400,15 @@ input[type="number"]::-webkit-outer-spin-button {
   opacity: 0.8;
 }
 
-.mod-body strong, .mod-body b { font-weight: 600; color: var(--text-primary); }
-.mod-body em, .mod-body i     { font-style: italic; }
+.mod-body strong,
+.mod-body b {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.mod-body em,
+.mod-body i {
+  font-style: italic;
+}
 
 .mod-body hr {
   border: none;
@@ -320,17 +425,22 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Inline images (inside <p> or <td>) stay inline */
-.mod-body p img, .mod-body td img, .mod-body li img {
+.mod-body p img,
+.mod-body td img,
+.mod-body li img {
   display: inline;
   vertical-align: middle;
   margin: 0 2px;
 }
 
-.mod-body ul, .mod-body ol {
+.mod-body ul,
+.mod-body ol {
   padding-left: 1.4em;
   margin: 0 0 0.65em;
 }
-.mod-body li { margin: 0.2em 0; }
+.mod-body li {
+  margin: 0.2em 0;
+}
 
 .mod-body pre {
   background: var(--hover-surface);
@@ -384,13 +494,26 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--text-secondary);
   vertical-align: middle;
 }
-.mod-body tr:nth-child(even) td { background: var(--bg-surface); }
+.mod-body tr:nth-child(even) td {
+  background: var(--bg-surface);
+}
 
 /* HTML elements Modrinth commonly uses */
-.mod-body center { text-align: center; display: block; }
-.mod-body big     { font-size: 1.15em; }
-.mod-body small   { font-size: 0.9em; }
-.mod-body font    { color: inherit; }
+.mod-body center {
+  text-align: center;
+  display: block;
+}
+.mod-body big {
+  font-size: 1.15em;
+}
+.mod-body small {
+  font-size: 0.9em;
+}
+.mod-body font {
+  color: inherit;
+}
 
 /* First heading needs no top margin */
-.mod-body > *:first-child { margin-top: 0; }
+.mod-body > *:first-child {
+  margin-top: 0;
+}

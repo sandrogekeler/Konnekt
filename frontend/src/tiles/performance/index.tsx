@@ -32,7 +32,12 @@ function tpsStrokeColor(tps: number): string {
 
 function fmtTime(ts: number): string {
   const d = new Date(ts)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  return d.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
 }
 
 function fmtTps(tps: number): string {
@@ -61,7 +66,7 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
   }))
 
   return (
-    <div className="flex flex-col h-full px-3 py-2 gap-2">
+    <div className="flex h-full flex-col gap-2 px-3 py-2">
       <div className="grid grid-cols-2 gap-x-3 gap-y-1">
         <StatCell label="TPS" value={fmtTps(tps)} valueClass={tpsColor(tps)} />
         <StatCell label="CPU" value={`${cpu.toFixed(1)}%`} />
@@ -73,7 +78,10 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
       </div>
 
       {ramTotal > 0 && (
-        <div className="h-1 rounded-full overflow-hidden shrink-0" style={{ background: 'var(--hover-surface)' }}>
+        <div
+          className="h-1 shrink-0 overflow-hidden rounded-full"
+          style={{ background: 'var(--hover-surface)' }}
+        >
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               ramPct > 80 ? 'bg-[var(--danger)]' : ramPct > 60 ? 'bg-[var(--warning)]' : 'bg-accent'
@@ -83,7 +91,10 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 rounded overflow-hidden" style={{ border: '0.5px solid var(--border-subtle)' }}>
+      <div
+        className="min-h-0 flex-1 overflow-hidden rounded"
+        style={{ border: '0.5px solid var(--border-subtle)' }}
+      >
         {sparkData.length > 1 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
@@ -102,7 +113,10 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
                   const labels: Record<string, string> = { tps: 'TPS', ramPct: 'RAM%', cpu: 'CPU%' }
                   const units: Record<string, string> = { tps: '', ramPct: '%', cpu: '%' }
                   const num = value as number
-                  return [`${num.toFixed(1)}${units[name as string] ?? ''}`, labels[name as string] ?? name]
+                  return [
+                    `${num.toFixed(1)}${units[name as string] ?? ''}`,
+                    labels[name as string] ?? name,
+                  ]
                 }}
                 labelFormatter={(_, payload) => {
                   const ts = payload?.[0]?.payload?.ts as number | undefined
@@ -140,7 +154,10 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-full text-xs" style={{ color: 'var(--text-faint)' }}>
+          <div
+            className="flex h-full items-center justify-center text-xs"
+            style={{ color: 'var(--text-faint)' }}
+          >
             waiting for data…
           </div>
         )}
@@ -149,11 +166,19 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
   )
 }
 
-function StatCell({ label, value, valueClass = 'text-white' }: { label: string; value: string; valueClass?: string }) {
+function StatCell({
+  label,
+  value,
+  valueClass = 'text-white',
+}: {
+  label: string
+  value: string
+  valueClass?: string
+}) {
   return (
     <div className="flex flex-col">
-      <span className="text-white/40 text-[10px]">{label}</span>
-      <span className={`text-xs font-mono font-medium ${valueClass}`}>{value}</span>
+      <span className="text-[10px] text-white/40">{label}</span>
+      <span className={`font-mono text-xs font-medium ${valueClass}`}>{value}</span>
     </div>
   )
 }
@@ -193,33 +218,45 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
   }, [cutoff])
 
   // Cleanup on unmount.
-  useEffect(() => () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }, [])
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    },
+    [],
+  )
 
-  const changeRange = useCallback((newRange: TimeRange) => {
-    if (newRange === range) return
-    setRange(newRange)
-    if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
-    const from = animCutoffRef.current
-    const to = anchor - newRange * 60 * 1000
-    const start = performance.now()
-    isAnimatingRef.current = true
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / 380, 1)
-      const eased = 1 - Math.pow(1 - t, 3)
-      const v = from + (to - from) * eased
-      animCutoffRef.current = v
-      setAnimCutoffRaw(v)
-      if (t < 1) { rafRef.current = requestAnimationFrame(tick) }
-      else { rafRef.current = null; isAnimatingRef.current = false }
-    }
-    rafRef.current = requestAnimationFrame(tick)
-  }, [range, anchor])
+  const changeRange = useCallback(
+    (newRange: TimeRange) => {
+      if (newRange === range) return
+      setRange(newRange)
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+      const from = animCutoffRef.current
+      const to = anchor - newRange * 60 * 1000
+      const start = performance.now()
+      isAnimatingRef.current = true
+      const tick = (now: number) => {
+        const t = Math.min((now - start) / 380, 1)
+        const eased = 1 - Math.pow(1 - t, 3)
+        const v = from + (to - from) * eased
+        animCutoffRef.current = v
+        setAnimCutoffRaw(v)
+        if (t < 1) {
+          rafRef.current = requestAnimationFrame(tick)
+        } else {
+          rafRef.current = null
+          isAnimatingRef.current = false
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    },
+    [range, anchor],
+  )
 
   // filtered is non-animated — used for the table and summary stats.
-  const filtered = useMemo(
-    () => history.filter((s) => s.timestamp >= cutoff),
-    [history, cutoff],
-  )
+  const filtered = useMemo(() => history.filter((s) => s.timestamp >= cutoff), [history, cutoff])
 
   // chartData is animated — filtered by the tweening animCutoff.
   const chartData = useMemo(
@@ -228,8 +265,12 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
         .filter((s) => s.timestamp >= animCutoff)
         .map((s) => ({
           ts: s.timestamp,
-          tps: hidden.has('tps') ? null : (s.tps < 0 ? null : s.tps),
-          ramPct: hidden.has('ramPct') ? null : (s.ramTotalMB > 0 ? Math.round((s.ramUsedMB / s.ramTotalMB) * 100) : null),
+          tps: hidden.has('tps') ? null : s.tps < 0 ? null : s.tps,
+          ramPct: hidden.has('ramPct')
+            ? null
+            : s.ramTotalMB > 0
+              ? Math.round((s.ramUsedMB / s.ramTotalMB) * 100)
+              : null,
           cpu: hidden.has('cpu') ? null : Math.round(s.cpuPercent),
           players: hidden.has('players') ? null : s.players,
         })),
@@ -255,10 +296,12 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
     const valid = filtered.filter((s) => s.tps >= 0)
     const tpsList = valid.map((s) => s.tps)
     const ramList = filtered.map((s) => s.ramUsedMB)
-    const pctList = filtered.filter((s) => s.ramTotalMB > 0).map((s) => (s.ramUsedMB / s.ramTotalMB) * 100)
+    const pctList = filtered
+      .filter((s) => s.ramTotalMB > 0)
+      .map((s) => (s.ramUsedMB / s.ramTotalMB) * 100)
     const cpuList = filtered.map((s) => s.cpuPercent)
     const plList = filtered.map((s) => s.players)
-    const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0
+    const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0)
     return {
       tps: { min: Math.min(...tpsList), max: Math.max(...tpsList), avg: avg(tpsList) },
       ram: { min: Math.min(...ramList), max: Math.max(...ramList), avg: avg(ramList) },
@@ -271,14 +314,18 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
   const toggleHide = (key: string) => {
     setHidden((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortKey(key); setSortDir('desc') }
+    else {
+      setSortKey(key)
+      setSortDir('desc')
+    }
   }
 
   const latest = history[history.length - 1]
@@ -288,28 +335,30 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
   const tpsStroke = tpsStrokeColor(latestTps)
 
   return (
-    <div className="flex flex-col h-full px-4 py-3 gap-3 overflow-hidden">
+    <div className="flex h-full flex-col gap-3 overflow-hidden px-4 py-3">
       {/* time range selector */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-white/40 text-xs">Window:</span>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-xs text-white/40">Window:</span>
         {TIME_RANGES.map(({ label, minutes }) => (
           <button
             key={label}
             onClick={() => changeRange(minutes)}
-            className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+            className={`rounded border px-2 py-0.5 text-xs transition-colors ${
               range === minutes
                 ? 'border-accent/60 text-accent bg-accent/10'
-                : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)]'
+                : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
             }`}
           >
             {label}
           </button>
         ))}
-        <span className="ml-auto text-xs" style={{ color: 'var(--text-faint)' }}>{filtered.length} samples</span>
+        <span className="ml-auto text-xs" style={{ color: 'var(--text-faint)' }}>
+          {filtered.length} samples
+        </span>
       </div>
 
       {/* chart */}
-      <div className="flex-[3] min-h-0">
+      <div className="min-h-0 flex-[3]">
         {chartData.length > 1 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
@@ -353,15 +402,35 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
                 }}
                 labelFormatter={(v) => fmtTime(v as number)}
                 formatter={(value, name) => {
-                  const labels: Record<string, string> = { tps: 'TPS', ramPct: 'RAM%', cpu: 'CPU%', players: 'Players' }
+                  const labels: Record<string, string> = {
+                    tps: 'TPS',
+                    ramPct: 'RAM%',
+                    cpu: 'CPU%',
+                    players: 'Players',
+                  }
                   return [value === null ? '—' : value, labels[name as string] ?? name]
                 }}
               />
               <Legend
                 wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
                 formatter={(value) => {
-                  const labels: Record<string, string> = { tps: 'TPS', ramPct: 'RAM%', cpu: 'CPU%', players: 'Players' }
-                  return <span style={{ color: hidden.has(value) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)' }}>{labels[value] ?? value}</span>
+                  const labels: Record<string, string> = {
+                    tps: 'TPS',
+                    ramPct: 'RAM%',
+                    cpu: 'CPU%',
+                    players: 'Players',
+                  }
+                  return (
+                    <span
+                      style={{
+                        color: hidden.has(value)
+                          ? 'rgba(255,255,255,0.25)'
+                          : 'rgba(255,255,255,0.7)',
+                      }}
+                    >
+                      {labels[value] ?? value}
+                    </span>
+                  )
                 }}
                 onClick={(e) => toggleHide(e.dataKey as string)}
               />
@@ -408,15 +477,19 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-full text-white/20 text-sm">
-            <span style={{ color: 'var(--text-faint)' }}>{history.length === 0 ? 'No data yet — start the server to begin recording' : 'No data in this time window'}</span>
+          <div className="flex h-full items-center justify-center text-sm text-white/20">
+            <span style={{ color: 'var(--text-faint)' }}>
+              {history.length === 0
+                ? 'No data yet — start the server to begin recording'
+                : 'No data in this time window'}
+            </span>
           </div>
         )}
       </div>
 
       {/* sortable history table */}
-      <div className="flex-[2] min-h-0 overflow-auto rounded border border-white/5">
-        <table className="w-full text-xs font-mono border-collapse">
+      <div className="min-h-0 flex-[2] overflow-auto rounded border border-white/5">
+        <table className="w-full border-collapse font-mono text-xs">
           <thead className="sticky top-0" style={{ backgroundColor: '#0a0c12' }}>
             <tr>
               {(
@@ -432,11 +505,11 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
                 <th
                   key={key}
                   onClick={() => handleSort(key)}
-                  className="text-left px-2 py-1 text-white/40 font-medium cursor-pointer hover:text-white/70 select-none border-b border-white/5 whitespace-nowrap"
+                  className="cursor-pointer border-b border-white/5 px-2 py-1 text-left font-medium whitespace-nowrap text-white/40 select-none hover:text-white/70"
                 >
                   {label}
                   {sortKey === key && (
-                    <span className="ml-1 text-accent">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                    <span className="text-accent ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
               ))}
@@ -447,16 +520,20 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
               <tr className="border-b border-white/10 bg-white/[0.03]">
                 <td className="px-2 py-1 text-white/30 italic">min·avg·max</td>
                 <td className={`px-2 py-1 ${tpsColor(summary.tps.avg)}`}>
-                  {summary.tps.min.toFixed(1)} · {summary.tps.avg.toFixed(1)} · {summary.tps.max.toFixed(1)}
+                  {summary.tps.min.toFixed(1)} · {summary.tps.avg.toFixed(1)} ·{' '}
+                  {summary.tps.max.toFixed(1)}
                 </td>
                 <td className="px-2 py-1 text-white/50">
-                  {Math.round(summary.ram.min)} · {Math.round(summary.ram.avg)} · {Math.round(summary.ram.max)}
+                  {Math.round(summary.ram.min)} · {Math.round(summary.ram.avg)} ·{' '}
+                  {Math.round(summary.ram.max)}
                 </td>
                 <td className="px-2 py-1 text-white/50">
-                  {summary.pct.min.toFixed(0)}% · {summary.pct.avg.toFixed(0)}% · {summary.pct.max.toFixed(0)}%
+                  {summary.pct.min.toFixed(0)}% · {summary.pct.avg.toFixed(0)}% ·{' '}
+                  {summary.pct.max.toFixed(0)}%
                 </td>
                 <td className="px-2 py-1 text-white/50">
-                  {summary.cpu.min.toFixed(0)}% · {summary.cpu.avg.toFixed(0)}% · {summary.cpu.max.toFixed(0)}%
+                  {summary.cpu.min.toFixed(0)}% · {summary.cpu.avg.toFixed(0)}% ·{' '}
+                  {summary.cpu.max.toFixed(0)}%
                 </td>
                 <td className="px-2 py-1 text-white/50">
                   {summary.players.min} · {summary.players.avg.toFixed(1)} · {summary.players.max}
@@ -471,7 +548,10 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
               </tr>
             )}
             {tableRows.map((row) => (
-              <tr key={row.timestamp} className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors">
+              <tr
+                key={row.timestamp}
+                className="border-b border-white/[0.04] transition-colors hover:bg-white/[0.03]"
+              >
                 <td className="px-2 py-1 text-white/40">{fmtTime(row.timestamp)}</td>
                 <td className={`px-2 py-1 font-medium ${tpsColor(row.tps)}`}>{fmtTps(row.tps)}</td>
                 <td className="px-2 py-1 text-white/60">

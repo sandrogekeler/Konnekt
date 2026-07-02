@@ -17,16 +17,24 @@ interface ServerConfigStore {
   setActiveId: (id: string) => Promise<void>
 }
 
-export const useServerConfigStore = create<ServerConfigStore>((set, get) => ({
+export const useServerConfigStore = create<ServerConfigStore>((set) => ({
   configs: [],
   activeId: '',
 
   loadConfigs: async () => {
     let configs: ServerConfig[] = []
-    try { configs = await GetServerConfigs() } catch { /* Wails IPC unavailable */ }
+    try {
+      configs = await GetServerConfigs()
+    } catch {
+      /* Wails IPC unavailable */
+    }
 
     let activeId = ''
-    try { activeId = await GetActiveServerID() } catch { /* Wails IPC unavailable */ }
+    try {
+      activeId = await GetActiveServerID()
+    } catch {
+      /* Wails IPC unavailable */
+    }
 
     if (!activeId || !configs.find((c) => c.id === activeId)) {
       activeId = configs[0]?.id ?? ''
@@ -36,19 +44,26 @@ export const useServerConfigStore = create<ServerConfigStore>((set, get) => ({
   },
 
   saveConfig: async (cfg: ServerConfig) => {
-    try { await SaveServerConfig(cfg) } catch { /* best-effort */ }
+    try {
+      await SaveServerConfig(cfg)
+    } catch {
+      /* best-effort */
+    }
     set((s) => {
       const idx = s.configs.findIndex((c) => c.id === cfg.id)
-      const configs = idx >= 0
-        ? s.configs.map((c, i) => (i === idx ? cfg : c))
-        : [...s.configs, cfg]
+      const configs =
+        idx >= 0 ? s.configs.map((c, i) => (i === idx ? cfg : c)) : [...s.configs, cfg]
       const activeId = s.activeId || cfg.id
       return { configs, activeId }
     })
   },
 
   deleteConfig: async (id: string) => {
-    try { await DeleteServerConfig(id) } catch { /* best-effort */ }
+    try {
+      await DeleteServerConfig(id)
+    } catch {
+      /* best-effort */
+    }
     set((s) => {
       const configs = s.configs.filter((c) => c.id !== id)
       const activeId = s.activeId === id ? (configs[0]?.id ?? '') : s.activeId
@@ -57,7 +72,11 @@ export const useServerConfigStore = create<ServerConfigStore>((set, get) => ({
   },
 
   setActiveId: async (id: string) => {
-    try { await SetActiveServerID(id) } catch { /* best-effort */ }
+    try {
+      await SetActiveServerID(id)
+    } catch {
+      /* best-effort */
+    }
     set({ activeId: id })
   },
 }))

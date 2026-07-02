@@ -1,0 +1,32 @@
+# https://lefthook.dev/configuration/
+#
+# Runs incrementally on staged files only — this repo has a long-standing
+# formatting style that predates Prettier (see agent_docs/HEALTH_CHECKLIST.md),
+# so we format-on-touch rather than reformatting the whole tree at once.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: frontend format
+      root: "frontend/"
+      glob: "*.{ts,tsx,css}"
+      run: pnpm exec prettier --write {staged_files}
+      stage_fixed: true
+
+    - name: frontend lint
+      root: "frontend/"
+      glob: "*.{ts,tsx}"
+      run: pnpm exec eslint {staged_files}
+
+    - name: frontend typecheck
+      root: "frontend/"
+      glob: "*.{ts,tsx}"
+      run: pnpm run typecheck
+
+    - name: go format
+      glob: "*.go"
+      run: gofmt -w {staged_files}
+      stage_fixed: true
+
+    - name: go vet
+      glob: "*.go"
+      run: go vet ./...

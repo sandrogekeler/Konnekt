@@ -32,7 +32,9 @@ function App() {
     if (!settingsLoaded || !activeId || autoStarted.current) return
     if (useSettingsStore.getState().settings.autoStartActiveServer) {
       autoStarted.current = true
-      StartServer(activeId).catch(() => { /* already running or no server */ })
+      StartServer(activeId).catch(() => {
+        /* already running or no server */
+      })
     }
   }, [settingsLoaded, activeId])
 
@@ -40,8 +42,16 @@ function App() {
     let cleanup: (() => void) | undefined
     try {
       cleanup = EventsOn(EVENTS.EULA_REQUIRED, () => setEulaRequired(true))
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   // Batch log lines so the console re-renders at most ~7×/sec instead of once
@@ -53,8 +63,16 @@ function App() {
       cleanup = EventsOn(EVENTS.LOG_LINE, (data: { timestamp: string; line: string }) => {
         pendingLines.current.push(data)
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
   useEffect(() => {
     const id = setInterval(() => {
@@ -76,8 +94,16 @@ function App() {
           emitNotification('crash', 'Server stopped unexpectedly')
         }
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   // Player join notifications
@@ -90,8 +116,16 @@ function App() {
           emitNotification('join', `${name} joined the game`)
         }
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   // Backup / restore notifications + sidebar progress tracking
@@ -112,18 +146,42 @@ function App() {
         useProcessesStore.getState().finish(data?.serverID ?? 'backup', 'done')
         emitNotification('info', 'Backup completed')
       })
-      c4 = EventsOn(EVENTS.RESTORE_COMPLETED, () => { emitNotification('info', 'Restore completed') })
+      c4 = EventsOn(EVENTS.RESTORE_COMPLETED, () => {
+        emitNotification('info', 'Restore completed')
+      })
       c5 = EventsOn(EVENTS.BACKUP_FAILED, (data?: { serverID?: string; error?: string }) => {
         useProcessesStore.getState().finish(data?.serverID ?? 'backup', 'failed')
         emitNotification('crash', `Backup failed${data?.error ? ': ' + data.error : ''}`)
       })
-    } catch { /* non-Wails context */ }
+    } catch {
+      /* non-Wails context */
+    }
     return () => {
-      try { c1?.() } catch { }
-      try { c2?.() } catch { }
-      try { c3?.() } catch { }
-      try { c4?.() } catch { }
-      try { c5?.() } catch { }
+      try {
+        c1?.()
+      } catch {
+        /* teardown no-op */
+      }
+      try {
+        c2?.()
+      } catch {
+        /* teardown no-op */
+      }
+      try {
+        c3?.()
+      } catch {
+        /* teardown no-op */
+      }
+      try {
+        c4?.()
+      } catch {
+        /* teardown no-op */
+      }
+      try {
+        c5?.()
+      } catch {
+        /* teardown no-op */
+      }
     }
   }, [])
 
@@ -133,25 +191,42 @@ function App() {
     let c2: (() => void) | undefined
     let c3: (() => void) | undefined
     try {
-      c1 = EventsOn(EVENTS.MOD_INSTALL_PROGRESS, (d?: { serverID?: string; fileName?: string; percent?: number }) => {
-        const key = 'mod:' + (d?.serverID ?? '')
-        const store = useProcessesStore.getState()
-        if (!store.processes[key]) {
-          store.start(key, `Downloading ${d?.fileName ?? 'mod'}…`)
-        }
-        store.updateProgress(key, d?.percent ?? 0)
-      })
+      c1 = EventsOn(
+        EVENTS.MOD_INSTALL_PROGRESS,
+        (d?: { serverID?: string; fileName?: string; percent?: number }) => {
+          const key = 'mod:' + (d?.serverID ?? '')
+          const store = useProcessesStore.getState()
+          if (!store.processes[key]) {
+            store.start(key, `Downloading ${d?.fileName ?? 'mod'}…`)
+          }
+          store.updateProgress(key, d?.percent ?? 0)
+        },
+      )
       c2 = EventsOn(EVENTS.MOD_INSTALLED, (d?: { serverID?: string }) => {
         useProcessesStore.getState().finish('mod:' + (d?.serverID ?? ''), 'done')
       })
       c3 = EventsOn(EVENTS.MOD_INSTALL_FAILED, (d?: { serverID?: string }) => {
         useProcessesStore.getState().finish('mod:' + (d?.serverID ?? ''), 'failed')
       })
-    } catch { /* non-Wails context */ }
+    } catch {
+      /* non-Wails context */
+    }
     return () => {
-      try { c1?.() } catch { }
-      try { c2?.() } catch { }
-      try { c3?.() } catch { }
+      try {
+        c1?.()
+      } catch {
+        /* teardown no-op */
+      }
+      try {
+        c2?.()
+      } catch {
+        /* teardown no-op */
+      }
+      try {
+        c3?.()
+      } catch {
+        /* teardown no-op */
+      }
     }
   }, [])
 
@@ -160,11 +235,20 @@ function App() {
     let cleanup: (() => void) | undefined
     try {
       cleanup = EventsOn(EVENTS.SCHEDULE_NOTIFY, (data: { kind: string; message: string }) => {
-        const kind = (['info', 'warn', 'error'].includes(data.kind) ? data.kind : 'info') as 'info' | 'warn' | 'error'
+        const kind = (['info', 'warn', 'error'].includes(data.kind) ? data.kind : 'info') as
+          'info' | 'warn' | 'error'
         emitNotification(kind, data.message)
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   // Server started notification
@@ -174,8 +258,16 @@ function App() {
       cleanup = EventsOn(EVENTS.SERVER_STARTED, () => {
         emitNotification('info', 'Server started')
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   // Player left notifications — shares the join toggle (player-activity alerts)
@@ -188,8 +280,16 @@ function App() {
           emitNotification('join', `${name} left the game`)
         }
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   // Low-TPS warning — edge-triggered with 14/15 hysteresis so a sustained dip
@@ -205,18 +305,26 @@ function App() {
           lowTpsWarned.current = false
         }
       })
-    } catch { /* non-Wails context */ }
-    return () => { try { cleanup?.() } catch { } }
+    } catch {
+      /* non-Wails context */
+    }
+    return () => {
+      try {
+        cleanup?.()
+      } catch {
+        /* teardown no-op */
+      }
+    }
   }, [])
 
   return (
     <div className="flex h-screen overflow-hidden">
       <aside
-        className="w-48 shrink-0 flex flex-col overflow-y-auto"
+        className="flex w-48 shrink-0 flex-col overflow-y-auto"
         style={{ borderRight: '0.5px solid var(--border-subtle)' }}
       >
         <div
-          className="px-3 py-3 shrink-0 flex items-center justify-between"
+          className="flex shrink-0 items-center justify-between px-3 py-3"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
         >
           <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--accent)' }}>
@@ -224,10 +332,14 @@ function App() {
           </span>
           <button
             onClick={() => setSettingsOpen(true)}
-            className="w-6 h-6 flex items-center justify-center rounded transition-colors text-sm"
+            className="flex h-6 w-6 items-center justify-center rounded text-sm transition-colors"
             style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+            }}
             title="Settings"
           >
             ⚙
@@ -248,17 +360,9 @@ function App() {
         <Dashboard />
       </main>
 
-      {eulaRequired && (
-        <EulaModal
-          serverId={activeId}
-          onClose={() => setEulaRequired(false)}
-        />
-      )}
+      {eulaRequired && <EulaModal serverId={activeId} onClose={() => setEulaRequired(false)} />}
 
-      <SettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
 }

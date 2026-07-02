@@ -5,14 +5,14 @@ import { fmtBytes, fmtDate, extractID } from './format'
 
 const KIND_COLOR: Record<string, string> = {
   overworld: '#22c55e',
-  nether:    '#ef4444',
-  the_end:   '#a78bfa',
+  nether: '#ef4444',
+  the_end: '#a78bfa',
 }
 
 const KIND_LABEL: Record<string, string> = {
   overworld: 'Overworld',
-  nether:    'Nether',
-  the_end:   'The End',
+  nether: 'Nether',
+  the_end: 'The End',
 }
 
 interface ServerInfoPanelProps {
@@ -40,9 +40,10 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
   }, [onClose])
 
   function toggleWorld(name: string) {
-    setExpandedWorlds(prev => {
+    setExpandedWorlds((prev) => {
       const next = new Set(prev)
-      next.has(name) ? next.delete(name) : next.add(name)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
       return next
     })
   }
@@ -51,7 +52,7 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
 
   return (
     <div
-      className="absolute right-0 top-0 bottom-0 overflow-y-auto flex flex-col"
+      className="absolute top-0 right-0 bottom-0 flex flex-col overflow-y-auto"
       style={{
         width: '42%',
         minWidth: 230,
@@ -64,25 +65,31 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
     >
       {/* Header */}
       <div
-        className="flex items-start justify-between gap-2 px-4 pt-5 pb-4 shrink-0"
+        className="flex shrink-0 items-start justify-between gap-2 px-4 pt-5 pb-4"
         style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
       >
-        <div className="flex flex-col gap-1.5 min-w-0">
-          <span className="font-mono text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="truncate font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
             {displayLabel}
           </span>
           {backup.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {backup.tags.map(tag => <TagPill key={tag} tag={tag} />)}
+              {backup.tags.map((tag) => (
+                <TagPill key={tag} tag={tag} />
+              ))}
             </div>
           )}
         </div>
         <button
           onClick={onClose}
-          className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-xs font-mono mt-0.5"
+          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded font-mono text-xs"
           style={{ color: 'var(--text-faint)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'
+          }}
         >
           ✕
         </button>
@@ -90,28 +97,32 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
 
       {/* Meta */}
       <div
-        className="flex flex-col px-4 py-3 shrink-0"
+        className="flex shrink-0 flex-col px-4 py-3"
         style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
       >
         <Row label="created" value={fmtDate(backup.createdAt)} />
-        <Row label="size"    value={fmtBytes(backup.sizeBytes)} />
-        <Row label="file"    value={backup.filename} mono />
+        <Row label="size" value={fmtBytes(backup.sizeBytes)} />
+        <Row label="file" value={backup.filename} mono />
       </div>
 
       {/* Worlds section */}
       <div className="flex flex-col">
         <button
-          className="flex items-center justify-between px-4 py-3 shrink-0 w-full text-left"
+          className="flex w-full shrink-0 items-center justify-between px-4 py-3 text-left"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-          onClick={() => setWorldsOpen(o => !o)}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.025)' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+          onClick={() => setWorldsOpen((o) => !o)}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.025)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+          }}
         >
-          <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+          <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
             worlds{worlds.length > 0 ? ` (${worlds.length})` : ''}
           </span>
           <span
-            className="text-xs font-mono"
+            className="font-mono text-xs"
             style={{
               color: 'var(--text-faint)',
               display: 'inline-block',
@@ -123,19 +134,21 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
           </span>
         </button>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateRows: worldsOpen ? '1fr' : '0fr',
-          transition: 'grid-template-rows 200ms ease',
-          overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateRows: worldsOpen ? '1fr' : '0fr',
+            transition: 'grid-template-rows 200ms ease',
+            overflow: 'hidden',
+          }}
+        >
           <div style={{ minHeight: 0, overflow: 'hidden' }} className="flex flex-col">
             {worlds.length === 0 ? (
-              <div className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+              <div className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
                 No world data found in this backup.
               </div>
             ) : (
-              worlds.map(world => (
+              worlds.map((world) => (
                 <WorldRow
                   key={world.name}
                   world={world}
@@ -151,31 +164,45 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
   )
 }
 
-function WorldRow({ world, expanded, onToggle }: { world: WorldSystem; expanded: boolean; onToggle: () => void }) {
+function WorldRow({
+  world,
+  expanded,
+  onToggle,
+}: {
+  world: WorldSystem
+  expanded: boolean
+  onToggle: () => void
+}) {
   const displayName = world.meta?.found && world.meta.levelName ? world.meta.levelName : world.name
 
   return (
     <div style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
       <button
-        className="flex items-center justify-between w-full px-4 py-2 text-left"
+        className="flex w-full items-center justify-between px-4 py-2 text-left"
         onClick={onToggle}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.025)' }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+        onMouseEnter={(e) => {
+          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.025)'
+        }}
+        onMouseLeave={(e) => {
+          ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+        }}
       >
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="text-xs font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="truncate font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
             {displayName}
           </span>
           {world.active && (
-            <span className="text-xs font-mono" style={{ color: '#22c55e' }}>active</span>
+            <span className="font-mono text-xs" style={{ color: '#22c55e' }}>
+              active
+            </span>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
             {fmtBytes(world.totalSize)}
           </span>
           <span
-            className="text-xs font-mono"
+            className="font-mono text-xs"
             style={{
               color: 'var(--text-faint)',
               display: 'inline-block',
@@ -188,19 +215,24 @@ function WorldRow({ world, expanded, onToggle }: { world: WorldSystem; expanded:
         </div>
       </button>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateRows: expanded ? '1fr' : '0fr',
-        transition: 'grid-template-rows 200ms ease',
-        overflow: 'hidden',
-      }}>
-        <div style={{ minHeight: 0, overflow: 'hidden' }} className="flex flex-col gap-1.5 px-5 pt-2 pb-3">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: expanded ? '1fr' : '0fr',
+          transition: 'grid-template-rows 200ms ease',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{ minHeight: 0, overflow: 'hidden' }}
+          className="flex flex-col gap-1.5 px-5 pt-2 pb-3"
+        >
           {world.dimensions && world.dimensions.length > 0 ? (
-            world.dimensions.map(dim => (
-              <DimRow key={dim.kind} kind={dim.kind} size={dim.size} />
-            ))
+            world.dimensions.map((dim) => <DimRow key={dim.kind} kind={dim.kind} size={dim.size} />)
           ) : (
-            <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>No dimension data.</span>
+            <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
+              No dimension data.
+            </span>
           )}
         </div>
       </div>
@@ -211,9 +243,11 @@ function WorldRow({ world, expanded, onToggle }: { world: WorldSystem; expanded:
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-0.5">
-      <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-faint)' }}>{label}</span>
+      <span className="shrink-0 font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
+        {label}
+      </span>
       <span
-        className="text-xs text-right truncate"
+        className="truncate text-right text-xs"
         style={{ color: 'var(--text-secondary)', fontFamily: mono ? 'monospace' : undefined }}
       >
         {value}
@@ -226,12 +260,12 @@ function DimRow({ kind, size }: { kind: string; size: number }) {
   const color = KIND_COLOR[kind] ?? '#60a5fa'
   return (
     <div className="flex items-center gap-2">
-      <div className="rounded-full shrink-0" style={{ width: 6, height: 6, background: color }} />
-      <span className="text-xs font-mono flex-1" style={{ color: 'var(--text-secondary)' }}>
+      <div className="shrink-0 rounded-full" style={{ width: 6, height: 6, background: color }} />
+      <span className="flex-1 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
         {KIND_LABEL[kind] ?? kind}
       </span>
       {size > 0 && (
-        <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+        <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
           {fmtBytes(size)}
         </span>
       )}
@@ -242,7 +276,7 @@ function DimRow({ kind, size }: { kind: string; size: number }) {
 function TagPill({ tag }: { tag: string }) {
   return (
     <span
-      className="inline-flex items-center px-1.5 py-px text-xs font-mono rounded"
+      className="inline-flex items-center rounded px-1.5 py-px font-mono text-xs"
       style={{
         background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
         color: 'var(--accent)',

@@ -27,12 +27,24 @@ interface Props {
 type DetailTab = 'about' | 'gallery' | 'versions'
 
 export function ContentDetailPanel({
-  project, projectLoading,
-  versions, versionsLoading,
-  installing, installError,
+  project,
+  projectLoading,
+  versions,
+  versionsLoading,
+  installing,
+  installError,
   moreByAuthorProjects,
-  onGetVersions, onGetAllVersions, onResolveDeps, onInstall, onInstallLatest,
-  onClose, onSelectProject, installedProjectIds,
+  // onResolveDeps is unused here: dependency resolution now surfaces via the
+  // isDepsRequiredError thrown from onInstall/onInstallLatest below. Left in
+  // Props for caller compatibility.
+  onGetVersions,
+  onGetAllVersions,
+  onResolveDeps: _onResolveDeps,
+  onInstall,
+  onInstallLatest,
+  onClose,
+  onSelectProject,
+  installedProjectIds,
 }: Props) {
   const [tab, setTab] = useState<DetailTab>('about')
   const [galleryIdx, setGalleryIdx] = useState(0)
@@ -105,47 +117,64 @@ export function ContentDetailPanel({
       >
         {/* Header */}
         <div
-          className="flex items-start gap-2.5 px-4 pt-4 pb-3 shrink-0"
+          className="flex shrink-0 items-start gap-2.5 px-4 pt-4 pb-3"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
         >
           {project.iconUrl ? (
             <img
               src={project.iconUrl}
               alt=""
-              className="rounded shrink-0"
+              className="shrink-0 rounded"
               style={{ width: 42, height: 42, objectFit: 'cover' }}
             />
           ) : (
             <div
-              className="rounded shrink-0 flex items-center justify-center text-xs font-mono"
-              style={{ width: 42, height: 42, background: 'var(--border-subtle)', color: 'var(--text-faint)' }}
+              className="flex shrink-0 items-center justify-center rounded font-mono text-xs"
+              style={{
+                width: 42,
+                height: 42,
+                background: 'var(--border-subtle)',
+                color: 'var(--text-faint)',
+              }}
             >
               &lt;&gt;
             </div>
           )}
 
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+          <div className="min-w-0 flex-1">
+            <div
+              className="truncate text-sm font-semibold"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {project.title}
             </div>
             {project.author && (
-              <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+              <div className="mt-0.5 truncate text-xs" style={{ color: 'var(--text-muted)' }}>
                 by {project.author}
               </div>
             )}
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <div className="mt-1 flex flex-wrap items-center gap-3">
               {project.downloads > 0 && (
-                <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                <span
+                  className="font-mono text-xs"
+                  style={{ color: 'var(--text-faint)', fontSize: 10 }}
+                >
                   ↓ {fmtCount(project.downloads)}
                 </span>
               )}
               {project.follows > 0 && (
-                <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                <span
+                  className="font-mono text-xs"
+                  style={{ color: 'var(--text-faint)', fontSize: 10 }}
+                >
                   ♥ {fmtCount(project.follows)}
                 </span>
               )}
               {project.dateModified && (
-                <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                <span
+                  className="font-mono text-xs"
+                  style={{ color: 'var(--text-faint)', fontSize: 10 }}
+                >
                   {relativeTime(project.dateModified)}
                 </span>
               )}
@@ -154,21 +183,28 @@ export function ContentDetailPanel({
 
           <button
             onClick={onClose}
-            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-xs"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs"
             style={{ color: 'var(--text-faint)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'
+            }}
           >
             ✕
           </button>
         </div>
 
         {/* Install button */}
-        <div className="px-4 py-2.5 shrink-0" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+        <div
+          className="shrink-0 px-4 py-2.5"
+          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
+        >
           <button
             onClick={handleInstallClick}
             disabled={isInstalling}
-            className="w-full py-1.5 rounded text-xs font-semibold transition-opacity"
+            className="w-full rounded py-1.5 text-xs font-semibold transition-opacity"
             style={{
               background: 'var(--accent)',
               color: 'var(--bg-base)',
@@ -178,22 +214,25 @@ export function ContentDetailPanel({
             {isInstalling ? 'Installing…' : 'Install'}
           </button>
           {installError && (
-            <div className="mt-1.5 text-xs" style={{ color: 'var(--danger)' }}>{installError}</div>
+            <div className="mt-1.5 text-xs" style={{ color: 'var(--danger)' }}>
+              {installError}
+            </div>
           )}
         </div>
 
         {/* Sub-tabs */}
         <div
-          className="flex items-center gap-1 px-3 py-1.5 shrink-0"
+          className="flex shrink-0 items-center gap-1 px-3 py-1.5"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
         >
-          {(['about', 'gallery', 'versions'] as const).map(t => (
+          {(['about', 'gallery', 'versions'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className="px-2.5 py-1 rounded text-xs capitalize transition-colors"
+              className="rounded px-2.5 py-1 text-xs capitalize transition-colors"
               style={{
-                background: tab === t ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'transparent',
+                background:
+                  tab === t ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'transparent',
                 color: tab === t ? 'var(--accent)' : 'var(--text-muted)',
                 fontWeight: tab === t ? 600 : 400,
               }}
@@ -204,11 +243,15 @@ export function ContentDetailPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {/* About */}
           {tab === 'about' && (
             <div className="px-4 py-3">
-              <ModAboutBody body={project.body} description={project.description} loading={projectLoading} />
+              <ModAboutBody
+                body={project.body}
+                description={project.description}
+                loading={projectLoading}
+              />
             </div>
           )}
 
@@ -220,30 +263,38 @@ export function ContentDetailPanel({
                   <img
                     src={project.gallery[galleryIdx]?.url}
                     alt={project.gallery[galleryIdx]?.title ?? ''}
-                    className="rounded-lg w-full mb-3"
+                    className="mb-3 w-full rounded-lg"
                     style={{ objectFit: 'contain', maxHeight: 220 }}
                   />
                   {project.gallery.length > 1 && (
-                    <div className="flex gap-1.5 flex-wrap">
+                    <div className="flex flex-wrap gap-1.5">
                       {project.gallery.map((img, i) => (
                         <button
                           key={i}
                           onClick={() => setGalleryIdx(i)}
-                          className="rounded overflow-hidden"
+                          className="overflow-hidden rounded"
                           style={{
-                            width: 44, height: 44,
+                            width: 44,
+                            height: 44,
                             outline: i === galleryIdx ? '2px solid var(--accent)' : 'none',
                             outlineOffset: 1,
                           }}
                         >
-                          <img src={img.url} alt="" className="w-full h-full" style={{ objectFit: 'cover' }} />
+                          <img
+                            src={img.url}
+                            alt=""
+                            className="h-full w-full"
+                            style={{ objectFit: 'cover' }}
+                          />
                         </button>
                       ))}
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>No gallery images.</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  No gallery images.
+                </div>
               )}
             </div>
           )}
@@ -252,21 +303,43 @@ export function ContentDetailPanel({
           {tab === 'versions' && (
             <div>
               {versionsLoading && (
-                <div className="px-4 py-3 text-xs animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading versions…</div>
+                <div
+                  className="animate-pulse px-4 py-3 text-xs"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Loading versions…
+                </div>
               )}
               {!versionsLoading && versions.length === 0 && (
-                <div className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>No compatible versions found.</div>
+                <div className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  No compatible versions found.
+                </div>
               )}
-              {versions.map(v => (
-                <VersionRow key={v.id} version={v} onInstall={() => onInstall([v.id])} installing={isInstalling} />
+              {versions.map((v) => (
+                <VersionRow
+                  key={v.id}
+                  version={v}
+                  onInstall={() => onInstall([v.id])}
+                  installing={isInstalling}
+                />
               ))}
               {!showAllVersions && versions.length > 0 && (
                 <button
-                  onClick={() => { setShowAllVersions(true); onGetAllVersions(project.id) }}
-                  className="w-full py-2 text-xs font-mono text-center transition-colors"
-                  style={{ color: 'var(--text-muted)', borderTop: '0.5px solid var(--border-subtle)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+                  onClick={() => {
+                    setShowAllVersions(true)
+                    onGetAllVersions(project.id)
+                  }}
+                  className="w-full py-2 text-center font-mono text-xs transition-colors"
+                  style={{
+                    color: 'var(--text-muted)',
+                    borderTop: '0.5px solid var(--border-subtle)',
+                  }}
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+                  }}
                 >
                   Show all versions
                 </button>
@@ -278,13 +351,16 @@ export function ContentDetailPanel({
           {tab === 'about' && moreByAuthorProjects.length > 0 && (
             <div className="px-4 pb-4">
               <div
-                className="text-xs font-semibold mb-3 pt-3"
-                style={{ color: 'var(--text-secondary)', borderTop: '0.5px solid var(--border-subtle)' }}
+                className="mb-3 pt-3 text-xs font-semibold"
+                style={{
+                  color: 'var(--text-secondary)',
+                  borderTop: '0.5px solid var(--border-subtle)',
+                }}
               >
                 More by {project.author}
               </div>
               <div className="flex flex-col gap-2">
-                {moreByAuthorProjects.map(p => (
+                {moreByAuthorProjects.map((p) => (
                   <ContentCard
                     key={p.id}
                     project={p}
@@ -304,7 +380,15 @@ export function ContentDetailPanel({
   )
 }
 
-function VersionRow({ version, onInstall, installing }: { version: ModVersion; onInstall: () => void; installing: boolean }) {
+function VersionRow({
+  version,
+  onInstall,
+  installing,
+}: {
+  version: ModVersion
+  onInstall: () => void
+  installing: boolean
+}) {
   const typeColor: Record<string, string> = {
     release: 'var(--accent)',
     beta: 'var(--warning)',
@@ -316,13 +400,13 @@ function VersionRow({ version, onInstall, installing }: { version: ModVersion; o
       className="flex items-start gap-2 px-4 py-2.5"
       style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
     >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
             {version.versionNumber}
           </span>
           <span
-            className="px-1.5 py-px rounded text-xs font-mono"
+            className="rounded px-1.5 py-px font-mono text-xs"
             style={{
               background: 'rgba(255,255,255,0.06)',
               color: typeColor[version.versionType] ?? 'var(--text-muted)',
@@ -332,13 +416,19 @@ function VersionRow({ version, onInstall, installing }: { version: ModVersion; o
             {version.versionType}
           </span>
         </div>
-        <div className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+        <div
+          className="mt-0.5 font-mono text-xs"
+          style={{ color: 'var(--text-faint)', fontSize: 10 }}
+        >
           {version.gameVersions?.slice(0, 3).join(', ')}
           {(version.gameVersions?.length ?? 0) > 3 ? '…' : ''}
           {version.fileSize ? ' · ' + fmtBytes(version.fileSize) : ''}
         </div>
         {version.datePublished && (
-          <div className="text-xs font-mono mt-0.5" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+          <div
+            className="mt-0.5 font-mono text-xs"
+            style={{ color: 'var(--text-faint)', fontSize: 10 }}
+          >
             {relativeTime(version.datePublished)}
           </div>
         )}
@@ -346,7 +436,7 @@ function VersionRow({ version, onInstall, installing }: { version: ModVersion; o
       <button
         onClick={onInstall}
         disabled={installing}
-        className="shrink-0 px-2.5 py-1 rounded text-xs font-medium transition-opacity"
+        className="shrink-0 rounded px-2.5 py-1 text-xs font-medium transition-opacity"
         style={{
           background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
           color: 'var(--accent)',

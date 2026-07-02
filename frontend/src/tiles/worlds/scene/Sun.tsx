@@ -12,13 +12,14 @@ export function Sun({ radius = 0.55 }: Props) {
   const glowTexture = useMemo(() => {
     const size = 256
     const canvas = document.createElement('canvas')
-    canvas.width = size; canvas.height = size
+    canvas.width = size
+    canvas.height = size
     const ctx = canvas.getContext('2d')!
     const mid = size / 2
     const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid)
-    grad.addColorStop(0,    'rgba(255, 210, 60, 0.15)')
-    grad.addColorStop(0.4,  'rgba(254, 190, 40, 0.06)')
-    grad.addColorStop(1,    'rgba(253, 160, 20, 0)')
+    grad.addColorStop(0, 'rgba(255, 210, 60, 0.15)')
+    grad.addColorStop(0.4, 'rgba(254, 190, 40, 0.06)')
+    grad.addColorStop(1, 'rgba(253, 160, 20, 0)')
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, size, size)
     return new THREE.CanvasTexture(canvas)
@@ -34,7 +35,13 @@ export function Sun({ radius = 0.55 }: Props) {
     <group>
       {/* Soft glow sprite — always faces camera, radial gradient fades to transparent */}
       <sprite scale={[radius * 4, radius * 4, 1]}>
+        {/* @react-three/fiber's Texture prop type resolves against a different
+            `three` type instance than our `THREE.Texture` (CanvasTexture is
+            missing the legacy `encoding` field it expects) — a known r3f/three
+            version-typing gap, not a real runtime concern. No clean cast bridges
+            it, so the rule is suppressed for this one interop line. */}
         <spriteMaterial
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           map={glowTexture as any}
           transparent
           blending={THREE.AdditiveBlending}

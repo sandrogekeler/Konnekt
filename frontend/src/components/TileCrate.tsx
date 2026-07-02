@@ -38,7 +38,13 @@ export function TileCrate() {
     flashTile(tile.id)
   }
 
-  const press = useRef<{ tile: TileDefinition; startX: number; startY: number; dragging: boolean; shiftKey: boolean } | null>(null)
+  const press = useRef<{
+    tile: TileDefinition
+    startX: number
+    startY: number
+    dragging: boolean
+    shiftKey: boolean
+  } | null>(null)
 
   const onWindowMove = (e: MouseEvent) => {
     const p = press.current
@@ -55,7 +61,8 @@ export function TileCrate() {
     const p = press.current
     press.current = null
     if (p && !p.dragging) {
-      p.shiftKey ? handleShiftClick(p.tile) : handleClick(p.tile)
+      if (p.shiftKey) handleShiftClick(p.tile)
+      else handleClick(p.tile)
     }
     // If it was a drag, the Dashboard's mouseup handler does the drop + cleanup.
   }
@@ -63,7 +70,13 @@ export function TileCrate() {
   const onMouseDown = (tile: TileDefinition, e: React.MouseEvent) => {
     if (e.button !== 0) return
     e.preventDefault() // stop text selection / focus during a drag
-    press.current = { tile, startX: e.clientX, startY: e.clientY, dragging: false, shiftKey: e.shiftKey }
+    press.current = {
+      tile,
+      startX: e.clientX,
+      startY: e.clientY,
+      dragging: false,
+      shiftKey: e.shiftKey,
+    }
     window.addEventListener('mousemove', onWindowMove)
     window.addEventListener('mouseup', onWindowUp)
   }
@@ -74,7 +87,7 @@ export function TileCrate() {
       <button
         key={tile.id}
         onMouseDown={(e) => onMouseDown(tile, e)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all"
+        className="flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-all"
         style={{
           color: onCanvas ? 'var(--text-primary)' : 'var(--text-secondary)',
           background: onCanvas ? 'transparent' : 'rgba(0,0,0,0.2)',
@@ -88,11 +101,13 @@ export function TileCrate() {
         }}
         onMouseLeave={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'
-          ;(e.currentTarget as HTMLButtonElement).style.background = onCanvas ? 'transparent' : 'rgba(0,0,0,0.2)'
+          ;(e.currentTarget as HTMLButtonElement).style.background = onCanvas
+            ? 'transparent'
+            : 'rgba(0,0,0,0.2)'
         }}
       >
-        <span className="text-base w-6 text-center">{tile.icon}</span>
-        <span className="text-xs font-medium flex-1">{tile.label}</span>
+        <span className="w-6 text-center text-base">{tile.icon}</span>
+        <span className="flex-1 text-xs font-medium">{tile.label}</span>
       </button>
     )
   }
@@ -105,9 +120,7 @@ export function TileCrate() {
       >
         {utilityTiles.map(renderTile)}
       </div>
-      <div className="flex flex-col gap-1 p-2">
-        {moduleTiles.map(renderTile)}
-      </div>
+      <div className="flex flex-col gap-1 p-2">{moduleTiles.map(renderTile)}</div>
     </div>
   )
 }

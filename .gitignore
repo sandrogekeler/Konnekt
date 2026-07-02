@@ -6,10 +6,12 @@ build/bin/
 frontend/package.json.md5
 
 # Dependencies
+node_modules/
 frontend/node_modules/
 
 # Go
 *.test
+*.syso
 
 # Editor
 .DS_Store
@@ -18,3 +20,6 @@ frontend/node_modules/
 
 # Local Minecraft test servers
 testserver*/
+
+# Claude Code local settings
+.claude/

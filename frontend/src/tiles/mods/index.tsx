@@ -7,13 +7,13 @@ import { BrowsePanel } from './BrowsePanel'
 import { useServerStore } from '../../stores/useServerStore'
 import { useServerConfigStore } from '../../stores/useServerConfigStore'
 import { useProcessesStore } from '../../stores/useProcessesStore'
-import { DetectServerLoader, SaveServerConfig } from '../../../wailsjs/go/main/App'
+import { DetectServerLoader } from '../../../wailsjs/go/main/App'
 import { models } from '../../../wailsjs/go/models'
 import { PLUGIN_LOADERS } from '../../lib/constants'
 
 function useServerKind(serverId: string): { kind: 'mods' | 'plugins'; detecting: boolean } {
-  const config = useServerConfigStore(s => s.configs.find(c => c.id === serverId))
-  const saveConfig = useServerConfigStore(s => s.saveConfig)
+  const config = useServerConfigStore((s) => s.configs.find((c) => c.id === serverId))
+  const saveConfig = useServerConfigStore((s) => s.saveConfig)
   const [detecting, setDetecting] = useState(false)
   const detected = useRef(false)
 
@@ -25,22 +25,32 @@ function useServerKind(serverId: string): { kind: 'mods' | 'plugins'; detecting:
     detected.current = true
     setDetecting(true)
     DetectServerLoader(serverId)
-      .then(cfg => saveConfig(cfg))
+      .then((cfg) => saveConfig(cfg))
       .catch(() => {})
       .finally(() => setDetecting(false))
   }, [serverId, config, saveConfig])
 
-  const kind = (PLUGIN_LOADERS as readonly string[]).includes(config?.loader ?? '') ? 'plugins' : 'mods'
+  const kind = (PLUGIN_LOADERS as readonly string[]).includes(config?.loader ?? '')
+    ? 'plugins'
+    : 'mods'
   return { kind, detecting }
 }
 
 export function ModsTile({ serverId, maximized }: TileProps) {
   const mods = useMods(serverId)
-  const running = useServerStore(s => s.status.running)
+  const running = useServerStore((s) => s.status.running)
   const { kind, detecting } = useServerKind(serverId)
 
   if (!maximized) {
-    return <ModsSummary serverId={serverId} mods={mods} running={running} kind={kind} detecting={detecting} />
+    return (
+      <ModsSummary
+        serverId={serverId}
+        mods={mods}
+        running={running}
+        kind={kind}
+        detecting={detecting}
+      />
+    )
   }
 
   return <ModsExpanded serverId={serverId} mods={mods} running={running} kind={kind} />
@@ -49,7 +59,11 @@ export function ModsTile({ serverId, maximized }: TileProps) {
 // --- Compact (non-maximized) view ---
 
 function ModsSummary({
-  serverId, mods, running, kind, detecting,
+  serverId,
+  mods,
+  running,
+  kind,
+  detecting,
 }: {
   serverId: string
   mods: ReturnType<typeof useMods>
@@ -60,11 +74,11 @@ function ModsSummary({
   const { installed, installedLoading, installProgress, setEnabled, uninstall, updates } = mods
   const noun = kind === 'plugins' ? 'plugin' : 'mod'
   const nounPlural = kind === 'plugins' ? 'plugins' : 'mods'
-  const modProcess = useProcessesStore(s => s.processes['mod:' + serverId])
+  const modProcess = useProcessesStore((s) => s.processes['mod:' + serverId])
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-center justify-between px-3 py-2 shrink-0">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center justify-between px-3 py-2">
         <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
           {detecting
             ? 'Detecting server type…'
@@ -77,11 +91,14 @@ function ModsSummary({
         )}
       </div>
       {modProcess?.status === 'running' && (
-        <div className="shrink-0 w-full" style={{ height: 2, background: 'var(--border-subtle)' }}>
-          <div className="h-full transition-all duration-300" style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }} />
+        <div className="w-full shrink-0" style={{ height: 2, background: 'var(--border-subtle)' }}>
+          <div
+            className="h-full transition-all duration-300"
+            style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }}
+          />
         </div>
       )}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <InstalledPanel
           mods={installed}
           loading={installedLoading}
@@ -99,13 +116,15 @@ function ModsSummary({
           versions={mods.versions}
           versionsLoading={mods.versionsLoading}
           installError={mods.installError}
-          onSelectProject={mod => mods.selectProject(modToProject(mod))}
+          onSelectProject={(mod) => mods.selectProject(modToProject(mod))}
           onClearProject={mods.clearProject}
           onGetVersions={mods.getVersions}
           onGetAllVersions={mods.getAllVersions}
           onResolveDeps={mods.resolveDeps}
           onInstall={mods.install}
-          onOpenInBrowser={() => {/* no-op in compact view */}}
+          onOpenInBrowser={() => {
+            /* no-op in compact view */
+          }}
         />
       </div>
     </div>
@@ -117,7 +136,10 @@ function ModsSummary({
 type ModsView = 'library' | 'browse'
 
 function ModsExpanded({
-  serverId, mods, running, kind,
+  serverId,
+  mods,
+  running,
+  kind,
 }: {
   serverId: string
   mods: ReturnType<typeof useMods>
@@ -127,7 +149,7 @@ function ModsExpanded({
   const [view, setView] = useState<ModsView>('library')
   const [refreshing, setRefreshing] = useState(false)
   const noun = kind === 'plugins' ? 'Plugin' : 'Mod'
-  const modProcess = useProcessesStore(s => s.processes['mod:' + serverId])
+  const modProcess = useProcessesStore((s) => s.processes['mod:' + serverId])
 
   function openBrowse() {
     setView('browse')
@@ -161,34 +183,52 @@ function ModsExpanded({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 shrink-0"
+        className="flex shrink-0 items-center gap-2 px-3 py-2"
         style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
       >
         {view === 'browse' ? (
           <>
             <button
               onClick={openLibrary}
-              className="text-xs font-mono transition-colors"
+              className="font-mono text-xs transition-colors"
               style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+              }}
             >
               ← Library
             </button>
-            <span className="flex-1 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+            <span
+              className="flex-1 text-xs font-semibold"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Add {noun}
             </span>
           </>
         ) : (
           <>
-            <span className="flex-1 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              {mods.installed.length} {mods.installed.length === 1 ? noun.toLowerCase() : (kind === 'plugins' ? 'plugins' : 'mods')}
+            <span
+              className="flex-1 text-xs font-semibold"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {mods.installed.length}{' '}
+              {mods.installed.length === 1
+                ? noun.toLowerCase()
+                : kind === 'plugins'
+                  ? 'plugins'
+                  : 'mods'}
             </span>
             {running && (
-              <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)', fontSize: 10 }}>
+              <span
+                className="shrink-0 text-xs"
+                style={{ color: 'var(--text-muted)', fontSize: 10 }}
+              >
                 restart needed for changes
               </span>
             )}
@@ -196,7 +236,7 @@ function ModsExpanded({
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
+              className="shrink-0 rounded px-2 py-1 font-mono text-xs transition-colors"
               style={{
                 border: '0.5px solid var(--border-subtle)',
                 color: 'var(--text-muted)',
@@ -204,35 +244,47 @@ function ModsExpanded({
                 opacity: refreshing ? 0.5 : 1,
               }}
               title="Refresh"
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+              }}
             >
               {refreshing ? '…' : '↺'}
             </button>
             {/* Add Files button */}
             <button
               onClick={handleAddFiles}
-              className="px-3 py-1 rounded text-xs font-semibold transition-colors shrink-0"
+              className="shrink-0 rounded px-3 py-1 text-xs font-semibold transition-colors"
               style={{
                 border: '0.5px solid var(--border-subtle)',
                 color: 'var(--text-secondary)',
                 background: 'transparent',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+              }}
             >
               Add Files
             </button>
             {/* Add Content button */}
             <button
               onClick={openBrowse}
-              className="px-3 py-1 rounded text-xs font-semibold transition-colors shrink-0"
+              className="shrink-0 rounded px-3 py-1 text-xs font-semibold transition-colors"
               style={{
                 background: 'var(--accent)',
                 color: 'var(--bg-base)',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.85'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+              }}
             >
               Add Content
             </button>
@@ -242,13 +294,16 @@ function ModsExpanded({
 
       {/* Download progress bar */}
       {modProcess?.status === 'running' && (
-        <div className="shrink-0 w-full" style={{ height: 2, background: 'var(--border-subtle)' }}>
-          <div className="h-full transition-all duration-300" style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }} />
+        <div className="w-full shrink-0" style={{ height: 2, background: 'var(--border-subtle)' }}>
+          <div
+            className="h-full transition-all duration-300"
+            style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }}
+          />
         </div>
       )}
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {view === 'library' ? (
           <InstalledPanel
             mods={mods.installed}
@@ -267,7 +322,7 @@ function ModsExpanded({
             versions={mods.versions}
             versionsLoading={mods.versionsLoading}
             installError={mods.installError}
-            onSelectProject={mod => mods.selectProject(modToProject(mod))}
+            onSelectProject={(mod) => mods.selectProject(modToProject(mod))}
             onClearProject={mods.clearProject}
             onGetVersions={mods.getVersions}
             onGetAllVersions={mods.getAllVersions}
@@ -298,7 +353,7 @@ function ModsExpanded({
             onInstall={mods.install}
             onInstallLatest={mods.installLatest}
             moreByAuthor={mods.moreByAuthor}
-            installedProjectIds={new Set(mods.installed.map(m => m.projectId).filter(Boolean))}
+            installedProjectIds={new Set(mods.installed.map((m) => m.projectId).filter(Boolean))}
           />
         )}
       </div>

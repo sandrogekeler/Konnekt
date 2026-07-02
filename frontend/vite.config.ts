@@ -1,9 +1,10 @@
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   // react-draggable's internal log() reads `process.env.DRAGGABLE_DEBUG`, but Vite
   // doesn't define `process` in the browser/WebView2. Without this, the very first
   // log() call inside DraggableCore.handleDragStart throws "process is not defined",

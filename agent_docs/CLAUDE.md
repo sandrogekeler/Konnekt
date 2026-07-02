@@ -93,8 +93,13 @@ Tile registry entry shape:
 - `import type` for type-only imports
 - No `any` — use `unknown` and narrow
 - Prefer named exports; default export only for page-level components
-- Tailwind only for styling — no inline `style={{}}` except react-grid-layout
-  position props
+- Styling via Tailwind utilities backed by the CSS-variable token system
+  (`frontend/src/style.css` `@theme inline` + `frontend/src/lib/theme.ts`
+  `applySkin()`). Inline `style={{}}` is reserved for genuinely dynamic/computed
+  values (animation delays, transforms, react-grid-layout position props) — not
+  for static styling. The codebase is mid-migration from an earlier
+  inline-styles-everywhere convention; see `agent_docs/HEALTH_CHECKLIST.md`
+  Milestone 2 for the tile-by-tile migration in progress.
 - Go: `gofmt` enforced, errors always handled (no blank `_` ignores)
 
 ## Build & dev commands

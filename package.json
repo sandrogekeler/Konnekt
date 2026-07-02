@@ -1,0 +1,7 @@
+{
+  "name": "konnekt-repo",
+  "private": true,
+  "devDependencies": {
+    "lefthook": "^1.10.10"
+  }
+}

@@ -46,7 +46,9 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         ? (s.backgroundStyle as AppSettings['backgroundStyle'])
         : DEFAULTS.backgroundStyle
       settings = { ...DEFAULTS, ...s, theme, skinId, backgroundStyle }
-    } catch { /* non-Wails context */ }
+    } catch {
+      /* non-Wails context */
+    }
     applySkin(settings)
     set({ settings, loaded: true })
   },
@@ -55,6 +57,10 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     const next = { ...get().settings, ...patch }
     set({ settings: next })
     applySkin(next)
-    try { await SaveAppSettings(next as any) } catch { /* best-effort */ }
+    try {
+      await SaveAppSettings(next)
+    } catch {
+      /* best-effort */
+    }
   },
 }))
