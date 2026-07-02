@@ -246,7 +246,8 @@ todo list, not a target.
   (`index-*.js`) chunk stays under a 550 KB budget, prints a per-chunk table.
   Wired in as `pnpm check-bundle`, run in the CI `frontend` job right after
   `pnpm build`. Verified the gate actually fails when the budget is
-  temporarily set below the real size, then restored it.
+  temporarily set below the real size, then restored it. Confirmed green on
+  `main`: https://github.com/sandrogekeler/Konnekt/actions/runs/28622676087
 - Not independently verified: live chart rendering with real streaming data
   in a browser. The Wails IPC bridge (`window.go`/`window.runtime`) only
   exists inside the native `wails dev` process — unreachable from the
