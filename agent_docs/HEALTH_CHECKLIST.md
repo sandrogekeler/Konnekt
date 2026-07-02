@@ -58,7 +58,7 @@ wails build              # Production build smoke test
 - [ ] Automated tests exist and pass for critical paths: RCON client, Modrinth
       API client, backup create/restore, config path-traversal guards,
       scheduler engine (Go); Zustand store logic and critical hooks (frontend).
-- [ ] CI is green on every push/PR (see backlog: GitHub Actions).
+- [x] CI is green on every push/PR (see backlog: GitHub Actions).
 - [ ] All Go methods bound to the Wails `App` struct return `(T, error)`, and
       errors are wrapped with context (`fmt.Errorf("...: %w", err)`).
 - [ ] Every `EventsOn` listener registered in a component is cleaned up on
@@ -129,8 +129,8 @@ todo list, not a target.
   (`setup-node`'s `cache: pnpm`, `setup-go`'s `cache: true`). Runs on push to
   `main` and on every PR. `wails build` packaging deferred (see below) — the
   light `go build`/`pnpm build` smoke check was judged sufficient for now.
-  Fixed the 14 Go files that weren't `gofmt`-clean as a prerequisite.
-  Still needs: a first real run confirmed green in the Actions tab.
+  Fixed the 14 Go files that weren't `gofmt`-clean as a prerequisite. Confirmed
+  green on `main`: https://github.com/sandrogekeler/Konnekt/actions/runs/28618749554
 - Follow-up (not yet done): a release-tag-gated full `wails build` packaging
   job, for stronger end-to-end confidence than the `go build`/`pnpm build`
   smoke check gives.
