@@ -190,6 +190,8 @@ todo list, not a target.
   `@testing-library/react`/`dom`, wired via a `test` block in
   `frontend/vite.config.ts` and a `pnpm test` script. Added to the CI
   `frontend` job (`.github/workflows/ci.yml`), after `pnpm lint`.
+  Confirmed green on `main`:
+  https://github.com/sandrogekeler/Konnekt/actions/runs/28620873038
 - ✅ Frontend: 39 tests covering the pure/no-Wails-mocking logic —
   `lib/format.ts`, `lib/layout.ts` (`collapseEmptyRows`), and three stores'
   pure logic: `useConsoleStore` (`classifyLine` + buffer-cap eviction on
