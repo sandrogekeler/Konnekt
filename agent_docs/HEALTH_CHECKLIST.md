@@ -28,14 +28,18 @@ wails build              # Production build smoke test
 
 ## 1. Clean
 
-- [ ] `go vet ./...` and `gofmt -l .` report nothing.
+- [x] `go vet ./...` and `gofmt -l .` report nothing.
 - [ ] No blank `_ =` error-ignores in Go, except documented `//nolint` cases
-      (e.g. `backend/services/eventbus.go`).
-- [ ] `pnpm lint` runs against a real ESLint config and passes.
-- [ ] Formatting (Prettier/Biome or equivalent) is consistent and enforced,
-      not manual.
-- [ ] `pnpm typecheck` has zero errors; no `any` anywhere (CLAUDE.md rule) —
-      use `unknown` and narrow instead.
+      (e.g. `backend/services/eventbus.go`). **Gap found** — see backlog
+      ("P2 — Undocumented blank error-ignores").
+- [x] `pnpm lint` runs against a real ESLint config and passes.
+- [x] Formatting (Prettier/Biome or equivalent) is consistent and enforced,
+      not manual (lefthook pre-commit hook: Prettier + ESLint + `tsc --noEmit`
+      on staged frontend files, `gofmt` + `go vet` on staged Go files).
+- [x] `pnpm typecheck` has zero errors; no `any` anywhere (CLAUDE.md rule) —
+      use `unknown` and narrow instead. One documented exception:
+      `frontend/src/tiles/worlds/scene/Sun.tsx` (known `three`/`@react-three/fiber`
+      cross-package type mismatch).
 - [ ] Nothing under `frontend/src/wailsjs/` has been hand-edited (it's
       auto-generated; regenerate via `wails generate module` instead).
 - [ ] No inline `style={{}}` beyond genuinely dynamic/computed values
@@ -44,7 +48,7 @@ wails build              # Production build smoke test
       CLAUDE.md's Code style section). `eslint.config.js`'s `no-restricted-syntax`
       rule flags remaining inline styles at `warn`; ratchet per directory to
       `error` as Milestone 2's migration clears each tile.
-- [ ] No committed build artifacts (`*.syso`, `frontend/dist/`, `build/bin/`)
+- [x] No committed build artifacts (`*.syso`, `frontend/dist/`, `build/bin/`)
       — `.gitignore` covers them.
 - [ ] No stray root-level scratch/design docs left un-triaged (either promoted
       into `agent_docs/` or deleted once the work lands).
@@ -258,6 +262,20 @@ todo list, not a target.
   configured Minecraft server.
 - Unused dependency found during this pass, tracked separately: see
   "P2 — Repo hygiene" below (`uplot` / `skinview3d`).
+
+**P2 — Undocumented blank error-ignores**
+- Found during this review: ~20 blank `_ = ` / `_, _ = ` error-ignores across
+  the Go backend with no `//nolint` explaining why the error is safe to drop
+  — the Clean-pillar rule only exempts *documented* cases (the existing
+  precedent is `backend/services/eventbus.go`). Spread across `backup.go`
+  (rollback-path renames/cleanup, meta save), `config_editor.go` (best-effort
+  old-backup pruning), `players.go` (`json.Unmarshal` into a fresh `[]T`),
+  `server.go` (`p.Percent(0)` priming call, `cmd.Wait()`, stdin `"stop"`
+  write, RCON `save-off`), `modservice.go` (manifest save), and
+  `scheduler_blocks.go`/`scheduler_engine.go` (command dispatch, data-node
+  exec). Most look like legitimate best-effort/fire-and-forget ops, but each
+  needs a one-line `//nolint` (or a real error check where it's not actually
+  safe to ignore) to match the documented convention.
 
 **P2 — Structured logging**
 - Replace ad-hoc `fmt.Errorf`-only error reporting on the backend with
