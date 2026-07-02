@@ -256,11 +256,8 @@ todo list, not a target.
   itself is sound (chunk separation, on-demand fetch, all typecheck/lint/test
   gates green); a full data-driven visual check needs `wails dev` with a
   configured Minecraft server.
-- Noted aside, not fixed here: `uplot` and `skinview3d` are dependencies in
-  `frontend/package.json` but are imported nowhere under `src/` (dead code —
-  `skinview3d` is presumably for the not-yet-built Beta skin-preview tile).
-  They don't affect bundle size since unimported code isn't bundled; flag as
-  a future dependency-hygiene cleanup.
+- Unused dependency found during this pass, tracked separately: see
+  "P2 — Repo hygiene" below (`uplot` / `skinview3d`).
 
 **P2 — Structured logging**
 - Replace ad-hoc `fmt.Errorf`-only error reporting on the backend with
@@ -273,6 +270,12 @@ todo list, not a target.
 - Create `agent_docs/DEPENDENCIES.md`, which `CLAUDE.md` already references
   but which doesn't exist yet.
 - Triage/relocate the root-level `scheduler-blocks-rework.md` design doc.
+- Remove (or wire up) two unused npm dependencies found during the code-split
+  pass: `uplot` and `skinview3d` in `frontend/package.json` are imported
+  nowhere under `frontend/src/`. `skinview3d` is presumably reserved for the
+  not-yet-built Beta "player skin preview" tile (see `ROADMAP.md`) — confirm
+  intent before removing it specifically. Unimported code isn't bundled, so
+  this doesn't affect bundle size; it's dependency-surface hygiene only.
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart
