@@ -217,7 +217,7 @@ export function BrowsePanel({
 
   // ── Animation ──────────────────────────────────────────────────────────────
   const panelOpen = !!selectedProject
-  const { displayResults, displayTotal, numCols, gridVisible, layoutOpen, pagePhase, getTileDelay, handlePage } =
+  const { displayResults, displayTotal, numCols, gridVisible, layoutOpen, pagePhase, pageDirection, getTileDelay, handlePage } =
     useGridPageAnimation({
       results, total, loading, panelOpen, containerRef,
       onSearch: (offset) => onSearch(query, selectedCats, offset, sortBy),
@@ -359,7 +359,7 @@ export function BrowsePanel({
                     key={project.id}
                     style={{
                       minWidth: 0,
-                      ...getTileStyle(getTileDelay(project.id), index % numCols, numCols, pagePhase, gridVisible),
+                      ...getTileStyle(getTileDelay(project.id), index % numCols, numCols, pagePhase, gridVisible, pageDirection),
                     }}
                   >
                     <ContentCard

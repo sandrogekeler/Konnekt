@@ -90,13 +90,18 @@ func (s *ModService) Categories(serverID string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Determine the project type for this server to prefer its category set.
+	// Modrinth only tags content categories with "mod"; there is no "plugin" taxonomy.
+	// So for plugin loaders we fall back to "mod" categories — they work as search
+	// facets regardless of project type.
+	cfg, _ := s.serverConfig(serverID)
+	projectType := "mod"
+	if info, ok := loaderProjectType[cfg.Loader]; ok && info.projectType != "plugin" {
+		projectType = info.projectType
+	}
 	var names []string
 	for _, c := range all {
-		// Only surface actual content categories (header=="categories"), not loaders
-		// or resolution/feature tags. Modrinth doesn't publish content categories for
-		// project_type=="plugin", so skip the projectType filter — the search already
-		// applies a project-type facet via buildFacets().
-		if c.Header == "categories" {
+		if c.Header == "categories" && c.ProjectType == projectType {
 			names = append(names, c.Name)
 		}
 	}

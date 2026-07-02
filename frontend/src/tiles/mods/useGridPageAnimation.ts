@@ -10,29 +10,39 @@ const COL_DELAY = 22        // stagger step per column (ms) — subtle sweep
 
 // Per-tile CSS driven by the current animation phase.
 //   idle  — panel open/close & initial load (scale from centre, random delay)
-//   exit  — page turn out: scale+translate left, left column first
-//   enter — page turn in:  scale+translate from right, right column first (inverse)
+//   exit  — page turn out: tiles fly toward the leading edge, leading column first
+//   enter — page turn in:  tiles fly in from the trailing edge, trailing column first
+//
+// forward (next page): exit LEFT, enter from RIGHT — left col first on exit, right col first on enter
+// backward (prev page): exit RIGHT, enter from LEFT — right col first on exit, left col first on enter
 export function getTileStyle(
   idleDelay: number,
   col: number,
   numCols: number,
   phase: 'idle' | 'exit' | 'enter',
   gridVisible: boolean,
+  direction: 'forward' | 'backward',
 ): React.CSSProperties {
   if (phase === 'exit') {
-    const delay = col * COL_DELAY
+    // Forward: sweep left-to-right (left col exits first), tiles slide left
+    // Backward: sweep right-to-left (right col exits first), tiles slide right
+    const delay = direction === 'forward' ? col * COL_DELAY : (numCols - 1 - col) * COL_DELAY
+    const tx = direction === 'forward' ? '-16px' : '16px'
     return {
       opacity: 0,
-      transform: 'scale(0.9) translateX(-16px)',
+      transform: `scale(0.9) translateX(${tx})`,
       transition: `opacity ${EXIT_MS}ms ease ${delay}ms, transform ${EXIT_MS}ms ease ${delay}ms`,
     }
   }
 
   if (phase === 'enter') {
-    const delay = (numCols - 1 - col) * COL_DELAY
+    // Forward: enter from right (right col enters first), sweep right-to-left
+    // Backward: enter from left (left col enters first), sweep left-to-right
+    const delay = direction === 'forward' ? (numCols - 1 - col) * COL_DELAY : col * COL_DELAY
+    const tx = direction === 'forward' ? '16px' : '-16px'
     return {
       opacity: gridVisible ? 1 : 0,
-      transform: gridVisible ? 'none' : 'scale(0.9) translateX(16px)',
+      transform: gridVisible ? 'none' : `scale(0.9) translateX(${tx})`,
       transition: gridVisible
         ? `opacity ${ENTER_MS}ms ease ${delay}ms, transform ${ENTER_MS}ms ease ${delay}ms`
         : 'none',
@@ -65,6 +75,7 @@ interface GridPageAnimation {
   gridVisible: boolean
   layoutOpen: boolean
   pagePhase: 'idle' | 'exit' | 'enter'
+  pageDirection: 'forward' | 'backward'
   getTileDelay: (id: string) => number
   handlePage: (offset: number) => void
 }
@@ -104,6 +115,11 @@ export function useGridPageAnimation({
   // ── Column count (measured from container width for accurate stagger) ───────
   const [numCols, setNumCols] = useState(4)
   const numColsRef = useRef(4)
+
+  // ── Page-turn direction ──────────────────────────────────────────────────────
+  const [pageDirection, setPageDirection] = useState<'forward' | 'backward'>('forward')
+  const pageDirectionRef = useRef<'forward' | 'backward'>('forward')
+  const currentOffsetRef = useRef(0)
 
   // ── Page-turn coordination refs ─────────────────────────────────────────────
   // Both the exit-animation timer AND the network response must complete before
@@ -192,6 +208,10 @@ export function useGridPageAnimation({
 
   // ── handlePage: kick off exit animation and fire the search ─────────────────
   const handlePage = useCallback((offset: number) => {
+    const dir = offset > currentOffsetRef.current ? 'forward' : 'backward'
+    currentOffsetRef.current = offset
+    pageDirectionRef.current = dir
+    setPageDirection(dir)
     clearTimeout(transTimerRef.current)
     exitDoneRef.current = false
     resultsDoneRef.current = false
@@ -287,7 +307,7 @@ export function useGridPageAnimation({
   }, [panelOpen])
 
   return {
-    displayResults, displayTotal, numCols, gridVisible, layoutOpen, pagePhase,
+    displayResults, displayTotal, numCols, gridVisible, layoutOpen, pagePhase, pageDirection,
     getTileDelay, handlePage,
   }
 }

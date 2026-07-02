@@ -69,9 +69,14 @@ func (c *ModrinthClient) Search(ctx context.Context, q models.ModSearchQuery, mc
 		return models.ModSearchResult{}, err
 	}
 
-	hits := make([]models.ModProject, len(raw.Hits))
-	for i, h := range raw.Hits {
-		hits[i] = mrHitToProject(h)
+	seen := make(map[string]struct{}, len(raw.Hits))
+	hits := make([]models.ModProject, 0, len(raw.Hits))
+	for _, h := range raw.Hits {
+		if _, dup := seen[h.ProjectID]; dup {
+			continue
+		}
+		seen[h.ProjectID] = struct{}{}
+		hits = append(hits, mrHitToProject(h))
 	}
 	return models.ModSearchResult{
 		Hits:   hits,

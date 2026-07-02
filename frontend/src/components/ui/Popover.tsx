@@ -17,9 +17,7 @@ export function Popover({ open, onClose, width = 160, maxHeight, children }: Pop
           right: 0,
           zIndex: 201,
           minWidth: width,
-          maxHeight,
-          overflowY: maxHeight ? 'auto' : undefined,
-          overflow: maxHeight ? undefined : 'hidden',
+          overflow: 'hidden',
           background: 'var(--bg-elevated)',
           backdropFilter: 'blur(12px)',
           border: '0.5px solid var(--border-subtle)',
@@ -32,7 +30,9 @@ export function Popover({ open, onClose, width = 160, maxHeight, children }: Pop
           transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
         }}
       >
-        {children}
+        {maxHeight ? (
+          <div style={{ maxHeight, overflowY: 'auto' }}>{children}</div>
+        ) : children}
       </div>
     </>
   )
