@@ -318,7 +318,8 @@ todo list, not a target.
   - Verification: `gofmt -l .` clean, `go vet ./...` + `go test ./... -count=1`
     + `go build ./...` green, and the audit grep
     (`grep -rn "_ = \|_, _ = " backend --include="*.go" | grep -v "_test.go" | grep -v "nolint"`)
-    returns nothing.
+    returns nothing. Confirmed green on `main`:
+    https://github.com/sandrogekeler/Konnekt/actions/runs/28629364439
 
 **P2 — Structured logging**
 - Replace ad-hoc `fmt.Errorf`-only error reporting on the backend with
