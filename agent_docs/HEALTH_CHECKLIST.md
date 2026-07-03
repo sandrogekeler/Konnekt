@@ -212,10 +212,41 @@ todo list, not a target.
     syntax is identical in form to `Toggle`'s, which *was* verified live
     (`box-shadow` computed to `rgba(0,0,0,0.3) 0px 1px 3px 0px`, matching the
     class exactly).
-- ~711 `style={{}}` usages remain across the rest of the codebase (~55 files).
+- ✅ Second slice done: `frontend/src/tiles/TileWrapper/index.tsx` — the
+  shared wrapper every tile renders inside (`CLAUDE.md`'s "Tile system"),
+  same "shared primitive" philosophy as the `ui/*` slice. All 5 occurrences
+  converted to Tailwind utilities; this is the **first directory in the
+  migration to reach zero remaining inline styles** — no `eslint-disable`
+  exceptions needed, unlike `ui/*`. Global warning count: 711 → 706. Added
+  `src/tiles/TileWrapper/**/*.tsx` to the same ratcheted-`error` `files` glob
+  in `frontend/eslint.config.js` as `ui/*` (merged into one config object
+  rather than duplicating the rule block).
+  - The three `onMouseEnter`/`onMouseLeave` pairs that imperatively set
+    `e.currentTarget.style.borderColor`/`.style.color` were left untouched —
+    not the JSX `style=` attribute the lint rule targets, and out of scope to
+    redesign. Verified live that this doesn't change runtime behavior: the
+    default border/text-color values now come from `className`, but the
+    hover handlers still directly set an inline `style` override, which wins
+    over `className` at the same specificity today exactly as it did before.
+  - Verified live in-browser (default dashboard, no Wails backend needed —
+    every visible tile uses this wrapper): computed styles matched exactly,
+    including the unusual `backgroundImage:
+    linear-gradient(var(--bg-surface),var(--bg-surface))` (a same-color-twice
+    trick) which resolved to identical gradient stops before and after.
+    Toggling a tile's maximize/restore confirmed the `cursor: maximized ?
+    'default' : 'grab'` ternary → conditional `className` conversion is
+    correct: querying all `.drag-handle` elements while one tile was
+    maximized showed `cursor: grab` on the four background grid tiles and
+    `cursor: default` on the maximized overlay's own handle. Confirmed the
+    hover border-color swap still fires (inspected the element's `style`
+    attribute directly: `border-color: var(--border-hover)` on hover,
+    reverting to `var(--border-subtle)` on mouseleave).
+- ~706 `style={{}}` usages remain across the rest of the codebase (~54 files).
   Continue tile-by-tile, static values only — genuinely dynamic ones stay
-  inline. Repeat the pattern: convert, then ratchet that directory's
-  `no-restricted-syntax` to `error` with documented exceptions for the rest.
+  inline. Repeat the pattern: convert, then add that directory to the
+  ratcheted-`error` `files` glob with documented exceptions for the rest.
+  Next-smallest candidates: stats (6), notifications (7), quick-commands (7),
+  performance (9), console (11).
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/

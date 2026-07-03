@@ -46,14 +46,14 @@ export default tseslint.config(
       ],
     },
   },
-  // Milestone 2 ratchet: components/ui/* has been migrated off inline styles
-  // (agent_docs/HEALTH_CHECKLIST.md), so new ones there are a hard error.
-  // Remaining justified exceptions (genuinely dynamic values) carry a
-  // documented eslint-disable-next-line. Flip more directories to 'error'
-  // here as each is cleared. Flat config applies later entries' matching
-  // rules on top of earlier ones, so this must come after the global block.
+  // Milestone 2 ratchet: these directories have been migrated off inline
+  // styles (agent_docs/HEALTH_CHECKLIST.md), so new ones there are a hard
+  // error. Remaining justified exceptions (genuinely dynamic values) carry a
+  // documented eslint-disable-next-line. Add more directories to this list
+  // as each is cleared. Flat config applies later entries' matching rules on
+  // top of earlier ones, so this must come after the global block.
   {
-    files: ['src/components/ui/**/*.tsx'],
+    files: ['src/components/ui/**/*.tsx', 'src/tiles/TileWrapper/**/*.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',
