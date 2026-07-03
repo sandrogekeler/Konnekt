@@ -271,7 +271,8 @@ todo list, not a target.
     matched the source arbitrary values exactly (`rgb(13,14,20)` = `#0d0e14`,
     `white/10` border). No new console errors beyond the same pre-existing
     `quick-commands` `window.go`-unavailable mount errors seen in prior
-    sessions.
+    sessions. Confirmed green on `main`:
+    https://github.com/sandrogekeler/Konnekt/actions/runs/28631150720
 - Missing `--font-mono` theme token found during this pass, tracked
   separately: see "P2 — Missing `--font-mono` theme token" below.
 - ~665 `style={{}}` usages remain across the rest of the codebase (~49
