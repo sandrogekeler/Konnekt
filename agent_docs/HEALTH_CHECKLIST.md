@@ -222,6 +222,21 @@ todo list, not a target.
   in `frontend/eslint.config.js` as `ui/*` (merged into one config object
   rather than duplicating the rule block). Confirmed green on `main`:
   https://github.com/sandrogekeler/Konnekt/actions/runs/28630261474
+  - ⚠️ **Regression this slice shipped, fixed later:** the commit dropped the
+    leading space in the outer div's conditional class string
+    (`` `relative h-full${maximized ? '' : ' tile-outer'}` `` →
+    `...: 'tile-outer'`), fusing `h-full` and `tile-outer` into the invalid
+    token `h-fulltile-outer` for every *non-maximized* tile. Since
+    `.tile-wrapper` is `position:absolute; inset:0`, losing `h-full` on its
+    parent collapsed all tiles to 0px height — the whole dashboard canvas
+    rendered empty (only maximized tiles, which take the `''` branch, were
+    fine). Fixed by moving the separator space *outside* the interpolation
+    (`` `relative h-full ${maximized ? '' : 'tile-outer'}` ``). **Lesson for
+    future className migrations:** conditional class strings with a
+    leading/trailing space inside the conditional are fragile; keep the
+    separating space outside the `${}`. And verify migrated tiles by their
+    rendered *geometry* (non-zero `getBoundingClientRect().height`), not just
+    computed `background-color` — a 0-height element still reports its color.
   - The three `onMouseEnter`/`onMouseLeave` pairs that imperatively set
     `e.currentTarget.style.borderColor`/`.style.color` were left untouched —
     not the JSX `style=` attribute the lint rule targets, and out of scope to

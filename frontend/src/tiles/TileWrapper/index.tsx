@@ -24,7 +24,7 @@ export function TileWrapper({
   onToggleMaximize,
 }: TileWrapperProps) {
   return (
-    <div className={`relative h-full${maximized ? '' : 'tile-outer'}`}>
+    <div className={`relative h-full ${maximized ? '' : 'tile-outer'}`}>
       {flash && <div className="tile-flash-ring" />}
       <div
         className="tile-wrapper border-border-subtle bg-canvas flex h-full flex-col overflow-hidden rounded-[10px] border-[0.5px] bg-[linear-gradient(var(--bg-surface),var(--bg-surface))] transition-colors duration-150"
