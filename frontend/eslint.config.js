@@ -53,7 +53,15 @@ export default tseslint.config(
   // as each is cleared. Flat config applies later entries' matching rules on
   // top of earlier ones, so this must come after the global block.
   {
-    files: ['src/components/ui/**/*.tsx', 'src/tiles/TileWrapper/**/*.tsx'],
+    files: [
+      'src/components/ui/**/*.tsx',
+      'src/tiles/TileWrapper/**/*.tsx',
+      'src/tiles/stats/**/*.tsx',
+      'src/tiles/notifications/**/*.tsx',
+      'src/tiles/quick-commands/**/*.tsx',
+      'src/tiles/performance/**/*.tsx',
+      'src/tiles/console/**/*.tsx',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',

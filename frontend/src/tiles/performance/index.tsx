@@ -11,10 +11,7 @@ const HistoryChart = lazy(() => import('./charts').then((m) => ({ default: m.His
 
 function ChartFallback() {
   return (
-    <div
-      className="flex h-full items-center justify-center text-xs"
-      style={{ color: 'var(--text-faint)' }}
-    >
+    <div className="text-text-faint flex h-full items-center justify-center text-xs">
       loading chart…
     </div>
   )
@@ -54,32 +51,24 @@ function CompactView({ history }: { history: StatsSnapshot[] }) {
       </div>
 
       {ramTotal > 0 && (
-        <div
-          className="h-1 shrink-0 overflow-hidden rounded-full"
-          style={{ background: 'var(--hover-surface)' }}
-        >
+        <div className="bg-hover h-1 shrink-0 overflow-hidden rounded-full">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               ramPct > 80 ? 'bg-[var(--danger)]' : ramPct > 60 ? 'bg-[var(--warning)]' : 'bg-accent'
             }`}
+            // eslint-disable-next-line no-restricted-syntax -- width is a computed percentage, not visible to Tailwind's static scanner
             style={{ width: `${Math.min(ramPct, 100)}%` }}
           />
         </div>
       )}
 
-      <div
-        className="min-h-0 flex-1 overflow-hidden rounded"
-        style={{ border: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-border-subtle min-h-0 flex-1 overflow-hidden rounded border-[0.5px]">
         {sparkData.length > 1 ? (
           <Suspense fallback={<ChartFallback />}>
             <SparkChart data={sparkData} />
           </Suspense>
         ) : (
-          <div
-            className="flex h-full items-center justify-center text-xs"
-            style={{ color: 'var(--text-faint)' }}
-          >
+          <div className="text-text-faint flex h-full items-center justify-center text-xs">
             waiting for data…
           </div>
         )}
@@ -274,9 +263,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
             {label}
           </button>
         ))}
-        <span className="ml-auto text-xs" style={{ color: 'var(--text-faint)' }}>
-          {filtered.length} samples
-        </span>
+        <span className="text-text-faint ml-auto text-xs">{filtered.length} samples</span>
       </div>
 
       {/* chart */}
@@ -294,7 +281,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
           </Suspense>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-white/20">
-            <span style={{ color: 'var(--text-faint)' }}>
+            <span className="text-text-faint">
               {history.length === 0
                 ? 'No data yet — start the server to begin recording'
                 : 'No data in this time window'}
@@ -306,7 +293,7 @@ function ExpandedView({ history }: { history: StatsSnapshot[] }) {
       {/* sortable history table */}
       <div className="min-h-0 flex-[2] overflow-auto rounded border border-white/5">
         <table className="w-full border-collapse font-mono text-xs">
-          <thead className="sticky top-0" style={{ backgroundColor: '#0a0c12' }}>
+          <thead className="sticky top-0 bg-[#0a0c12]">
             <tr>
               {(
                 [

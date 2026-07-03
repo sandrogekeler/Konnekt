@@ -6,28 +6,28 @@ import type { TileProps } from '../../types'
 
 const KIND_ICON: Record<NotifKind, string> = {
   crash: '⚠',
-  join:  '●',
-  info:  '·',
-  warn:  '⚠',
+  join: '●',
+  info: '·',
+  warn: '⚠',
   error: '✕',
 }
 
-const KIND_COLOR: Record<NotifKind, string> = {
-  crash: 'var(--danger)',
-  join:  'var(--accent)',
-  info:  'var(--text-muted)',
-  warn:  'var(--warning)',
-  error: 'var(--danger)',
+const KIND_CLASS: Record<NotifKind, string> = {
+  crash: 'text-danger',
+  join: 'text-accent',
+  info: 'text-text-muted',
+  warn: 'text-warning',
+  error: 'text-danger',
 }
 
 // Filter options — "errors" matches both 'error' and 'crash' (same severity).
 type KindFilter = 'all' | 'join' | 'info' | 'warn' | 'errors'
 
 const FILTER_OPTIONS: { value: KindFilter; label: string }[] = [
-  { value: 'all',    label: 'All' },
-  { value: 'join',   label: 'Joins' },
-  { value: 'info',   label: 'Info' },
-  { value: 'warn',   label: 'Warn' },
+  { value: 'all', label: 'All' },
+  { value: 'join', label: 'Joins' },
+  { value: 'info', label: 'Info' },
+  { value: 'warn', label: 'Warn' },
   { value: 'errors', label: 'Errors' },
 ]
 
@@ -50,15 +50,22 @@ export function NotificationsTile(_props: TileProps) {
   const activeLabel = FILTER_OPTIONS.find((o) => o.value === filter)?.label ?? 'All'
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Filter toolbar — collapsed by default */}
-      <div className="flex items-center gap-2 px-3 pt-2 pb-1 shrink-0">
+      <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-1">
         <button
           onClick={() => setFilterOpen((v) => !v)}
-          className="flex items-center gap-1 text-xs transition-colors"
-          style={{ color: filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)' }}
+          className={`flex items-center gap-1 text-xs transition-colors ${
+            filterOpen ? 'text-text-secondary' : 'text-text-faint'
+          }`}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = filterOpen
+              ? 'var(--text-secondary)'
+              : 'var(--text-faint)'
+          }}
         >
           <span>{filterOpen ? '▾' : '▸'}</span>
           <span className="font-mono">{filterOpen ? 'Filter' : activeLabel}</span>
@@ -68,28 +75,21 @@ export function NotificationsTile(_props: TileProps) {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 flex flex-col gap-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
         {items.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+          <div className="text-text-faint flex h-full items-center justify-center font-mono text-xs">
             No notifications yet
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-xs font-mono py-2" style={{ color: 'var(--text-faint)' }}>
-            No matching notifications
-          </div>
+          <div className="text-text-faint py-2 font-mono text-xs">No matching notifications</div>
         ) : (
           filtered.map((item) => (
             <div key={item.id} className="flex items-start gap-2 text-xs">
-              <span
-                className="shrink-0 font-mono"
-                style={{ color: KIND_COLOR[item.kind] }}
-              >
+              <span className={`shrink-0 font-mono ${KIND_CLASS[item.kind]}`}>
                 {KIND_ICON[item.kind]}
               </span>
-              <span className="shrink-0 font-mono" style={{ color: 'var(--text-faint)' }}>
-                {item.timestamp}
-              </span>
-              <span style={{ color: 'var(--text-secondary)' }}>{item.text}</span>
+              <span className="text-text-faint shrink-0 font-mono">{item.timestamp}</span>
+              <span className="text-text-secondary">{item.text}</span>
             </div>
           ))
         )}
@@ -98,10 +98,13 @@ export function NotificationsTile(_props: TileProps) {
       <div className="shrink-0 px-3 pb-2">
         <button
           onClick={clear}
-          className="text-xs transition-colors"
-          style={{ color: 'var(--text-faint)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+          className="text-text-faint text-xs transition-colors"
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'
+          }}
         >
           Clear all
         </button>

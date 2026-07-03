@@ -30,25 +30,33 @@ interface CmdItem {
 type PresetTemplate = Omit<CmdItem, 'id'>
 
 const PRESETS: PresetTemplate[] = [
-  { label: 'Start',         kind: 'lifecycle', value: 'start' },
-  { label: 'Stop',          kind: 'lifecycle', value: 'stop' },
-  { label: 'Restart',       kind: 'lifecycle', value: 'restart' },
-  { label: 'Save All',      kind: 'cmd',       value: 'save-all' },
-  { label: 'List',          kind: 'cmd',       value: 'list' },
-  { label: 'Set Day',       kind: 'cmd',       value: 'time set day' },
-  { label: 'Set Night',     kind: 'cmd',       value: 'time set night' },
-  { label: 'Clear Weather', kind: 'cmd',       value: 'weather clear' },
-  { label: 'Rain',          kind: 'cmd',       value: 'weather rain' },
-  { label: 'Freeze Time',   kind: 'cmd',       value: 'gamerule doDaylightCycle false' },
-  { label: 'Unfreeze Time', kind: 'cmd',       value: 'gamerule doDaylightCycle true' },
-  { label: 'Peaceful',      kind: 'cmd',       value: 'difficulty peaceful' },
-  { label: 'Kick Player',   kind: 'special',   value: 'kick' },
-  { label: 'Ban Player',    kind: 'special',   value: 'ban' },
+  { label: 'Start', kind: 'lifecycle', value: 'start' },
+  { label: 'Stop', kind: 'lifecycle', value: 'stop' },
+  { label: 'Restart', kind: 'lifecycle', value: 'restart' },
+  { label: 'Save All', kind: 'cmd', value: 'save-all' },
+  { label: 'List', kind: 'cmd', value: 'list' },
+  { label: 'Set Day', kind: 'cmd', value: 'time set day' },
+  { label: 'Set Night', kind: 'cmd', value: 'time set night' },
+  { label: 'Clear Weather', kind: 'cmd', value: 'weather clear' },
+  { label: 'Rain', kind: 'cmd', value: 'weather rain' },
+  { label: 'Freeze Time', kind: 'cmd', value: 'gamerule doDaylightCycle false' },
+  { label: 'Unfreeze Time', kind: 'cmd', value: 'gamerule doDaylightCycle true' },
+  { label: 'Peaceful', kind: 'cmd', value: 'difficulty peaceful' },
+  { label: 'Kick Player', kind: 'special', value: 'kick' },
+  { label: 'Ban Player', kind: 'special', value: 'ban' },
 ]
 
 const DEFAULT_LABELS = new Set([
-  'Start', 'Stop', 'Restart', 'Save All', 'List',
-  'Set Day', 'Clear Weather', 'Freeze Time', 'Kick Player', 'Ban Player',
+  'Start',
+  'Stop',
+  'Restart',
+  'Save All',
+  'List',
+  'Set Day',
+  'Clear Weather',
+  'Freeze Time',
+  'Kick Player',
+  'Ban Player',
 ])
 
 const newId = () =>
@@ -183,8 +191,8 @@ export function QuickCommandsTile({ serverId }: TileProps) {
   const execLifecycle = useCallback(
     (action: string) => {
       const fns: Record<string, () => Promise<void>> = {
-        start:   () => StartServer(serverId),
-        stop:    () => StopServer(serverId),
+        start: () => StartServer(serverId),
+        stop: () => StopServer(serverId),
         restart: () => RestartServer(serverId),
       }
       fns[action]?.().catch(console.error)
@@ -261,10 +269,10 @@ export function QuickCommandsTile({ serverId }: TileProps) {
   }, [])
 
   return (
-    <div className="flex flex-col h-full px-3 py-2 gap-2">
-      <div className="flex-1 min-h-0 overflow-y-auto">
+    <div className="flex h-full flex-col gap-2 px-3 py-2">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-white/25 text-xs">
+          <div className="flex h-full items-center justify-center text-xs text-white/25">
             Press Edit to add commands.
           </div>
         ) : (
@@ -288,18 +296,18 @@ export function QuickCommandsTile({ serverId }: TileProps) {
                     dragIndex.current = null
                     setOverIndex(null)
                   }}
-                  className={`flex items-center gap-1 px-2 py-1.5 text-xs rounded border text-white/70 cursor-grab transition-colors ${
+                  className={`flex cursor-grab items-center gap-1 rounded border px-2 py-1.5 text-xs text-white/70 transition-colors ${
                     overIndex === i ? 'border-white/40 bg-white/10' : 'border-white/10'
                   }`}
                 >
-                  <span className="text-white/25 select-none leading-none">⠿</span>
+                  <span className="leading-none text-white/25 select-none">⠿</span>
                   <span className="flex-1 truncate" title={item.value}>
                     {item.label}
                   </span>
                   <button
                     onClick={() => removeItem(item.id)}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="px-1 text-white/30 hover:text-red-400 transition-colors leading-none"
+                    className="px-1 leading-none text-white/30 transition-colors hover:text-red-400"
                     title="Remove"
                   >
                     ×
@@ -310,7 +318,7 @@ export function QuickCommandsTile({ serverId }: TileProps) {
                   key={item.id}
                   onClick={() => run(item)}
                   title={item.value}
-                  className="px-2 py-1.5 text-xs rounded border border-white/10 text-white/70 hover:text-white hover:border-white/25 hover:bg-white/5 transition-all text-left truncate"
+                  className="truncate rounded border border-white/10 px-2 py-1.5 text-left text-xs text-white/70 transition-all hover:border-white/25 hover:bg-white/5 hover:text-white"
                 >
                   {item.label}
                 </button>
@@ -320,7 +328,7 @@ export function QuickCommandsTile({ serverId }: TileProps) {
         )}
       </div>
 
-      <div className="shrink-0 flex flex-col gap-1.5">
+      <div className="flex shrink-0 flex-col gap-1.5">
         {editing && (
           <div className="relative">
             <input
@@ -329,26 +337,26 @@ export function QuickCommandsTile({ serverId }: TileProps) {
               onChange={(e) => setNewCmd(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCustom()}
               placeholder="Add command..."
-              className="w-full bg-white/5 border border-white/10 rounded px-2 pr-7 py-1 text-xs font-mono text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors"
+              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1 pr-7 font-mono text-xs text-white placeholder-white/25 transition-colors outline-none focus:border-white/20"
             />
             <button
               onClick={addCustom}
               title="Add command"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/80 transition-colors text-sm leading-none"
+              className="absolute top-1/2 right-1.5 -translate-y-1/2 text-sm leading-none text-white/35 transition-colors hover:text-white/80"
             >
               +
             </button>
           </div>
         )}
-        <div className="flex gap-1.5 justify-between">
+        <div className="flex justify-between gap-1.5">
           {editing && (
             <button
               ref={presetsButtonRef}
               onClick={openPresets}
-              className={`px-2 py-1 text-xs rounded border transition-colors ${
+              className={`rounded border px-2 py-1 text-xs transition-colors ${
                 dropdownPos
-                  ? 'border-white/25 text-white bg-white/5'
-                  : 'border-white/10 text-white/60 hover:text-white hover:border-white/25'
+                  ? 'border-white/25 bg-white/5 text-white'
+                  : 'border-white/10 text-white/60 hover:border-white/25 hover:text-white'
               }`}
             >
               + Presets
@@ -356,10 +364,10 @@ export function QuickCommandsTile({ serverId }: TileProps) {
           )}
           <button
             onClick={toggleEdit}
-            className={`ml-auto px-2 py-1 text-xs rounded border transition-colors ${
+            className={`ml-auto rounded border px-2 py-1 text-xs transition-colors ${
               editing
-                ? 'border-white/25 text-white bg-white/5'
-                : 'border-white/10 text-white/60 hover:text-white hover:border-white/25'
+                ? 'border-white/25 bg-white/5 text-white'
+                : 'border-white/10 text-white/60 hover:border-white/25 hover:text-white'
             }`}
           >
             {editing ? 'Done' : 'Edit'}
@@ -371,24 +379,15 @@ export function QuickCommandsTile({ serverId }: TileProps) {
         createPortal(
           <div
             ref={dropdownRef}
+            className="fixed z-[9999] grid grid-cols-2 gap-1.5 overflow-y-auto rounded-[10px] border-[0.5px] border-white/10 bg-[#0d0e14] p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            // eslint-disable-next-line no-restricted-syntax -- position computed from getBoundingClientRect, not visible to Tailwind's static scanner
             style={{
-              position: 'fixed',
               top: dropdownPos.top,
               bottom: dropdownPos.bottom,
               left: dropdownPos.left,
               minWidth: dropdownPos.width,
               width: dropdownPos.width,
               maxHeight: dropdownPos.maxHeight,
-              overflowY: 'auto',
-              zIndex: 9999,
-              background: '#0d0e14',
-              border: '0.5px solid rgba(255,255,255,0.1)',
-              borderRadius: '10px',
-              padding: '10px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '6px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
             }}
           >
             {PRESETS.map((p) => (
@@ -399,7 +398,7 @@ export function QuickCommandsTile({ serverId }: TileProps) {
                   setDropdownPos(null)
                 }}
                 title={p.value}
-                className="px-2 py-1.5 text-xs rounded border border-white/10 text-white/70 hover:text-white hover:border-white/25 hover:bg-white/5 transition-all text-left truncate"
+                className="truncate rounded border border-white/10 px-2 py-1.5 text-left text-xs text-white/70 transition-all hover:border-white/25 hover:bg-white/5 hover:text-white"
               >
                 {p.label}
               </button>
@@ -410,36 +409,44 @@ export function QuickCommandsTile({ serverId }: TileProps) {
 
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div
-            className="rounded-xl p-5 w-72 flex flex-col gap-4"
-            style={{ background: 'var(--bg-base)', border: '0.5px solid var(--border-subtle)' }}
-          >
+          <div className="border-border-subtle bg-canvas flex w-72 flex-col gap-4 rounded-xl border-[0.5px] p-5">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+              <span className="text-text-primary text-sm font-semibold capitalize">
                 {confirmAction === 'stop' ? 'Stop server?' : 'Restart server?'}
               </span>
-              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <span className="text-text-secondary text-xs">
                 {confirmAction === 'stop'
                   ? 'This will stop the running server. Any unsaved progress may be lost.'
                   : 'This will restart the running server. Players will be briefly disconnected.'}
               </span>
             </div>
-            <div className="flex gap-2 justify-end">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-3 py-1.5 text-xs transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+                className="text-text-muted px-3 py-1.5 text-xs transition-colors"
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+                }}
               >
                 Cancel
               </button>
               <button
-                onClick={() => { execLifecycle(confirmAction); setConfirmAction(null) }}
-                className="px-3 py-1.5 text-xs rounded transition-colors"
-                style={{ background: 'rgba(248,113,113,0.15)', border: '0.5px solid rgba(248,113,113,0.3)', color: '#f87171' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.25)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.15)' }}
+                onClick={() => {
+                  execLifecycle(confirmAction)
+                  setConfirmAction(null)
+                }}
+                className="rounded border-[0.5px] border-red-400/30 bg-red-400/15 px-3 py-1.5 text-xs text-red-400 transition-colors"
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background =
+                    'rgba(248,113,113,0.25)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background =
+                    'rgba(248,113,113,0.15)'
+                }}
               >
                 {confirmAction === 'stop' ? 'Stop' : 'Restart'}
               </button>
@@ -450,10 +457,7 @@ export function QuickCommandsTile({ serverId }: TileProps) {
 
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div
-            className="rounded-xl p-5 w-80 flex flex-col gap-3"
-            style={{ background: '#0d0e14', border: '0.5px solid rgba(255,255,255,0.1)' }}
-          >
+          <div className="flex w-80 flex-col gap-3 rounded-xl border-[0.5px] border-white/10 bg-[#0d0e14] p-5">
             <h3 className="text-sm font-semibold capitalize">{modal.type} Player</h3>
             <input
               type="text"
@@ -461,25 +465,25 @@ export function QuickCommandsTile({ serverId }: TileProps) {
               onChange={(e) => setModal((m) => m && { ...m, playerName: e.target.value })}
               placeholder="Player name"
               autoFocus
-              className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20"
+              className="rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20"
             />
             <input
               type="text"
               value={modal.reason}
               onChange={(e) => setModal((m) => m && { ...m, reason: e.target.value })}
               placeholder="Reason (optional)"
-              className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20"
+              className="rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20"
             />
-            <div className="flex gap-2 justify-end">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setModal(null)}
-                className="px-3 py-1.5 text-xs text-white/50 hover:text-white transition-colors"
+                className="px-3 py-1.5 text-xs text-white/50 transition-colors hover:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={submitModal}
-                className="px-3 py-1.5 text-xs rounded bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors"
+                className="rounded border border-red-500/30 bg-red-500/20 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/30"
               >
                 {modal.type === 'kick' ? 'Kick' : 'Ban'}
               </button>

@@ -242,12 +242,46 @@ todo list, not a target.
     hover border-color swap still fires (inspected the element's `style`
     attribute directly: `border-color: var(--border-hover)` on hover,
     reverting to `var(--border-subtle)` on mouseleave).
-- ~706 `style={{}}` usages remain across the rest of the codebase (~54 files).
-  Continue tile-by-tile, static values only — genuinely dynamic ones stay
-  inline. Repeat the pattern: convert, then add that directory to the
-  ratcheted-`error` `files` glob with documented exceptions for the rest.
-  Next-smallest candidates: stats (6), notifications (7), quick-commands (7),
-  performance (9), console (11).
+- ✅ Third slice done: batched all five remaining small single-file tiles in
+  one pass — `stats`, `notifications`, `quick-commands`, `performance`,
+  `console` (40 occurrences total, exact count corrected from the earlier
+  census, which missed the `style={cond ? {...} : {}}` ternary form).
+  `notifications` fully converts to zero remaining inline styles (including a
+  `KIND_COLOR` → `KIND_CLASS` static Tailwind-class lookup, replacing the
+  removed CSS-var lookup — `NotifKind` is a closed string-literal union, so
+  this is exactly as static as a boolean ternary). `stats`/`quick-commands`/
+  `performance` each keep exactly one genuinely-computed exception (a
+  percentage-width bar fill, and a floating dropdown's
+  `getBoundingClientRect`-derived position). `console` keeps 4 documented
+  exceptions, all `fontFamily: "'JetBrains Mono', monospace"` — see the new
+  `--font-mono` token-gap entry below. The eslint ratchet's `files` glob also
+  caught one leftover from the earlier code-split session:
+  `performance/charts.tsx`'s recharts `<Legend>` label color (a ternary
+  between two static `rgba()` values, converted the same way). Global warning
+  count: 706 → 665.
+  - `#f87171` in `quick-commands.tsx` turned out to be exactly Tailwind's
+    default `red-400` — converted to named classes with opacity modifiers
+    (`bg-red-400/15`, `border-red-400/30`, `text-red-400`) instead of
+    arbitrary hex brackets.
+  - Verified live: `stats`' status dot correctly shows `bg-red-500` with
+    `box-shadow: none` in the offline state (computed style, confirming the
+    ternary's false branch); `console`'s command input still resolves
+    `font-family: "JetBrains Mono", monospace` exactly; the quick-commands
+    kick/ban modal panel opened and its `background-color`/`border-color`
+    matched the source arbitrary values exactly (`rgb(13,14,20)` = `#0d0e14`,
+    `white/10` border). No new console errors beyond the same pre-existing
+    `quick-commands` `window.go`-unavailable mount errors seen in prior
+    sessions.
+- Missing `--font-mono` theme token found during this pass, tracked
+  separately: see "P2 — Missing `--font-mono` theme token" below.
+- ~665 `style={{}}` usages remain across the rest of the codebase (~49
+  files). Continue tile-by-tile — the remaining hotspots are all
+  substantially larger and more dynamic-content-heavy: mods (176), backups
+  (116), scheduler (88), config (80), the rest of `components/` (68),
+  worlds (45), players (32). These will need more deliberate scoping
+  (likely per-tile, not batched) and, for several, live `wails dev` + a
+  configured server to fully verify beyond what this sandbox's headless
+  preview can reach.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/
@@ -256,6 +290,22 @@ todo list, not a target.
   `exhaustive-deps` only (see Lint/format enforcement above). The ~60 findings
   it currently surfaces are concentrated in the r3f scene code and would need
   a dedicated pass with test coverage in place first.
+
+**P2 — Missing `--font-mono` theme token**
+- Found during the Milestone 2 third slice: `frontend/src/style.css`'s
+  `@theme inline` block registers color tokens but has no `--font-mono`
+  override, so the bare `font-mono` Tailwind utility (already used in several
+  places across the codebase) resolves to Tailwind's *default* monospace
+  stack, not the app's actual font (JetBrains Mono, per `CLAUDE.md`).
+  Registering `--font-mono: 'JetBrains Mono', 'Fira Code', monospace;` (the
+  exact stack already used in `style.css`'s `.mod-body code` rule) would let
+  `console.tsx`'s 4 documented inline-style exceptions, and any similar sites
+  found in future migration passes, convert to a plain `font-mono` class.
+  Deliberately not fixed as part of the Milestone 2 pass — every *existing*
+  bare `font-mono` usage project-wide needs auditing first, since some may
+  currently be relying on Tailwind's default stack rather than an inline
+  override masking the gap; flipping the token blind would be a wide,
+  unverified visual change across the whole codebase.
 
 **P1 — Test coverage + gate**
 - ✅ Stood up the frontend test harness: `vitest` (pinned to `^3` — `vitest@4`

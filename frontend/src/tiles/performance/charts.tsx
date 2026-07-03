@@ -165,11 +165,7 @@ export function HistoryChart({
               players: 'Players',
             }
             return (
-              <span
-                style={{
-                  color: hidden.has(value) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
-                }}
-              >
+              <span className={hidden.has(value) ? 'text-white/25' : 'text-white/70'}>
                 {labels[value] ?? value}
               </span>
             )

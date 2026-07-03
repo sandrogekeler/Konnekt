@@ -16,8 +16,8 @@ const LEVEL_CLASS = {
 type LevelFilter = 'all' | 'warn' | 'error'
 
 const LEVEL_FILTER_OPTIONS: { value: LevelFilter; label: string }[] = [
-  { value: 'all',   label: 'All' },
-  { value: 'warn',  label: 'Warn' },
+  { value: 'all', label: 'All' },
+  { value: 'warn', label: 'Warn' },
   { value: 'error', label: 'Error' },
 ]
 
@@ -28,7 +28,7 @@ function highlightQuery(text: string, query: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: 'var(--accent)', color: 'var(--bg-base)', borderRadius: 2 }}>
+      <mark className="bg-accent text-canvas rounded-sm">
         {text.slice(idx, idx + query.length)}
       </mark>
       {text.slice(idx + query.length)}
@@ -81,15 +81,24 @@ export function ConsoleTile({ serverId }: TileProps) {
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Search / filter toolbar — collapsed by default */}
-      <div className="flex items-center gap-2 px-3 pt-2 pb-1 shrink-0">
+      <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-1">
         <button
           onClick={() => setFilterOpen((v) => !v)}
-          className="flex items-center gap-1 text-xs transition-colors shrink-0"
-          style={{ color: filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)', fontFamily: "'JetBrains Mono', monospace" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = filterOpen ? 'var(--text-secondary)' : 'var(--text-faint)' }}
+          className={`flex shrink-0 items-center gap-1 text-xs transition-colors ${
+            filterOpen ? 'text-text-secondary' : 'text-text-faint'
+          }`}
+          // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = filterOpen
+              ? 'var(--text-secondary)'
+              : 'var(--text-faint)'
+          }}
         >
           <span>{filterOpen ? '▾' : '▸'}</span>
           <span>{filterOpen ? 'Filter' : levelFilter !== 'all' ? levelFilter : 'All'}</span>
@@ -101,18 +110,23 @@ export function ConsoleTile({ serverId }: TileProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="search…"
-              className="flex-1 rounded px-2 py-0.5 text-xs font-mono outline-none"
-              style={{
-                background: 'var(--hover-surface)',
-                border: '0.5px solid var(--border-subtle)',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
+              className="bg-hover border-border-subtle text-text-primary flex-1 rounded border-[0.5px] px-2 py-0.5 font-mono text-xs outline-none"
+              // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              onFocus={(e) => {
+                ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)'
               }}
-              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)' }}
-              onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)' }}
+              onBlur={(e) => {
+                ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)'
+              }}
             />
-            <Segmented options={LEVEL_FILTER_OPTIONS} value={levelFilter} onChange={setLevelFilter} compact />
-            <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-faint)' }}>
+            <Segmented
+              options={LEVEL_FILTER_OPTIONS}
+              value={levelFilter}
+              onChange={setLevelFilter}
+              compact
+            />
+            <span className="text-text-faint shrink-0 font-mono text-xs">
               {filtered.length}/{lines.length}
             </span>
           </>
@@ -122,22 +136,17 @@ export function ConsoleTile({ serverId }: TileProps) {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto px-3 py-2 font-mono text-xs leading-5 select-text"
+        className="min-h-0 flex-1 overflow-y-auto px-3 py-2 font-mono text-xs leading-5 select-text"
+        // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
         style={{ fontFamily: "'JetBrains Mono', monospace" }}
       >
         {filtered.length === 0 && lines.length > 0 ? (
-          <div className="text-xs font-mono py-2" style={{ color: 'var(--text-faint)' }}>
-            No matching lines
-          </div>
+          <div className="text-text-faint py-2 font-mono text-xs">No matching lines</div>
         ) : (
           filtered.map((line) => (
             <div key={line.id} className="flex gap-2">
-              {showTimestamps && (
-                <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>{line.timestamp}</span>
-              )}
-              <span className={LEVEL_CLASS[line.level]}>
-                {highlightQuery(line.text, query)}
-              </span>
+              {showTimestamps && <span className="text-text-faint shrink-0">{line.timestamp}</span>}
+              <span className={LEVEL_CLASS[line.level]}>{highlightQuery(line.text, query)}</span>
             </div>
           ))
         )}
@@ -149,34 +158,32 @@ export function ConsoleTile({ serverId }: TileProps) {
             setAutoScroll(true)
             if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
           }}
-          className="mx-3 mb-1 text-xs transition-colors text-center"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-text-muted mx-3 mb-1 text-center text-xs transition-colors"
         >
           ↓ scroll to bottom
         </button>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-2 px-3 pb-3 pt-1">
-        <span className="text-accent font-mono text-sm self-center">&gt;</span>
+      <form onSubmit={handleSubmit} className="flex gap-2 px-3 pt-1 pb-3">
+        <span className="text-accent self-center font-mono text-sm">&gt;</span>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter command..."
-          className="flex-1 rounded px-2 py-1 text-sm font-mono outline-none transition-colors"
-          style={{
-            background: 'var(--hover-surface)',
-            border: '0.5px solid var(--border-subtle)',
-            color: 'var(--text-primary)',
-            fontFamily: "'JetBrains Mono', monospace",
+          className="bg-hover border-border-subtle text-text-primary flex-1 rounded border-[0.5px] px-2 py-1 font-mono text-sm transition-colors outline-none"
+          // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          onFocus={(e) => {
+            ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)'
           }}
-          onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)' }}
-          onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)' }}
+          onBlur={(e) => {
+            ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-subtle)'
+          }}
         />
         <button
           type="submit"
-          className="px-3 py-1 text-xs rounded transition-colors"
-          style={{ border: '0.5px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+          className="border-border-subtle text-text-secondary rounded border-[0.5px] px-3 py-1 text-xs transition-colors"
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-hover)'
@@ -191,8 +198,7 @@ export function ConsoleTile({ serverId }: TileProps) {
         <button
           type="button"
           onClick={clear}
-          className="px-3 py-1 text-xs rounded transition-colors"
-          style={{ border: '0.5px solid var(--border-subtle)', color: 'var(--text-faint)' }}
+          className="border-border-subtle text-text-faint rounded border-[0.5px] px-3 py-1 text-xs transition-colors"
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-hover)'
