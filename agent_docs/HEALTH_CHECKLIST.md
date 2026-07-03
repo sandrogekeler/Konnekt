@@ -220,7 +220,8 @@ todo list, not a target.
   exceptions needed, unlike `ui/*`. Global warning count: 711 → 706. Added
   `src/tiles/TileWrapper/**/*.tsx` to the same ratcheted-`error` `files` glob
   in `frontend/eslint.config.js` as `ui/*` (merged into one config object
-  rather than duplicating the rule block).
+  rather than duplicating the rule block). Confirmed green on `main`:
+  https://github.com/sandrogekeler/Konnekt/actions/runs/28630261474
   - The three `onMouseEnter`/`onMouseLeave` pairs that imperatively set
     `e.currentTarget.style.borderColor`/`.style.color` were left untouched —
     not the JSX `style=` attribute the lint rule targets, and out of scope to
