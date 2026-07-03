@@ -29,8 +29,8 @@ wails build              # Production build smoke test
 ## 1. Clean
 
 - [x] `go vet ./...` and `gofmt -l .` report nothing.
-- [ ] No blank `_ =` error-ignores in Go, except documented `//nolint` cases
-      (e.g. `backend/services/eventbus.go`). **Gap found** — see backlog
+- [x] No blank `_ =` error-ignores in Go, except documented `//nolint` cases
+      (e.g. `backend/services/eventbus.go`). See backlog
       ("P2 — Undocumented blank error-ignores").
 - [x] `pnpm lint` runs against a real ESLint config and passes.
 - [x] Formatting (Prettier/Biome or equivalent) is consistent and enforced,
@@ -296,18 +296,29 @@ todo list, not a target.
   "P2 — Repo hygiene" below (`uplot` / `skinview3d`).
 
 **P2 — Undocumented blank error-ignores**
-- Found during this review: ~20 blank `_ = ` / `_, _ = ` error-ignores across
-  the Go backend with no `//nolint` explaining why the error is safe to drop
-  — the Clean-pillar rule only exempts *documented* cases (the existing
-  precedent is `backend/services/eventbus.go`). Spread across `backup.go`
-  (rollback-path renames/cleanup, meta save), `config_editor.go` (best-effort
-  old-backup pruning), `players.go` (`json.Unmarshal` into a fresh `[]T`),
-  `server.go` (`p.Percent(0)` priming call, `cmd.Wait()`, stdin `"stop"`
-  write, RCON `save-off`), `modservice.go` (manifest save), and
-  `scheduler_blocks.go`/`scheduler_engine.go` (command dispatch, data-node
-  exec). Most look like legitimate best-effort/fire-and-forget ops, but each
-  needs a one-line `//nolint` (or a real error check where it's not actually
-  safe to ignore) to match the documented convention.
+- ✅ Resolved. All 28 blank `_ = ` / `_, _ = ` sites across
+  `backend/services/{backup,config_editor,players,modservice,scheduler_blocks,
+  scheduler_engine,server,server_windows,server_other}.go` now carry a
+  `//nolint:errcheck // <reason>` comment (no `golangci-lint` config exists in
+  this repo — `//nolint` is a human-readable documentation convention here,
+  not machine-enforced). 27 were genuinely safe best-effort/fire-and-forget
+  code (rollback cleanup, progress-estimate walks, best-effort manifest/meta
+  persistence, RCON save-flush during backup, OS-handle-close/process-kill
+  teardown) — verified individually by reading each call site in context, not
+  assumed.
+  - One real bug found and fixed, not just documented: `worlds.go`'s
+    `RenameWorld` renamed a world's folder on disk, then discarded the error
+    from writing the new name into `server.properties`'s `level-name`. A
+    failed write there would have left `RenameWorld` returning success while
+    the server's config pointed at a folder that no longer existed — the
+    server would fail to find its world on next start. Now propagates the
+    error (`fmt.Errorf("world folder renamed but level-name update failed: %w", err)`),
+    a safe, backward-compatible fix since the function already returns
+    `error` and no caller needed to change.
+  - Verification: `gofmt -l .` clean, `go vet ./...` + `go test ./... -count=1`
+    + `go build ./...` green, and the audit grep
+    (`grep -rn "_ = \|_, _ = " backend --include="*.go" | grep -v "_test.go" | grep -v "nolint"`)
+    returns nothing.
 
 **P2 — Structured logging**
 - Replace ad-hoc `fmt.Errorf`-only error reporting on the backend with

@@ -42,7 +42,7 @@ func loadJSON[T any](path string) []T {
 		return nil
 	}
 	var out []T
-	_ = json.Unmarshal(data, &out)
+	_ = json.Unmarshal(data, &out) //nolint:errcheck // intentional degrade-to-empty: out stays its nil zero value on parse failure
 	return out
 }
 

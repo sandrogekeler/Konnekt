@@ -493,7 +493,7 @@ func (s *ModService) SetEnabled(serverID, fileName string, enabled bool) error {
 				it.Enabled = enabled
 			}
 		}
-		_ = s.saveManifest(serverID, manifest)
+		_ = s.saveManifest(serverID, manifest) //nolint:errcheck // best-effort manifest sync; the underlying file operation already succeeded
 	}
 
 	s.bus.Emit(EventModChanged, map[string]any{"serverID": serverID})
@@ -533,7 +533,7 @@ func (s *ModService) Uninstall(serverID, fileName string) error {
 	manifest, _ := s.loadManifest(serverID)
 	if manifest != nil {
 		manifest.removeByBase(bareName)
-		_ = s.saveManifest(serverID, manifest)
+		_ = s.saveManifest(serverID, manifest) //nolint:errcheck // best-effort manifest sync; the underlying file operation already succeeded
 	}
 
 	s.clearUpdateCache(serverID)

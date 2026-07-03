@@ -45,19 +45,19 @@ func (s *ServerService) createJob() {
 		uint32(unsafe.Sizeof(info)),
 	)
 	if err != nil {
-		_ = windows.CloseHandle(job)
+		_ = windows.CloseHandle(job) //nolint:errcheck // error-path cleanup; job is being discarded either way
 		return
 	}
 
 	proc, err := windows.OpenProcess(windows.PROCESS_ALL_ACCESS, false, uint32(s.cmd.Process.Pid))
 	if err != nil {
-		_ = windows.CloseHandle(job)
+		_ = windows.CloseHandle(job) //nolint:errcheck // error-path cleanup; job is being discarded either way
 		return
 	}
 	defer windows.CloseHandle(proc)
 
 	if err := windows.AssignProcessToJobObject(job, proc); err != nil {
-		_ = windows.CloseHandle(job)
+		_ = windows.CloseHandle(job) //nolint:errcheck // error-path cleanup; job is being discarded either way
 		return
 	}
 
@@ -67,11 +67,11 @@ func (s *ServerService) createJob() {
 // closeJob releases the Job Object handle after the Java process has exited normally.
 func (s *ServerService) closeJob() {
 	if s.job != 0 {
-		_ = windows.CloseHandle(windows.Handle(s.job))
+		_ = windows.CloseHandle(windows.Handle(s.job)) //nolint:errcheck // normal teardown; the process is exiting regardless
 		s.job = 0
 	}
 }
 
 func killTree(pid int) {
-	_ = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(pid)).Run()
+	_ = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(pid)).Run() //nolint:errcheck // best-effort escalation; already the last-resort fallback
 }

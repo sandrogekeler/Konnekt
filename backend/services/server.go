@@ -188,7 +188,7 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 	if p, err := process.NewProcess(int32(s.cmd.Process.Pid)); err == nil {
 		s.cachedProc = p
 		// Prime the first measurement so subsequent Percent(0) calls return a delta
-		_, _ = p.Percent(0)
+		_, _ = p.Percent(0) //nolint:errcheck // priming call; return value intentionally unused
 	}
 
 	// Reset TPS state
@@ -283,7 +283,7 @@ func (s *ServerService) streamOutput(r io.Reader) {
 
 func (s *ServerService) waitForExit() {
 	if s.cmd != nil {
-		_ = s.cmd.Wait()
+		_ = s.cmd.Wait() //nolint:errcheck // reaps the exited process; exit status not needed here
 	}
 	s.closeJob()
 	close(s.exited)
@@ -313,7 +313,7 @@ func (s *ServerService) Stop() error {
 	s.expectedStop = true
 
 	if s.stdin != nil {
-		_, _ = fmt.Fprintln(s.stdin, "stop")
+		_, _ = fmt.Fprintln(s.stdin, "stop") //nolint:errcheck // best-effort; the timeout + killTree fallback below is the real safety net
 		s.stdin.Close()
 	}
 
@@ -495,13 +495,13 @@ func (s *ServerService) PrepareForBackup() bool {
 	}
 
 	if rconOK {
-		_, _ = s.rcon.Execute(addr, pw, "save-off")
-		_, _ = s.rcon.Execute(addr, pw, "save-all flush")
+		_, _ = s.rcon.Execute(addr, pw, "save-off")       //nolint:errcheck // best-effort save-flush before backup; backup proceeds either way
+		_, _ = s.rcon.Execute(addr, pw, "save-all flush") //nolint:errcheck // best-effort save-flush before backup; backup proceeds either way
 		return true
 	}
 
-	_ = s.SendCommand("save-off")
-	_ = s.SendCommand("save-all flush")
+	_ = s.SendCommand("save-off")       //nolint:errcheck // best-effort save-flush before backup; backup proceeds either way
+	_ = s.SendCommand("save-all flush") //nolint:errcheck // best-effort save-flush before backup; backup proceeds either way
 	time.Sleep(3 * time.Second)
 	return true
 }
@@ -519,10 +519,10 @@ func (s *ServerService) ResumeSaves() {
 		return
 	}
 	if rconOK {
-		_, _ = s.rcon.Execute(addr, pw, "save-on")
+		_, _ = s.rcon.Execute(addr, pw, "save-on") //nolint:errcheck // best-effort resume after backup
 		return
 	}
-	_ = s.SendCommand("save-on")
+	_ = s.SendCommand("save-on") //nolint:errcheck // best-effort resume after backup
 }
 
 func (s *ServerService) Uptime() string {

@@ -335,7 +335,7 @@ func (s *SchedulerService) ensureDataOutputs(
 		svc:       s.deps,
 		dataOut:   dataOut,
 	}
-	_ = entry.exec(ec) // ignore ExecResult — pure data nodes have no control branches
+	_ = entry.exec(ec) //nolint:errcheck // ignore ExecResult — pure data nodes have no control branches
 
 	if len(dataOut) > 0 {
 		outputs[nodeID] = dataOut

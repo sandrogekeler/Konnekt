@@ -286,7 +286,7 @@ func (s *ConfigEditorService) pruneBackups(dir, prefix string) {
 		}
 	}
 	for i := 0; i < len(matching)-backupKeep; i++ {
-		_ = os.Remove(filepath.Join(dir, matching[i]))
+		_ = os.Remove(filepath.Join(dir, matching[i])) //nolint:errcheck // best-effort retention pruning; a leftover .bak file is harmless
 	}
 }
 

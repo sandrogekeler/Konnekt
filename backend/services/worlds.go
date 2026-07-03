@@ -217,7 +217,9 @@ func (s *WorldService) RenameWorld(serverID, oldName, newName string) error {
 	}
 
 	if oldName == active {
-		_ = writeProperty(filepath.Join(cfg.WorkingDir, "server.properties"), "level-name", newName)
+		if err := writeProperty(filepath.Join(cfg.WorkingDir, "server.properties"), "level-name", newName); err != nil {
+			return fmt.Errorf("world folder renamed but level-name update failed: %w", err)
+		}
 	}
 	return nil
 }

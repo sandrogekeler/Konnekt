@@ -414,11 +414,11 @@ func (s *BackupService) RestoreBackup(serverID, filename string) error {
 			return err
 		}
 		if err := os.Rename(tmp, workingDir); err != nil {
-			_ = os.Rename(aside, workingDir)
+			_ = os.Rename(aside, workingDir) //nolint:errcheck // best-effort rollback; err below is already the reported failure
 			s.bus.Emit(EventBackupFailed, map[string]string{"error": err.Error()})
 			return err
 		}
-		_ = os.RemoveAll(aside)
+		_ = os.RemoveAll(aside) //nolint:errcheck // best-effort cleanup of the pre-restore backup dir; restore already succeeded
 	} else {
 		// World-only restore: replace the target world folder.
 		// For named world backups use the stored world name; legacy server
@@ -449,11 +449,11 @@ func (s *BackupService) RestoreBackup(serverID, filename string) error {
 			return err
 		}
 		if err := os.Rename(tmp, targetDir); err != nil {
-			_ = os.Rename(aside, targetDir)
+			_ = os.Rename(aside, targetDir) //nolint:errcheck // best-effort rollback; err below is already the reported failure
 			s.bus.Emit(EventBackupFailed, map[string]string{"error": err.Error()})
 			return err
 		}
-		_ = os.RemoveAll(aside)
+		_ = os.RemoveAll(aside) //nolint:errcheck // best-effort cleanup of the pre-restore backup dir; restore already succeeded
 	}
 
 	s.bus.Emit(EventRestoreCompleted, map[string]string{"serverID": serverID, "filename": filename})
@@ -470,7 +470,7 @@ func (s *BackupService) DeleteBackup(serverID, filename string) error {
 	}
 	if meta, err := s.loadMeta(metaDir); err == nil {
 		delete(meta, filename)
-		_ = s.saveMeta(metaDir, meta)
+		_ = s.saveMeta(metaDir, meta) //nolint:errcheck // best-effort metadata sync; the backup file itself is still deleted below
 	}
 	return os.Remove(filePath)
 }
@@ -774,7 +774,7 @@ func shortID() string {
 
 func dirSize(srcDir string) int64 {
 	var total int64
-	_ = filepath.Walk(srcDir, func(_ string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(srcDir, func(_ string, info os.FileInfo, err error) error { //nolint:errcheck // best-effort size estimate for a progress percentage; a walk error just undercounts
 		if err == nil && !info.IsDir() {
 			total += info.Size()
 		}

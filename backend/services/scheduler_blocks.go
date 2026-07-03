@@ -412,7 +412,7 @@ func execWriteAttribute(e *ExecContext) ExecResult {
 		if value == "true" || value == "1" {
 			cmd = "whitelist on"
 		}
-		_ = e.Server().SendCommand(cmd)
+		_ = e.Server().SendCommand(cmd) //nolint:errcheck // UX nicety only; writeProperty above already persisted the source of truth
 	case "server.port":
 		if writeErr := writeProperty(propsPath, "server-port", value); writeErr != nil {
 			return ExecResult{Port: "onFailed", Err: writeErr}
@@ -421,7 +421,7 @@ func execWriteAttribute(e *ExecContext) ExecResult {
 		if writeErr := writeProperty(propsPath, "gamemode", value); writeErr != nil {
 			return ExecResult{Port: "onFailed", Err: writeErr}
 		}
-		_ = e.Server().SendCommand("defaultgamemode " + value)
+		_ = e.Server().SendCommand("defaultgamemode " + value) //nolint:errcheck // UX nicety only; writeProperty above already persisted the source of truth
 	case "server.world":
 		if writeErr := writeProperty(propsPath, "level-name", value); writeErr != nil {
 			return ExecResult{Port: "onFailed", Err: writeErr}
