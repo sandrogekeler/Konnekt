@@ -50,7 +50,7 @@ wails build              # Production build smoke test
       `error` as Milestone 2's migration clears each tile.
 - [x] No committed build artifacts (`*.syso`, `frontend/dist/`, `build/bin/`)
       — `.gitignore` covers them.
-- [ ] No stray root-level scratch/design docs left un-triaged (either promoted
+- [x] No stray root-level scratch/design docs left un-triaged (either promoted
       into `agent_docs/` or deleted once the work lands).
 - [ ] `agent_docs/CLAUDE.md` and `agent_docs/ROADMAP.md` still reflect the
       actual stack/structure/scope — update them when they drift.
@@ -449,6 +449,11 @@ todo list, not a target.
   exclusively). `skinview3d` is **kept intentionally**: reserved for the
   not-yet-built Beta "player skin preview" tile (`ROADMAP.md`), documented in
   `agent_docs/DEPENDENCIES.md` so it isn't mistaken for dead weight later.
+- ✅ Deleted the stale root-level `Roadmap.md` — a status log fully superseded
+  by `agent_docs/ROADMAP.md` (which it already deferred to for feature scope)
+  and out of date (e.g. still listed "Split the JS bundle" as planned
+  Infrastructure work, done in the code-split pass above). Root now has no
+  `.md` files besides `README.md`.
 
 **P1 — Scheduler node-system deep analysis**
 - Found during the repo-hygiene pass, while triaging

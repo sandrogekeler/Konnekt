@@ -3,9 +3,6 @@
 This file is the full Alpha/Beta scope reference for Claude Code.
 When implementing any feature, check its status here first.
 
-For a running log of what has actually shipped recently, see the root
-`Roadmap.md` — that file tracks current status; this one defines the full scope.
-
 Note: some Beta features (Settings page, theme toggle, desktop notifications)
 were shipped early during Alpha. Their status below reflects reality.
 
