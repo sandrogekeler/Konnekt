@@ -18,6 +18,8 @@ const DEFAULTS = {
   consoleTimestamps: false,
   notifyOnCrash: false,
   notifyOnJoin: false,
+  schedulerPaletteCollapsed: true,
+  schedulerPaletteClosedCategories: {},
 }
 
 describe('useSettingsStore', () => {

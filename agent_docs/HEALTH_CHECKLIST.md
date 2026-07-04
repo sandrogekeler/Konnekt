@@ -108,8 +108,13 @@ wails build              # Production build smoke test
 - [ ] New Go dependencies were checked against `agent_docs/DEPENDENCIES.md`
       before being added (create this file if it doesn't exist yet — see
       backlog).
-- [ ] Local-first invariant holds: no `localStorage`/`sessionStorage` usage;
+- [x] Local-first invariant holds: no `localStorage`/`sessionStorage` usage;
       all persistence goes through Go file I/O into the Wails app data dir.
+      Repo-wide grep confirms zero occurrences under `frontend/src/`. The one
+      violation found (scheduler `BlockPalette.tsx`'s palette-collapse and
+      per-category-collapse prefs) has been migrated onto `AppSettings` →
+      `app_settings.json`, the same Go-backed path console/notify prefs
+      already use — see backlog.
 
 ## 4. Performant
 
@@ -589,13 +594,20 @@ todo list, not a target.
     (`frontend/src/tiles/scheduler/**`) — the largest untouched cluster in
     the Milestone 2 inline-style migration (see that section above); not yet
     in the ESLint error-ratchet glob.
-  - **Scalable: 2 GAPs.** (1) No `useSchedulerStore` — state lives in local
-    `useState` inside `useScheduler.ts`, contradicting CLAUDE.md's
+  - **Scalable: 1 GAP remaining.** No `useSchedulerStore` — state lives in
+    local `useState` inside `useScheduler.ts`, contradicting CLAUDE.md's
     one-Zustand-store-per-domain rule (confirmed drift, not just suspected).
-    (2) `localStorage` used directly in
-    `frontend/src/tiles/scheduler/editor/BlockPalette.tsx` (palette
-    collapsed/closed state) — a direct violation of CLAUDE.md's explicit
-    "no `localStorage`/`sessionStorage`; persist via Go file I/O" rule.
+    The other Scalable gap this audit found — `localStorage` used directly in
+    `frontend/src/tiles/scheduler/editor/BlockPalette.tsx` for palette
+    collapsed/closed state, a direct violation of CLAUDE.md's explicit "no
+    `localStorage`/`sessionStorage`; persist via Go file I/O" rule — is now
+    ✅ **fixed**: migrated onto `AppSettings.schedulerPaletteCollapsed` /
+    `.schedulerPaletteClosedCategories`, persisted through the existing
+    `GetAppSettings`/`SaveAppSettings` binding (no new Go methods, bindings
+    regenerated via `wails generate module`). Verified live with a
+    mocked-Wails-bridge preview: toggling the palette collapse and a category
+    group calls `SaveAppSettings` with the new fields, and `localStorage`
+    stays at 0 keys throughout.
   - **Stable: critical gap, now closed for the backend engine** (this
     session's main remediation — see the P1 test-coverage entry above for
     what shipped). Two smaller Stable gaps remain, not yet fixed: the 30s
@@ -615,12 +627,11 @@ todo list, not a target.
   zip-slip/data-type-validation tests. `pnpm test` (88 tests), `pnpm typecheck`,
   and `pnpm lint` all green.
 - **Remaining scheduler backlog** (deferred, not fixed this session):
-  frontend tests for the `useScheduler` hook (needs
-  `vi.mock('../../wailsjs/...')`, a pattern not yet used anywhere in the
-  codebase); the `localStorage` → Go-file-I/O migration; the
-  `useSchedulerStore` Zustand migration; the scheduler's inline-style
+  the `useSchedulerStore` Zustand migration; the scheduler's inline-style
   Milestone-2 slice; the next-run poll → event switch; offline-error surfacing
-  in `useScheduler`.
+  in `useScheduler`. (The `localStorage` → Go-file-I/O migration and
+  `useScheduler`-hook test coverage, both listed here previously, have since
+  been completed.)
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart
