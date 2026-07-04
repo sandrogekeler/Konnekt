@@ -111,14 +111,16 @@ func (s *ConfigService) SetActiveServerID(id string) error {
 
 func (s *ConfigService) GetAppSettings() (models.AppSettings, error) {
 	defaults := models.AppSettings{
-		Theme:              "dark",
-		SkinId:             "default",
-		AccentColor:        "#4ade80",
-		SuccessColor:       "#22c55e",
-		WarningColor:       "#f59e0b",
-		DangerColor:        "#f87171",
-		BackgroundStyle:    "solid",
-		ConsoleBufferLines: 1000,
+		Theme:                            "dark",
+		SkinId:                           "default",
+		AccentColor:                      "#4ade80",
+		SuccessColor:                     "#22c55e",
+		WarningColor:                     "#f59e0b",
+		DangerColor:                      "#f87171",
+		BackgroundStyle:                  "solid",
+		ConsoleBufferLines:               1000,
+		SchedulerPaletteCollapsed:        true,
+		SchedulerPaletteClosedCategories: map[string]bool{},
 	}
 	data, err := os.ReadFile(filepath.Join(s.dataDir, "app_settings.json"))
 	if os.IsNotExist(err) {

@@ -17,6 +17,8 @@ const DEFAULTS: AppSettings = {
   consoleTimestamps: false,
   notifyOnCrash: false,
   notifyOnJoin: false,
+  schedulerPaletteCollapsed: true,
+  schedulerPaletteClosedCategories: {},
 }
 
 interface SettingsStore {
@@ -45,7 +47,14 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const backgroundStyle = (validBgStyles as readonly string[]).includes(s.backgroundStyle)
         ? (s.backgroundStyle as AppSettings['backgroundStyle'])
         : DEFAULTS.backgroundStyle
-      settings = { ...DEFAULTS, ...s, theme, skinId, backgroundStyle }
+      settings = {
+        ...DEFAULTS,
+        ...s,
+        theme,
+        skinId,
+        backgroundStyle,
+        schedulerPaletteClosedCategories: s.schedulerPaletteClosedCategories ?? {},
+      }
     } catch {
       /* non-Wails context */
     }

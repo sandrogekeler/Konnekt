@@ -10,7 +10,7 @@ interface Props {
 
 export function ModAboutBody({ body, description, loading }: Props) {
   if (loading && !body) {
-    return <div className="text-xs animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading details…</div>
+    return <div className="text-text-muted animate-pulse text-xs">Loading details…</div>
   }
   if (body) {
     return (
@@ -22,7 +22,7 @@ export function ModAboutBody({ body, description, loading }: Props) {
     )
   }
   if (description) {
-    return <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{description}</p>
+    return <p className="text-text-muted text-xs leading-relaxed">{description}</p>
   }
-  return <div className="text-xs" style={{ color: 'var(--text-muted)' }}>No description available.</div>
+  return <div className="text-text-muted text-xs">No description available.</div>
 }

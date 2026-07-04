@@ -19,7 +19,11 @@ export function Pagination({ total, offset, onPage }: PaginationProps) {
     }
     const pages: (number | '...')[] = [1]
     if (currentPage > 3) pages.push('...')
-    for (let p = Math.max(2, currentPage - 1); p <= Math.min(totalPages - 1, currentPage + 1); p++) {
+    for (
+      let p = Math.max(2, currentPage - 1);
+      p <= Math.min(totalPages - 1, currentPage + 1);
+      p++
+    ) {
       pages.push(p)
     }
     if (currentPage < totalPages - 2) pages.push('...')
@@ -30,57 +34,63 @@ export function Pagination({ total, offset, onPage }: PaginationProps) {
   const pages = getPages()
 
   return (
-    <div
-      className="flex items-center justify-center gap-1 px-3 py-3 shrink-0 flex-wrap"
-      style={{ borderTop: '0.5px solid var(--border-subtle)' }}
-    >
+    <div className="border-border-subtle flex shrink-0 flex-wrap items-center justify-center gap-1 border-t-[0.5px] px-3 py-3">
       {/* Prev */}
       <button
         disabled={currentPage === 1}
         onClick={() => onPage((currentPage - 2) * PAGE_SIZE)}
-        className="px-2 py-1 rounded text-xs font-mono transition-colors disabled:opacity-30"
-        style={{ color: 'var(--text-muted)', background: 'transparent' }}
-        onMouseEnter={e => { if (currentPage !== 1) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+        className="text-text-muted rounded bg-transparent px-2 py-1 font-mono text-xs transition-colors disabled:opacity-30"
+        onMouseEnter={(e) => {
+          if (currentPage !== 1)
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+        }}
+        onMouseLeave={(e) => {
+          ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+        }}
       >
         ‹
       </button>
 
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`ellipsis-${i}`} className="px-1 text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+          <span key={`ellipsis-${i}`} className="text-text-faint px-1 font-mono text-xs">
             …
           </span>
         ) : (
           <button
             key={p}
             onClick={() => onPage(((p as number) - 1) * PAGE_SIZE)}
-            className="min-w-[28px] px-2 py-1 rounded text-xs font-mono transition-colors"
-            style={{
-              background: p === currentPage ? 'var(--accent)' : 'transparent',
-              color: p === currentPage ? 'var(--bg-base)' : 'var(--text-muted)',
-              fontWeight: p === currentPage ? 600 : 400,
+            className={`min-w-[28px] rounded px-2 py-1 font-mono text-xs transition-colors ${
+              p === currentPage
+                ? 'bg-accent text-canvas font-semibold'
+                : 'text-text-muted bg-transparent font-normal'
+            }`}
+            onMouseEnter={(e) => {
+              if (p !== currentPage)
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
             }}
-            onMouseEnter={e => {
-              if (p !== currentPage) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
-            }}
-            onMouseLeave={e => {
-              if (p !== currentPage) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+            onMouseLeave={(e) => {
+              if (p !== currentPage)
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
             }}
           >
             {p}
           </button>
-        )
+        ),
       )}
 
       {/* Next */}
       <button
         disabled={currentPage === totalPages}
         onClick={() => onPage(currentPage * PAGE_SIZE)}
-        className="px-2 py-1 rounded text-xs font-mono transition-colors disabled:opacity-30"
-        style={{ color: 'var(--text-muted)', background: 'transparent' }}
-        onMouseEnter={e => { if (currentPage !== totalPages) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
+        className="text-text-muted rounded bg-transparent px-2 py-1 font-mono text-xs transition-colors disabled:opacity-30"
+        onMouseEnter={(e) => {
+          if (currentPage !== totalPages)
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+        }}
+        onMouseLeave={(e) => {
+          ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+        }}
       >
         ›
       </button>

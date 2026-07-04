@@ -107,74 +107,39 @@ export function ContentDetailPanel({
         />
       )}
 
-      <div
-        className="flex flex-col overflow-hidden"
-        style={{
-          width: '100%',
-          height: '100%',
-          background: 'color-mix(in srgb, var(--bg-base) 97%, white)',
-        }}
-      >
+      <div className="flex h-full w-full flex-col overflow-hidden bg-[color-mix(in_srgb,var(--bg-base)_97%,white)]">
         {/* Header */}
-        <div
-          className="flex shrink-0 items-start gap-2.5 px-4 pt-4 pb-3"
-          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-        >
+        <div className="border-border-subtle flex shrink-0 items-start gap-2.5 border-b-[0.5px] px-4 pt-4 pb-3">
           {project.iconUrl ? (
             <img
               src={project.iconUrl}
               alt=""
-              className="shrink-0 rounded"
-              style={{ width: 42, height: 42, objectFit: 'cover' }}
+              className="h-[42px] w-[42px] shrink-0 rounded object-cover"
             />
           ) : (
-            <div
-              className="flex shrink-0 items-center justify-center rounded font-mono text-xs"
-              style={{
-                width: 42,
-                height: 42,
-                background: 'var(--border-subtle)',
-                color: 'var(--text-faint)',
-              }}
-            >
+            <div className="bg-border-subtle text-text-faint flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded font-mono text-xs">
               &lt;&gt;
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <div
-              className="truncate text-sm font-semibold"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {project.title}
-            </div>
+            <div className="text-text-primary truncate text-sm font-semibold">{project.title}</div>
             {project.author && (
-              <div className="mt-0.5 truncate text-xs" style={{ color: 'var(--text-muted)' }}>
-                by {project.author}
-              </div>
+              <div className="text-text-muted mt-0.5 truncate text-xs">by {project.author}</div>
             )}
             <div className="mt-1 flex flex-wrap items-center gap-3">
               {project.downloads > 0 && (
-                <span
-                  className="font-mono text-xs"
-                  style={{ color: 'var(--text-faint)', fontSize: 10 }}
-                >
+                <span className="text-text-faint font-mono text-xs text-[10px]">
                   ↓ {fmtCount(project.downloads)}
                 </span>
               )}
               {project.follows > 0 && (
-                <span
-                  className="font-mono text-xs"
-                  style={{ color: 'var(--text-faint)', fontSize: 10 }}
-                >
+                <span className="text-text-faint font-mono text-xs text-[10px]">
                   ♥ {fmtCount(project.follows)}
                 </span>
               )}
               {project.dateModified && (
-                <span
-                  className="font-mono text-xs"
-                  style={{ color: 'var(--text-faint)', fontSize: 10 }}
-                >
+                <span className="text-text-faint font-mono text-xs text-[10px]">
                   {relativeTime(project.dateModified)}
                 </span>
               )}
@@ -183,8 +148,7 @@ export function ContentDetailPanel({
 
           <button
             onClick={onClose}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs"
-            style={{ color: 'var(--text-faint)' }}
+            className="text-text-faint flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
             }}
@@ -197,45 +161,30 @@ export function ContentDetailPanel({
         </div>
 
         {/* Install button */}
-        <div
-          className="shrink-0 px-4 py-2.5"
-          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-        >
+        <div className="border-border-subtle shrink-0 border-b-[0.5px] px-4 py-2.5">
           <button
             onClick={handleInstallClick}
             disabled={isInstalling}
-            className="w-full rounded py-1.5 text-xs font-semibold transition-opacity"
-            style={{
-              background: 'var(--accent)',
-              color: 'var(--bg-base)',
-              opacity: isInstalling ? 0.6 : 1,
-            }}
+            className={`bg-accent text-canvas w-full rounded py-1.5 text-xs font-semibold transition-opacity ${
+              isInstalling ? 'opacity-60' : 'opacity-100'
+            }`}
           >
             {isInstalling ? 'Installing…' : 'Install'}
           </button>
-          {installError && (
-            <div className="mt-1.5 text-xs" style={{ color: 'var(--danger)' }}>
-              {installError}
-            </div>
-          )}
+          {installError && <div className="text-danger mt-1.5 text-xs">{installError}</div>}
         </div>
 
         {/* Sub-tabs */}
-        <div
-          className="flex shrink-0 items-center gap-1 px-3 py-1.5"
-          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-        >
+        <div className="border-border-subtle flex shrink-0 items-center gap-1 border-b-[0.5px] px-3 py-1.5">
           {(['about', 'gallery', 'versions'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className="rounded px-2.5 py-1 text-xs capitalize transition-colors"
-              style={{
-                background:
-                  tab === t ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'transparent',
-                color: tab === t ? 'var(--accent)' : 'var(--text-muted)',
-                fontWeight: tab === t ? 600 : 400,
-              }}
+              className={`rounded px-2.5 py-1 text-xs capitalize transition-colors ${
+                tab === t
+                  ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] font-semibold'
+                  : 'text-text-muted bg-transparent font-normal'
+              }`}
             >
               {t}
             </button>
@@ -263,8 +212,7 @@ export function ContentDetailPanel({
                   <img
                     src={project.gallery[galleryIdx]?.url}
                     alt={project.gallery[galleryIdx]?.title ?? ''}
-                    className="mb-3 w-full rounded-lg"
-                    style={{ objectFit: 'contain', maxHeight: 220 }}
+                    className="mb-3 max-h-[220px] w-full rounded-lg object-contain"
                   />
                   {project.gallery.length > 1 && (
                     <div className="flex flex-wrap gap-1.5">
@@ -272,29 +220,18 @@ export function ContentDetailPanel({
                         <button
                           key={i}
                           onClick={() => setGalleryIdx(i)}
-                          className="overflow-hidden rounded"
-                          style={{
-                            width: 44,
-                            height: 44,
-                            outline: i === galleryIdx ? '2px solid var(--accent)' : 'none',
-                            outlineOffset: 1,
-                          }}
+                          className={`h-[44px] w-[44px] overflow-hidden rounded outline-offset-1 ${
+                            i === galleryIdx ? 'outline-accent outline-2' : 'outline-none'
+                          }`}
                         >
-                          <img
-                            src={img.url}
-                            alt=""
-                            className="h-full w-full"
-                            style={{ objectFit: 'cover' }}
-                          />
+                          <img src={img.url} alt="" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  No gallery images.
-                </div>
+                <div className="text-text-muted text-xs">No gallery images.</div>
               )}
             </div>
           )}
@@ -303,15 +240,12 @@ export function ContentDetailPanel({
           {tab === 'versions' && (
             <div>
               {versionsLoading && (
-                <div
-                  className="animate-pulse px-4 py-3 text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
+                <div className="text-text-muted animate-pulse px-4 py-3 text-xs">
                   Loading versions…
                 </div>
               )}
               {!versionsLoading && versions.length === 0 && (
-                <div className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-text-muted px-4 py-3 text-xs">
                   No compatible versions found.
                 </div>
               )}
@@ -329,11 +263,7 @@ export function ContentDetailPanel({
                     setShowAllVersions(true)
                     onGetAllVersions(project.id)
                   }}
-                  className="w-full py-2 text-center font-mono text-xs transition-colors"
-                  style={{
-                    color: 'var(--text-muted)',
-                    borderTop: '0.5px solid var(--border-subtle)',
-                  }}
+                  className="text-text-muted border-border-subtle w-full border-t-[0.5px] py-2 text-center font-mono text-xs transition-colors"
                   onMouseEnter={(e) => {
                     ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
                   }}
@@ -350,13 +280,7 @@ export function ContentDetailPanel({
           {/* More by author */}
           {tab === 'about' && moreByAuthorProjects.length > 0 && (
             <div className="px-4 pb-4">
-              <div
-                className="mb-3 pt-3 text-xs font-semibold"
-                style={{
-                  color: 'var(--text-secondary)',
-                  borderTop: '0.5px solid var(--border-subtle)',
-                }}
-              >
+              <div className="text-text-secondary border-border-subtle mb-3 border-t-[0.5px] pt-3 text-xs font-semibold">
                 More by {project.author}
               </div>
               <div className="flex flex-col gap-2">
@@ -389,46 +313,33 @@ function VersionRow({
   onInstall: () => void
   installing: boolean
 }) {
-  const typeColor: Record<string, string> = {
-    release: 'var(--accent)',
-    beta: 'var(--warning)',
-    alpha: 'var(--danger)',
-  }
+  const typeColorClass =
+    version.versionType === 'release'
+      ? 'text-accent'
+      : version.versionType === 'beta'
+        ? 'text-warning'
+        : version.versionType === 'alpha'
+          ? 'text-danger'
+          : 'text-text-muted'
 
   return (
-    <div
-      className="flex items-start gap-2 px-4 py-2.5"
-      style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-    >
+    <div className="border-border-subtle flex items-start gap-2 border-b-[0.5px] px-4 py-2.5">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-            {version.versionNumber}
-          </span>
+          <span className="text-text-primary text-xs font-medium">{version.versionNumber}</span>
           <span
-            className="rounded px-1.5 py-px font-mono text-xs"
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              color: typeColor[version.versionType] ?? 'var(--text-muted)',
-              fontSize: 10,
-            }}
+            className={`rounded bg-white/[0.06] px-1.5 py-px font-mono text-xs text-[10px] ${typeColorClass}`}
           >
             {version.versionType}
           </span>
         </div>
-        <div
-          className="mt-0.5 font-mono text-xs"
-          style={{ color: 'var(--text-faint)', fontSize: 10 }}
-        >
+        <div className="text-text-faint mt-0.5 font-mono text-xs text-[10px]">
           {version.gameVersions?.slice(0, 3).join(', ')}
           {(version.gameVersions?.length ?? 0) > 3 ? '…' : ''}
           {version.fileSize ? ' · ' + fmtBytes(version.fileSize) : ''}
         </div>
         {version.datePublished && (
-          <div
-            className="mt-0.5 font-mono text-xs"
-            style={{ color: 'var(--text-faint)', fontSize: 10 }}
-          >
+          <div className="text-text-faint mt-0.5 font-mono text-xs text-[10px]">
             {relativeTime(version.datePublished)}
           </div>
         )}
@@ -436,13 +347,9 @@ function VersionRow({
       <button
         onClick={onInstall}
         disabled={installing}
-        className="shrink-0 rounded px-2.5 py-1 text-xs font-medium transition-opacity"
-        style={{
-          background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
-          color: 'var(--accent)',
-          border: '0.5px solid color-mix(in srgb, var(--accent) 30%, transparent)',
-          opacity: installing ? 0.5 : 1,
-        }}
+        className={`text-accent shrink-0 rounded border-[0.5px] border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] px-2.5 py-1 text-xs font-medium transition-opacity ${
+          installing ? 'opacity-50' : 'opacity-100'
+        }`}
       >
         Install
       </button>

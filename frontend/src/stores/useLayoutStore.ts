@@ -13,7 +13,9 @@ import {
 // Persist the current on-screen layout independently of named presets, so
 // drags/resizes/removals survive a restart without overwriting the templates.
 function persistActiveLayout(layout: readonly LayoutItem[]) {
-  SaveActiveLayout(JSON.stringify(layout)).catch(() => { /* Wails IPC unavailable */ })
+  SaveActiveLayout(JSON.stringify(layout)).catch(() => {
+    /* Wails IPC unavailable */
+  })
 }
 
 interface LayoutStore {
@@ -34,12 +36,20 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
 
   loadPresets: async () => {
     let remote: LayoutPreset[] = []
-    try { remote = await GetLayoutPresets() ?? [] } catch { /* Wails IPC unavailable */ }
+    try {
+      remote = (await GetLayoutPresets()) ?? []
+    } catch {
+      /* Wails IPC unavailable */
+    }
     let presets: LayoutPreset[] = remote
 
     if (presets.length === 0) {
       for (const p of DEFAULT_LAYOUT_PRESETS) {
-        try { await SaveLayoutPreset(p.name, p.layout) } catch { /* best-effort */ }
+        try {
+          await SaveLayoutPreset(p.name, p.layout)
+        } catch {
+          /* best-effort */
+        }
       }
       presets = DEFAULT_LAYOUT_PRESETS
     }
@@ -51,7 +61,9 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     try {
       const saved = await GetActiveLayout()
       if (saved) layout = JSON.parse(saved)
-    } catch { /* Wails IPC unavailable */ }
+    } catch {
+      /* Wails IPC unavailable */
+    }
 
     set({ presets, activePresetName: active?.name ?? 'Default', currentLayout: layout })
   },
@@ -59,14 +71,16 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   savePreset: async (name: string) => {
     const { currentLayout } = get()
     const layoutStr = JSON.stringify(currentLayout)
-    try { await SaveLayoutPreset(name, layoutStr) } catch { /* best-effort */ }
+    try {
+      await SaveLayoutPreset(name, layoutStr)
+    } catch {
+      /* best-effort */
+    }
     const updated: LayoutPreset = { name, layout: layoutStr }
     set((s) => {
       const idx = s.presets.findIndex((p) => p.name === name)
       const presets =
-        idx >= 0
-          ? s.presets.map((p, i) => (i === idx ? updated : p))
-          : [...s.presets, updated]
+        idx >= 0 ? s.presets.map((p, i) => (i === idx ? updated : p)) : [...s.presets, updated]
       return { presets, activePresetName: name }
     })
   },
@@ -81,12 +95,22 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   },
 
   deletePreset: async (name: string) => {
-    try { await DeleteLayoutPreset(name) } catch { /* best-effort */ }
-    set((s) => ({
-      presets: s.presets.filter((p) => p.name !== name),
-      activePresetName:
-        s.activePresetName === name ? (s.presets[0]?.name ?? '') : s.activePresetName,
-    }))
+    try {
+      await DeleteLayoutPreset(name)
+    } catch {
+      /* best-effort */
+    }
+    set((s) => {
+      const presets = s.presets.filter((p) => p.name !== name)
+      return {
+        presets,
+        // Read the *filtered* list's first entry — reading s.presets[0] here
+        // would reassign back to the just-deleted name whenever it happened
+        // to be first, leaving no preset matching activePresetName in the UI.
+        activePresetName:
+          s.activePresetName === name ? (presets[0]?.name ?? '') : s.activePresetName,
+      }
+    })
   },
 
   updateLayout: (layout: readonly LayoutItem[]) => {

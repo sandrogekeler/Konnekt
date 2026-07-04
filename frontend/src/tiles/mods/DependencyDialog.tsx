@@ -13,13 +13,15 @@ export function DependencyDialog({ primaryVersionId, dependencies, onConfirm, on
   const [optionalSelected, setOptionalSelected] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onCancel])
 
   const toggleOptional = (versionId: string) => {
-    setOptionalSelected(prev => {
+    setOptionalSelected((prev) => {
       const next = new Set(prev)
       if (next.has(versionId)) next.delete(versionId)
       else next.add(versionId)
@@ -38,27 +40,22 @@ export function DependencyDialog({ primaryVersionId, dependencies, onConfirm, on
     onConfirm(ids)
   }
 
-  const required = dependencies.filter(d => d.required)
-  const optional = dependencies.filter(d => !d.required)
+  const required = dependencies.filter((d) => d.required)
+  const optional = dependencies.filter((d) => !d.required)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
-      <div
-        className="rounded-xl p-5 w-full max-w-md"
-        style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)' }}
-      >
-        <h2 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          Dependencies
-        </h2>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65">
+      <div className="bg-canvas border-border-subtle w-full max-w-md rounded-xl border p-5">
+        <h2 className="text-text-primary mb-1 text-sm font-semibold">Dependencies</h2>
+        <p className="text-text-muted mb-4 text-xs">
           This mod requires the following. Required dependencies will be installed automatically.
         </p>
 
         {required.length > 0 && (
           <div className="mb-3">
-            <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Required</div>
+            <div className="text-text-secondary mb-1 text-xs font-medium">Required</div>
             <div className="flex flex-col gap-1">
-              {required.map(dep => (
+              {required.map((dep) => (
                 <DepRow key={dep.projectId} dep={dep} checked locked={!dep.alreadyInstalled} />
               ))}
             </div>
@@ -67,9 +64,9 @@ export function DependencyDialog({ primaryVersionId, dependencies, onConfirm, on
 
         {optional.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Optional</div>
+            <div className="text-text-secondary mb-1 text-xs font-medium">Optional</div>
             <div className="flex flex-col gap-1">
-              {optional.map(dep => (
+              {optional.map((dep) => (
                 <DepRow
                   key={dep.projectId}
                   dep={dep}
@@ -85,15 +82,13 @@ export function DependencyDialog({ primaryVersionId, dependencies, onConfirm, on
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded text-xs"
-            style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
+            className="bg-surface text-text-secondary rounded px-3 py-1.5 text-xs"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="px-3 py-1.5 rounded text-xs font-medium"
-            style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+            className="bg-accent text-canvas rounded px-3 py-1.5 text-xs font-medium"
           >
             Install
           </button>
@@ -104,7 +99,10 @@ export function DependencyDialog({ primaryVersionId, dependencies, onConfirm, on
 }
 
 function DepRow({
-  dep, checked, locked, onChange,
+  dep,
+  checked,
+  locked,
+  onChange,
 }: {
   dep: ResolvedDependency
   checked: boolean
@@ -113,32 +111,27 @@ function DepRow({
 }) {
   return (
     <div
-      className="flex items-center gap-2 px-2 py-1.5 rounded"
-      style={{
-        background: 'var(--bg-surface)',
-        opacity: dep.alreadyInstalled ? 0.5 : 1,
-      }}
+      className={`bg-surface flex items-center gap-2 rounded px-2 py-1.5 ${
+        dep.alreadyInstalled ? 'opacity-50' : 'opacity-100'
+      }`}
     >
       <input
         type="checkbox"
         checked={dep.alreadyInstalled ? true : checked}
         disabled={locked || dep.alreadyInstalled}
         onChange={onChange}
-        className="shrink-0"
-        style={{ accentColor: 'var(--accent)' }}
+        className="accent-accent shrink-0"
       />
-      <div className="flex-1 min-w-0">
-        <span className="text-xs" style={{ color: 'var(--text-primary)' }}>
-          {dep.projectTitle}
-        </span>
+      <div className="min-w-0 flex-1">
+        <span className="text-text-primary text-xs">{dep.projectTitle}</span>
         {dep.version.versionNumber && (
-          <span className="ml-1 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-text-muted ml-1 font-mono text-xs">
             {dep.version.versionNumber}
           </span>
         )}
       </div>
       {dep.alreadyInstalled && (
-        <span className="shrink-0 text-xs px-1 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)', fontSize: 10 }}>
+        <span className="text-text-muted shrink-0 rounded bg-white/[0.06] px-1 text-xs text-[10px]">
           installed
         </span>
       )}

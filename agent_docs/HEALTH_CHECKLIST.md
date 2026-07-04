@@ -108,8 +108,13 @@ wails build              # Production build smoke test
 - [ ] New Go dependencies were checked against `agent_docs/DEPENDENCIES.md`
       before being added (create this file if it doesn't exist yet — see
       backlog).
-- [ ] Local-first invariant holds: no `localStorage`/`sessionStorage` usage;
+- [x] Local-first invariant holds: no `localStorage`/`sessionStorage` usage;
       all persistence goes through Go file I/O into the Wails app data dir.
+      Repo-wide grep confirms zero occurrences under `frontend/src/`. The one
+      violation found (scheduler `BlockPalette.tsx`'s palette-collapse and
+      per-category-collapse prefs) has been migrated onto `AppSettings` →
+      `app_settings.json`, the same Go-backed path console/notify prefs
+      already use — see backlog.
 
 ## 4. Performant
 
@@ -298,14 +303,55 @@ todo list, not a target.
     https://github.com/sandrogekeler/Konnekt/actions/runs/28631150720
 - Missing `--font-mono` theme token found during this pass, tracked
   separately: see "P2 — Missing `--font-mono` theme token" below.
-- ~665 `style={{}}` usages remain across the rest of the codebase (~49
-  files). Continue tile-by-tile — the remaining hotspots are all
-  substantially larger and more dynamic-content-heavy: mods (176), backups
-  (116), scheduler (88), config (80), the rest of `components/` (68),
-  worlds (45), players (32). These will need more deliberate scoping
-  (likely per-tile, not batched) and, for several, live `wails dev` + a
-  configured server to fully verify beyond what this sandbox's headless
-  preview can reach.
+- ✅ Fourth slice done: the **mods tile** — the single largest remaining
+  cluster, all 9 files (`frontend/src/tiles/mods/**`: `InstalledPanel.tsx`,
+  `ModPreviewDialog.tsx`, `ContentDetailPanel.tsx`, `BrowsePanel.tsx`,
+  `index.tsx`, `DependencyDialog.tsx`, `ContentCard.tsx`, `Pagination.tsx`,
+  `ModAboutBody.tsx`). 176 → 7 remaining, all genuinely dynamic and documented
+  with `eslint-disable-next-line no-restricted-syntax`: three live-percent
+  progress-bar widths (`index.tsx` x2, `InstalledPanel.tsx`), two live
+  user-controlled grid-column counts (`InstalledPanel.tsx`, `BrowsePanel.tsx`),
+  and the resizable detail panel's live `panelWidth`-derived width/transform
+  (`BrowsePanel.tsx` x2). Global warning count: 668 → 492. Added
+  `src/tiles/mods/**/*.tsx` to the ratcheted-`error` `files` glob in
+  `frontend/eslint.config.js`; `pnpm lint` passes with 0 errors, confirming
+  every remaining inline style in the tile is a documented exception.
+  - Static ternaries between two fixed values (color, background, opacity,
+    border, font-weight) converted to conditional `className`s throughout,
+    per the established rule — including several 3-way ternaries (e.g. a
+    version-type color lookup keyed by a plain `string` field, mirrored the
+    same way an already-existing ternary chain in `ModPreviewDialog.tsx`
+    handled it, for consistency between the two files).
+  - New conversion patterns established this pass, verified live via computed
+    `getComputedStyle()` checks against a running `pnpm dev` server (not just
+    typecheck/lint): `color-mix(in srgb, ...)` values as Tailwind arbitrary
+    `bg-[...]`/`border-[...]` (verified the mixed color resolves correctly);
+    `mask-image`/`-webkit-mask-image` gradients as arbitrary properties
+    (`[mask-image:...]`); `line-clamp-2` replacing the manual
+    `-webkit-box`/`-webkit-line-clamp` trick; `caret-accent` for `caretColor`;
+    opacity ternaries mapped onto Tailwind's opacity scale exactly (`0.55` →
+    `opacity-55`, `0.2` → `opacity-20`); a fixed-duration `transform`
+    transition (`280ms cubic-bezier(0.4,0,0.2,1)`) converted to
+    `duration-[280ms] ease-in-out` since Tailwind's `ease-in-out` *is* that
+    exact bezier curve — the `PANEL_SLIDE_MS` constant that previously held
+    this value was removed as dead code once inlined into the class, with a
+    comment linking the two so a future duration change updates both;
+    `calc(100vw-48px)`-style arbitrary values confirmed Tailwind auto-inserts
+    the required operator spacing even without explicit underscores.
+  - Not independently verified: the mods tile itself rendering end-to-end
+    inside the app. `index.tsx`'s `useMods` hook calls `EventsOn` and
+    `DetectServerLoader` on mount and crashes without the Wails bridge, so
+    only the 8 pure-presentational child components could be exercised
+    (verified via direct computed-style checks against a running Vite dev
+    server, not a full component mount) — a full visual pass needs `wails dev`
+    with a configured server, same limitation noted for backups/performance in
+    prior sessions.
+- ~490 `style={{}}` usages remain across the rest of the codebase (~48
+  files). Continue tile-by-tile — the remaining hotspots: backups (116),
+  scheduler (88), config (80), the rest of `components/` (68), worlds (45),
+  players (32). These will need more deliberate scoping (likely per-tile, not
+  batched) and, for several, live `wails dev` + a configured server to fully
+  verify beyond what this sandbox's headless preview can reach.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/
@@ -386,11 +432,40 @@ todo list, not a target.
   nil-context-safe). Verified the data-type-validation guard test actually
   fails when that guard is disabled, then restored it — same technique as the
   zip-slip test above.
-- Deferred follow-up — **Wails-mocked store tests**: `useTileStore`,
-  `useLayoutStore`, `useServerConfigStore`, `useSettingsStore` all call
-  generated `wailsjs/go/main/App` bindings directly; testing their
-  load/save/CRUD logic needs `vi.mock('../../wailsjs/go/main/App')`. Also
-  untested: the two custom hooks (`useWailsCall`, `usePopover`).
+- ✅ **Wails-mocked store tests — harness established, 4 stores + `useScheduler`
+  covered.** Added the first `vi.mock('../../wailsjs/go/main/App')` pattern in
+  the repo (a plain hoisted auto-mock — no `vite.config.ts` or setup-file
+  changes needed): `useSettingsStore.test.ts` (7 tests — payload merge,
+  invalid-value fallback per validated field, load-rejects-to-defaults),
+  `useTileStore.test.ts` (6 — saved/empty/rejecting `loadTiles`, dedup on
+  `addTile`, active↔crate moves), `useLayoutStore.test.ts` (13 — preset
+  seeding, active-layout override, insert-vs-update `savePreset`, delete
+  reassignment), `useServerConfigStore.test.ts` (13 — stale/missing-activeId
+  fallback, insert-vs-update, delete reassignment), and
+  `frontend/src/tiles/scheduler/useScheduler.test.ts` (4, via `renderHook` +
+  `vi.useFakeTimers` — mount fetch, save/run refresh, the 30s next-run poll and
+  its unmount cleanup), closing the second (frontend hook) half of the
+  scheduler test-coverage backlog alongside the earlier `graphMapping.ts` pass.
+  Frontend test count: 88 → 131.
+  - **One real bug found and fixed, not just documented**: `useLayoutStore.ts`'s
+    `deletePreset` computed the reassigned `activePresetName` from
+    `s.presets[0]` — the *pre-filter* array — so deleting the active preset
+    reassigned back to that same now-deleted name whenever it happened to be
+    first in the list (the common case, since "Default" is always seeded
+    first). `LayoutPresets.tsx` highlights the active preset by exact name
+    match, so this silently left **no** preset shown as active after such a
+    delete, and its save-fallback (`newName.trim() || activePresetName`) would
+    have resurrected the deleted preset's name on the next save. Fixed by
+    reading the *filtered* list's first entry instead — same
+    write-test-first/find-real-bug technique as the earlier `RenameWorld` and
+    zip-slip fixes. Verified the fix by first watching the un-fixed test fail,
+    then confirming green after the source fix (plus a second, unrelated
+    fault-injection check: temporarily dropped `useTileStore.addTile`'s dedup
+    guard and confirmed its test fails, then restored it).
+  - Still untested: the two custom hooks (`useWailsCall`, `usePopover`), and
+    the binding-backed tile hooks (`useMods`, `useBackups`, `useWorlds`,
+    `usePerformanceHistory`) — the harness above is now a documented,
+    copy-pasteable pattern for covering them.
 - Deferred follow-up — **Modrinth HTTP-path coverage**: `ModrinthClient`
   hardcodes `modrinthBase = "https://api.modrinth.com/v2"` with no injectable
   base URL, so the 429/`Retry-After` retry logic and search-hit dedup can't be
@@ -519,25 +594,44 @@ todo list, not a target.
     (`frontend/src/tiles/scheduler/**`) — the largest untouched cluster in
     the Milestone 2 inline-style migration (see that section above); not yet
     in the ESLint error-ratchet glob.
-  - **Scalable: 2 GAPs.** (1) No `useSchedulerStore` — state lives in local
-    `useState` inside `useScheduler.ts`, contradicting CLAUDE.md's
+  - **Scalable: 1 GAP remaining.** No `useSchedulerStore` — state lives in
+    local `useState` inside `useScheduler.ts`, contradicting CLAUDE.md's
     one-Zustand-store-per-domain rule (confirmed drift, not just suspected).
-    (2) `localStorage` used directly in
-    `frontend/src/tiles/scheduler/editor/BlockPalette.tsx` (palette
-    collapsed/closed state) — a direct violation of CLAUDE.md's explicit
-    "no `localStorage`/`sessionStorage`; persist via Go file I/O" rule.
+    The other Scalable gap this audit found — `localStorage` used directly in
+    `frontend/src/tiles/scheduler/editor/BlockPalette.tsx` for palette
+    collapsed/closed state, a direct violation of CLAUDE.md's explicit "no
+    `localStorage`/`sessionStorage`; persist via Go file I/O" rule — is now
+    ✅ **fixed**: migrated onto `AppSettings.schedulerPaletteCollapsed` /
+    `.schedulerPaletteClosedCategories`, persisted through the existing
+    `GetAppSettings`/`SaveAppSettings` binding (no new Go methods, bindings
+    regenerated via `wails generate module`). Verified live with a
+    mocked-Wails-bridge preview: toggling the palette collapse and a category
+    group calls `SaveAppSettings` with the new fields, and `localStorage`
+    stays at 0 keys throughout.
   - **Stable: critical gap, now closed for the backend engine** (this
     session's main remediation — see the P1 test-coverage entry above for
     what shipped). Two smaller Stable gaps remain, not yet fixed: the 30s
     next-run poll in `useScheduler.ts` should be a Wails event instead
     (CLAUDE.md's no-`useEffect`-polling rule), and `useScheduler` swallows
     IPC failures silently (no offline/error state surfaced to the UI).
+- ✅ **`graphMapping.ts` frontend test coverage added**: 26 tests in the new
+  `frontend/src/tiles/scheduler/editor/graphMapping.test.ts` covering
+  `graphToFlow`/`flowToGraph` (including a dedicated round-trip test),
+  `isValidConnection`, `detectControlCycles`, `randId`, and `defaultConfig` —
+  all pure logic, no Wails binding mocks needed, following the same
+  `as unknown as models.X` stub convention as the sibling `portTypes.test.ts`.
+  Verified the round-trip and cycle-detection tests actually fail when their
+  underlying guards are disabled (the `data:`-prefix kind inference in
+  `flowToGraph`, and the `reachableFrom` reachability check in
+  `detectControlCycles`), then restored both — same technique as the backend
+  zip-slip/data-type-validation tests. `pnpm test` (88 tests), `pnpm typecheck`,
+  and `pnpm lint` all green.
 - **Remaining scheduler backlog** (deferred, not fixed this session):
-  frontend tests for `graphMapping.ts` (`detectControlCycles`,
-  `flowToGraph`/`graphToFlow` round-trip) and the `useScheduler` hook; the
-  `localStorage` → Go-file-I/O migration; the `useSchedulerStore` Zustand
-  migration; the scheduler's inline-style Milestone-2 slice; the next-run
-  poll → event switch; offline-error surfacing in `useScheduler`.
+  the `useSchedulerStore` Zustand migration; the scheduler's inline-style
+  Milestone-2 slice; the next-run poll → event switch; offline-error surfacing
+  in `useScheduler`. (The `localStorage` → Go-file-I/O migration and
+  `useScheduler`-hook test coverage, both listed here previously, have since
+  been completed.)
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart

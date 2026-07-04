@@ -1,9 +1,6 @@
-import { useState } from 'react'
 import type { models } from '../../../../wailsjs/go/models'
 import { CATEGORY_COLOR, CATEGORY_ICON, orderedCategories } from './blockMeta'
-
-const LS_COLLAPSED = 'scheduler.palette.collapsed'
-const LS_CLOSED    = 'scheduler.palette.closed'
+import { useSettingsStore } from '../../../stores/useSettingsStore'
 
 interface Props {
   blockDefs: models.BlockDef[]
@@ -11,31 +8,24 @@ interface Props {
 }
 
 export function BlockPalette({ blockDefs, onAdd }: Props) {
-  const [collapsed, setCollapsed] = useState<boolean>(
-    () => localStorage.getItem(LS_COLLAPSED) !== 'false',
-  )
-  const [closed, setClosed] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem(LS_CLOSED) ?? '{}') } catch { return {} }
-  })
+  const { settings, update } = useSettingsStore()
+  const collapsed = settings.schedulerPaletteCollapsed
+  const closed = settings.schedulerPaletteClosedCategories
 
   const categories = orderedCategories(blockDefs)
 
   function toggleCollapsed() {
-    const next = !collapsed
-    setCollapsed(next)
-    localStorage.setItem(LS_COLLAPSED, String(next))
+    update({ schedulerPaletteCollapsed: !collapsed })
   }
 
   function toggleCategory(cat: string) {
-    const next = { ...closed, [cat]: !closed[cat] }
-    setClosed(next)
-    localStorage.setItem(LS_CLOSED, JSON.stringify(next))
+    update({ schedulerPaletteClosedCategories: { ...closed, [cat]: !closed[cat] } })
   }
 
   if (collapsed) {
     return (
       <div
-        className="shrink-0 flex items-center justify-center"
+        className="flex shrink-0 items-center justify-center"
         style={{
           width: 20,
           borderRight: '0.5px solid var(--border-subtle)',
@@ -45,7 +35,16 @@ export function BlockPalette({ blockDefs, onAdd }: Props) {
         onClick={toggleCollapsed}
         title="Expand blocks"
       >
-        <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-faint)', userSelect: 'none' }}>›</span>
+        <span
+          style={{
+            fontSize: 11,
+            fontFamily: 'monospace',
+            color: 'var(--text-faint)',
+            userSelect: 'none',
+          }}
+        >
+          ›
+        </span>
       </div>
     )
   }
@@ -60,7 +59,10 @@ export function BlockPalette({ blockDefs, onAdd }: Props) {
       }}
     >
       <div className="px-2 py-2">
-        <div className="text-xs font-mono mb-2 flex items-center" style={{ color: 'var(--text-faint)' }}>
+        <div
+          className="mb-2 flex items-center font-mono text-xs"
+          style={{ color: 'var(--text-faint)' }}
+        >
           <span className="flex-1">blocks</span>
           <span
             onClick={toggleCollapsed}
@@ -71,17 +73,17 @@ export function BlockPalette({ blockDefs, onAdd }: Props) {
           </span>
         </div>
 
-        {categories.map(cat => {
-          const defs = blockDefs.filter(d => d.category === cat)
+        {categories.map((cat) => {
+          const defs = blockDefs.filter((d) => d.category === cat)
           if (defs.length === 0) return null
-          const color    = CATEGORY_COLOR[cat] ?? '#6b7280'
-          const icon     = CATEGORY_ICON[cat] ?? '?'
+          const color = CATEGORY_COLOR[cat] ?? '#6b7280'
+          const icon = CATEGORY_ICON[cat] ?? '?'
           const isClosed = !!closed[cat]
 
           return (
             <div key={cat} className="mb-3">
               <div
-                className="text-xs font-mono uppercase mb-1 flex items-center gap-1 cursor-pointer select-none"
+                className="mb-1 flex cursor-pointer items-center gap-1 font-mono text-xs uppercase select-none"
                 style={{ color }}
                 onClick={() => toggleCategory(cat)}
               >
@@ -90,27 +92,33 @@ export function BlockPalette({ blockDefs, onAdd }: Props) {
                 <span>{cat}</span>
               </div>
 
-              {!isClosed && defs.map(def => (
-                <div
-                  key={def.id}
-                  draggable
-                  onClick={() => onAdd(def)}
-                  onDragStart={e => e.dataTransfer.setData('blockType', def.id)}
-                  title={def.description}
-                  className="px-2 py-1 mb-0.5 rounded cursor-pointer select-none"
-                  style={{
-                    background: 'var(--bg-surface)',
-                    border: '0.5px solid var(--border-subtle)',
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    color: 'var(--text-primary)',
-                  }}
-                  onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.borderColor = color)}
-                  onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)')}
-                >
-                  {def.label}
-                </div>
-              ))}
+              {!isClosed &&
+                defs.map((def) => (
+                  <div
+                    key={def.id}
+                    draggable
+                    onClick={() => onAdd(def)}
+                    onDragStart={(e) => e.dataTransfer.setData('blockType', def.id)}
+                    title={def.description}
+                    className="mb-0.5 cursor-pointer rounded px-2 py-1 select-none"
+                    style={{
+                      background: 'var(--bg-surface)',
+                      border: '0.5px solid var(--border-subtle)',
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) =>
+                      ((e.currentTarget as HTMLDivElement).style.borderColor = color)
+                    }
+                    onMouseLeave={(e) =>
+                      ((e.currentTarget as HTMLDivElement).style.borderColor =
+                        'var(--border-subtle)')
+                    }
+                  >
+                    {def.label}
+                  </div>
+                ))}
             </div>
           )
         })}

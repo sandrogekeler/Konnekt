@@ -17,4 +17,7 @@ type AppSettings struct {
 
 	NotifyOnCrash bool `json:"notifyOnCrash"`
 	NotifyOnJoin  bool `json:"notifyOnJoin"`
+
+	SchedulerPaletteCollapsed        bool            `json:"schedulerPaletteCollapsed"`
+	SchedulerPaletteClosedCategories map[string]bool `json:"schedulerPaletteClosedCategories"`
 }

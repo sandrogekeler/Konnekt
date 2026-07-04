@@ -14,6 +14,8 @@ export namespace models {
 	    consoleTimestamps: boolean;
 	    notifyOnCrash: boolean;
 	    notifyOnJoin: boolean;
+	    schedulerPaletteCollapsed: boolean;
+	    schedulerPaletteClosedCategories: Record<string, boolean>;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -34,6 +36,8 @@ export namespace models {
 	        this.consoleTimestamps = source["consoleTimestamps"];
 	        this.notifyOnCrash = source["notifyOnCrash"];
 	        this.notifyOnJoin = source["notifyOnJoin"];
+	        this.schedulerPaletteCollapsed = source["schedulerPaletteCollapsed"];
+	        this.schedulerPaletteClosedCategories = source["schedulerPaletteClosedCategories"];
 	    }
 	}
 	export class AttrValue {

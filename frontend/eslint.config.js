@@ -61,6 +61,7 @@ export default tseslint.config(
       'src/tiles/quick-commands/**/*.tsx',
       'src/tiles/performance/**/*.tsx',
       'src/tiles/console/**/*.tsx',
+      'src/tiles/mods/**/*.tsx',
     ],
     rules: {
       'no-restricted-syntax': [
