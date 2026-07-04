@@ -42,7 +42,7 @@ A node-based automation editor: wire up triggers (a player joining or leaving, t
 
 ### World management
 
-A 3D "solar system" visualizer for navigating your server's worlds and dimensions — switch the active world, rename, duplicate, delete, back up individual worlds, and inspect NBT metadata.
+A 3D visualizer for navigating your server's worlds and dimensions — switch the active world, rename, duplicate, delete, back up individual worlds, and inspect NBT metadata.
 
 ![World management placeholder](docs/images/world-management.png)
 
