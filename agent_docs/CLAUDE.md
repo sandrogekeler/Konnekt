@@ -8,7 +8,7 @@ Modular tile-based UI. Dark console aesthetic. Local-first, no cloud dependency.
 - **Shell**: Wails v2 (Go backend + system WebView)
 - **Backend**: Go (`backend/`)
 - **Frontend**: React 19 + TypeScript + Vite (`frontend/`)
-- **Styling**: Tailwind CSS v3
+- **Styling**: Tailwind CSS v4
 - **State**: Zustand
 - **Tile grid**: react-grid-layout
 - **IPC**: Wails auto-generated bindings (`frontend/src/wailsjs/`)

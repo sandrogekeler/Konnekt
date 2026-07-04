@@ -322,6 +322,16 @@ todo list, not a target.
   currently be relying on Tailwind's default stack rather than an inline
   override masking the gap; flipping the token blind would be a wide,
   unverified visual change across the whole codebase.
+- Follow-up finding (repo-hygiene pass): the audit turned up 246 `font-mono`
+  usages across 39 files, all currently resolving to Tailwind's *default*
+  monospace stack. More importantly, `frontend/src/style.css` has no
+  `@font-face` for JetBrains Mono at all — the only bundled font is Satoshi
+  (used for `sans`, not `mono`). So today's bare `font-mono` and a would-be
+  `--font-mono: 'JetBrains Mono', ...` token both fall through to whatever
+  monospace the OS provides; registering the token wouldn't visibly change
+  anything until JetBrains Mono is actually bundled as a webfont. Still
+  deferred — now blocked on "bundle the font" as a prerequisite, not just
+  "audit existing usages."
 
 **P1 — Test coverage + gate**
 - ✅ Stood up the frontend test harness: `vitest` (pinned to `^3` — `vitest@4`
@@ -427,15 +437,32 @@ todo list, not a target.
 **P2 — Repo hygiene**
 - ✅ `*.syso` added to `.gitignore` (`konnekt-res.syso` was untracked and
   uncovered).
-- Create `agent_docs/DEPENDENCIES.md`, which `CLAUDE.md` already references
-  but which doesn't exist yet.
-- Triage/relocate the root-level `scheduler-blocks-rework.md` design doc.
-- Remove (or wire up) two unused npm dependencies found during the code-split
-  pass: `uplot` and `skinview3d` in `frontend/package.json` are imported
-  nowhere under `frontend/src/`. `skinview3d` is presumably reserved for the
-  not-yet-built Beta "player skin preview" tile (see `ROADMAP.md`) — confirm
-  intent before removing it specifically. Unimported code isn't bundled, so
-  this doesn't affect bundle size; it's dependency-surface hygiene only.
+- ✅ Created `agent_docs/DEPENDENCIES.md` — policy + rationale table for every
+  direct Go and npm dependency, referenced from `CLAUDE.md`.
+- ✅ Triaged the root-level `scheduler-blocks-rework.md` design doc: promoted
+  to `agent_docs/scheduler-blocks-rework.md` rather than deleted — it's the
+  spec base for the scheduler's block/node system (triggers, attributes,
+  math, data-type→color legend, which stays fixed) and remains useful input
+  for the node-system rework tracked below.
+- ✅ Removed the unused `uplot` npm dependency (confirmed unimported anywhere
+  under `frontend/src/` — the performance tile's charts use `recharts`
+  exclusively). `skinview3d` is **kept intentionally**: reserved for the
+  not-yet-built Beta "player skin preview" tile (`ROADMAP.md`), documented in
+  `agent_docs/DEPENDENCIES.md` so it isn't mistaken for dead weight later.
+
+**P1 — Scheduler node-system deep analysis**
+- Found during the repo-hygiene pass, while triaging
+  `agent_docs/scheduler-blocks-rework.md` (the original block/trigger/attribute
+  spec, now promoted from a root-level stray doc). Per the user: the rework
+  described there already shipped, but the node/block editor
+  (`frontend/src/tiles/scheduler/editor/`, built on `@xyflow/react`) needs a
+  proper in-depth check that it functions as an actual node system, not just
+  looks like one — data genuinely parsing through connections, triggers/
+  updates propagating correctly end-to-end, math blocks and typed values
+  (Integer/Float/String/Boolean/Vector/Trigger) behaving as the spec's
+  data-type→color legend implies. That legend's colors are confirmed fixed and
+  should not change. This is a dedicated investigation + likely rework, not a
+  quick fix — scope and plan separately.
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart
