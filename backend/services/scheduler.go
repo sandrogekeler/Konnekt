@@ -267,6 +267,9 @@ func (s *SchedulerService) writeHistory(history []models.RunRecord) error {
 }
 
 func (s *SchedulerService) activeServerID() string {
+	if s.deps.config == nil {
+		return ""
+	}
 	if id, err := s.deps.config.GetActiveServerID(); err == nil {
 		return id
 	}

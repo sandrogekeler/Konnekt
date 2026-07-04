@@ -355,6 +355,29 @@ todo list, not a target.
   guard is removed, then restored it),
   `config_editor_test.go` (the path-traversal `sandbox()` guard),
   `modrinth_test.go` (`buildFacets` facet-string assembly).
+- ✅ **Scheduler backend engine — closed the critical gap.** A dedicated
+  4-pillar audit of the scheduler (see the new backlog entry below) found the
+  ~3,100-line execution engine essentially untested — only `scheduler_expr.go`
+  and `scheduler_validate.go` had test files; `runGraph`/`executeNode`,
+  triggers, cron/interval matching, next-run calc, and all block executors had
+  zero coverage. Added:
+  `scheduler_engine_test.go` (`runGraph` integration: control-flow ordering,
+  data-flow through pure-data pull-eval + the data-over-config overlay,
+  `onFailed` branching, the data-type-validation short-circuit, the
+  control-cycle/`maxNodesPerRun` guard, the concurrency guard; plus direct
+  `ExecContext` getter tests and `execConstant`/`execMathOp`/`execCondition`/
+  `execDelay`/`execRandomNumber` executor tests — including pinning down two
+  existing behaviors as tests, not fixes: `GetFloat` silently falls back to
+  its default on an unparseable string, and `execCondition`'s `gt`/`lt` are
+  lexicographic string comparisons, not numeric),
+  `scheduler_triggers_test.go` (`cronMatches` field types incl. `*/n` steps/
+  ranges/lists, `cooldownAllows`), `scheduler_nextrun_test.go` (`nextTimeOfDay`,
+  `nextCron`, `nextInterval`, `findTriggerNode`). One production change: a
+  nil-guard in `activeServerID()` so the engine is constructable without a
+  full `ConfigService`, enabling headless tests (`EventBus.Emit` was already
+  nil-context-safe). Verified the data-type-validation guard test actually
+  fails when that guard is disabled, then restored it — same technique as the
+  zip-slip test above.
 - Deferred follow-up — **Wails-mocked store tests**: `useTileStore`,
   `useLayoutStore`, `useServerConfigStore`, `useSettingsStore` all call
   generated `wailsjs/go/main/App` bindings directly; testing their
@@ -456,18 +479,57 @@ todo list, not a target.
   `.md` files besides `README.md`.
 
 **P1 — Scheduler node-system deep analysis**
-- Found during the repo-hygiene pass, while triaging
-  `agent_docs/scheduler-blocks-rework.md` (the original block/trigger/attribute
-  spec, now promoted from a root-level stray doc). Per the user: the rework
-  described there already shipped, but the node/block editor
-  (`frontend/src/tiles/scheduler/editor/`, built on `@xyflow/react`) needs a
-  proper in-depth check that it functions as an actual node system, not just
-  looks like one — data genuinely parsing through connections, triggers/
-  updates propagating correctly end-to-end, math blocks and typed values
-  (Integer/Float/String/Boolean/Vector/Trigger) behaving as the spec's
-  data-type→color legend implies. That legend's colors are confirmed fixed and
-  should not change. This is a dedicated investigation + likely rework, not a
-  quick fix — scope and plan separately.
+- ✅ **Architecture confirmed sound.** Three parallel Explore agents mapped the
+  xyflow editor, the Go engine, and the contract between them: it's a hybrid
+  control-flow + data-flow graph interpreter — xyflow is a pure visual editor
+  serializing losslessly to a shared `models.Graph`; the real node engine
+  (BFS control-flow execution, lazy pull-eval of pure-data nodes, an
+  attribute scope with expression parsing) lives in Go, as it must (blocks
+  spawn Java, send RCON, write backups — CLAUDE.md: "Go owns all side
+  effects"). Keeping xyflow over switching to `rete` was the right call —
+  rete's value-add is its own JS-side execution engine, which this app can't
+  use. The control-pin/data-pin split mirrors Unreal Blueprints and Blender's
+  node graph — the right base structure.
+- ✅ **Data-type flow enforcement shipped** (the one real gap found: ports
+  declared a type but nothing checked it). New `frontend/.../portTypes.ts` +
+  `backend/services/scheduler_validate.go` share a type-resolution model,
+  enforced at authoring time (`isValidConnection` rejects incompatible drags)
+  and run time (`runGraph` fails loudly instead of silently coercing). Also
+  fixed `data.constant`'s output port (was hardcoded `"string"`, is now
+  `"auto"`).
+- ✅ **Connection-handle UX fixed**: the visible port dot was also the entire
+  grab/drop hit area (too small); the `Handle`'s own box (xyflow's real hit
+  area) is now an 18px zone with a small decorative dot inside it, plus a
+  node-background/border-contrast fix.
+- ✅ **Full 4-pillar Health Checklist audit performed** (3 parallel Explore
+  agents + hand-verification of every load-bearing claim):
+  - **Performant: PASS.** `BlockNode` is `React.memo`; context value +
+    `defMap`/cycle-detection sets all `useMemo`'d; static `nodeTypes`/
+    `edgeTypes`; 200-cap history ring; deliberate cadences (30s frontend
+    countdown, 1-min backend ticker); 500-node/30-min/60s-per-node guards.
+  - **Clean: GAP.** 89 inline `style={{}}` across 8 scheduler files
+    (`frontend/src/tiles/scheduler/**`) — the largest untouched cluster in
+    the Milestone 2 inline-style migration (see that section above); not yet
+    in the ESLint error-ratchet glob.
+  - **Scalable: 2 GAPs.** (1) No `useSchedulerStore` — state lives in local
+    `useState` inside `useScheduler.ts`, contradicting CLAUDE.md's
+    one-Zustand-store-per-domain rule (confirmed drift, not just suspected).
+    (2) `localStorage` used directly in
+    `frontend/src/tiles/scheduler/editor/BlockPalette.tsx` (palette
+    collapsed/closed state) — a direct violation of CLAUDE.md's explicit
+    "no `localStorage`/`sessionStorage`; persist via Go file I/O" rule.
+  - **Stable: critical gap, now closed for the backend engine** (this
+    session's main remediation — see the P1 test-coverage entry above for
+    what shipped). Two smaller Stable gaps remain, not yet fixed: the 30s
+    next-run poll in `useScheduler.ts` should be a Wails event instead
+    (CLAUDE.md's no-`useEffect`-polling rule), and `useScheduler` swallows
+    IPC failures silently (no offline/error state surfaced to the UI).
+- **Remaining scheduler backlog** (deferred, not fixed this session):
+  frontend tests for `graphMapping.ts` (`detectControlCycles`,
+  `flowToGraph`/`graphToFlow` round-trip) and the `useScheduler` hook; the
+  `localStorage` → Go-file-I/O migration; the `useSchedulerStore` Zustand
+  migration; the scheduler's inline-style Milestone-2 slice; the next-run
+  poll → event switch; offline-error surfacing in `useScheduler`.
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart
