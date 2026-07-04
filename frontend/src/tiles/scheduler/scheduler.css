@@ -53,9 +53,11 @@
   fill: rgba(0, 0, 0, 0.3);
 }
 
-/* Handle border matches canvas bg so they look clean */
+/* Handle is the (oversized) connection grab area — thin light border so it
+   reads as a distinct droppable zone around the small dot BlockNode renders
+   inside it (see BlockNode.tsx). */
 .react-flow__handle {
-  border: 2px solid var(--bg-base) !important;
+  border: 1px solid var(--border-hover) !important;
 }
 
 /* Selection */
@@ -71,8 +73,12 @@
 
 /* Node entrance animation */
 @keyframes node-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .node-entrance {
   animation: node-fade-in 150ms var(--node-anim-delay, 0ms) ease-out both;
@@ -80,8 +86,12 @@
 
 /* Edge draw-in (pathLength="1" normalization trick — see AnimatedEdge.tsx) */
 @keyframes edge-draw-in {
-  from { stroke-dashoffset: 1; }
-  to   { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 .edge-draw-in {
   animation: edge-draw-in 280ms ease-out both;
@@ -89,8 +99,17 @@
 
 /* Live run highlight: pulsing glow on the currently-executing node */
 @keyframes node-run-pulse {
-  0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 0 4px var(--accent); }
-  50%      { box-shadow: 0 0 0 1px var(--accent), 0 0 16px var(--accent); }
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 0 4px var(--accent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 0 16px var(--accent);
+  }
 }
 .node-running {
   animation: node-run-pulse 1.1s ease-in-out infinite;
