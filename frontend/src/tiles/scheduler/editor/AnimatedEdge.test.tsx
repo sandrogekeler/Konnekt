@@ -52,6 +52,26 @@ describe('AnimatedEdge', () => {
     expect(container.querySelector('.react-flow__edge-interaction')).not.toBeNull()
   })
 
+  // Regression guard: xyflow's `.react-flow__edge` group sets `pointer-events:
+  // visibleStroke` (not `.react-flow__edge-path` itself, which has no
+  // pointer-events rule at all), so without an explicit override the visible
+  // path — painted on top, in DOM order — intercepts hover wherever it's
+  // actually painted (a solid line's whole length, or a dashed line's dash
+  // marks) and steals it from the interaction path underneath, which has no
+  // handler of its own there, causing hover to flicker off.
+  it('keeps the visible path out of hit-testing so it cannot steal hover from the interaction path', () => {
+    const { container } = renderEdge()
+    settle(container)
+    const path = container.querySelector('.react-flow__edge-path')
+    expect(path?.getAttribute('style')).toContain('pointer-events: none')
+  })
+
+  it('keeps the visible path non-interactive during the entrance animation too', () => {
+    const { container } = renderEdge()
+    const path = container.querySelector('.react-flow__edge-path')
+    expect(path?.getAttribute('style')).toContain('pointer-events: none')
+  })
+
   it('highlights the visible path with the accent color when selected', () => {
     const { container } = renderEdge({ selected: true })
     settle(container)

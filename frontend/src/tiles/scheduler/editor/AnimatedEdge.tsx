@@ -39,11 +39,17 @@ export function AnimatedEdge({
     highlight = { stroke: '#f59e0b', strokeWidth: 2 }
   }
 
-  // Wide, transparent hit target. The visible `.react-flow__edge-path` is
-  // `pointer-events: none` in xyflow; a bare hand-rolled <path> (unlike
-  // <BaseEdge>) never gets the wide `.react-flow__edge-interaction` path that
-  // normally provides the clickable area, so clicks only land on the thin
-  // visible stroke, making the edge nearly unselectable.
+  // Wide, transparent hit target. xyflow's own `.react-flow__edge-path` rule
+  // (@xyflow/react/dist/style.css) does NOT set `pointer-events: none` — only
+  // the parent `.react-flow__edge` group gets `pointer-events: visibleStroke`,
+  // which the visible path inherits. So the visible path below explicitly sets
+  // `pointerEvents: 'none'` in its own style — without it, the visible path
+  // (painted on top, in DOM order after this one) would intercept the pointer
+  // wherever it's actually painted (a solid control edge's whole length, or a
+  // data edge's dash marks), stealing hover from this path underneath and
+  // firing a spurious mouseleave, since the visible path has no enter/leave
+  // handler of its own. That produced exactly this flicker: hover dropping
+  // mid-line or between dash gaps.
   const interaction = (
     <path
       className="react-flow__edge-interaction"
@@ -68,7 +74,7 @@ export function AnimatedEdge({
           d={d}
           pathLength={1}
           onAnimationEnd={() => setAnimDone(true)}
-          style={{ ...style, strokeDasharray: 1, animationDelay: `${delay}ms`, ...highlight }}
+          style={{ ...style, strokeDasharray: 1, animationDelay: `${delay}ms`, ...highlight, pointerEvents: 'none' }}
           markerEnd={markerEnd}
         />
       </>
@@ -82,7 +88,7 @@ export function AnimatedEdge({
         id={id}
         className="react-flow__edge-path"
         d={d}
-        style={{ ...style, strokeDasharray: baseDash, ...highlight }}
+        style={{ ...style, strokeDasharray: baseDash, ...highlight, pointerEvents: 'none' }}
         markerEnd={markerEnd}
       />
     </>
