@@ -79,22 +79,21 @@ function ModsSummary({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center justify-between px-3 py-2">
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-text-secondary text-xs font-semibold">
           {detecting
             ? 'Detecting server type…'
             : `${installed.length} ${installed.length !== 1 ? nounPlural : noun}`}
         </span>
         {running && (
-          <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>
-            restart needed for changes
-          </span>
+          <span className="text-text-muted text-xs text-[10px]">restart needed for changes</span>
         )}
       </div>
       {modProcess?.status === 'running' && (
-        <div className="w-full shrink-0" style={{ height: 2, background: 'var(--border-subtle)' }}>
+        <div className="bg-border-subtle h-0.5 w-full shrink-0">
           <div
-            className="h-full transition-all duration-300"
-            style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }}
+            className="bg-accent h-full transition-all duration-300"
+            // eslint-disable-next-line no-restricted-syntax -- width is a live download-progress percent
+            style={{ width: `${modProcess.percent}%` }}
           />
         </div>
       )}
@@ -185,16 +184,12 @@ function ModsExpanded({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
-      <div
-        className="flex shrink-0 items-center gap-2 px-3 py-2"
-        style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-border-subtle flex shrink-0 items-center gap-2 border-b-[0.5px] px-3 py-2">
         {view === 'browse' ? (
           <>
             <button
               onClick={openLibrary}
-              className="font-mono text-xs transition-colors"
-              style={{ color: 'var(--text-muted)' }}
+              className="text-text-muted font-mono text-xs transition-colors"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
               }}
@@ -204,19 +199,11 @@ function ModsExpanded({
             >
               ← Library
             </button>
-            <span
-              className="flex-1 text-xs font-semibold"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Add {noun}
-            </span>
+            <span className="text-text-secondary flex-1 text-xs font-semibold">Add {noun}</span>
           </>
         ) : (
           <>
-            <span
-              className="flex-1 text-xs font-semibold"
-              style={{ color: 'var(--text-secondary)' }}
-            >
+            <span className="text-text-secondary flex-1 text-xs font-semibold">
               {mods.installed.length}{' '}
               {mods.installed.length === 1
                 ? noun.toLowerCase()
@@ -225,10 +212,7 @@ function ModsExpanded({
                   : 'mods'}
             </span>
             {running && (
-              <span
-                className="shrink-0 text-xs"
-                style={{ color: 'var(--text-muted)', fontSize: 10 }}
-              >
+              <span className="text-text-muted shrink-0 text-xs text-[10px]">
                 restart needed for changes
               </span>
             )}
@@ -236,13 +220,9 @@ function ModsExpanded({
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="shrink-0 rounded px-2 py-1 font-mono text-xs transition-colors"
-              style={{
-                border: '0.5px solid var(--border-subtle)',
-                color: 'var(--text-muted)',
-                background: 'transparent',
-                opacity: refreshing ? 0.5 : 1,
-              }}
+              className={`text-text-muted border-border-subtle shrink-0 rounded border-[0.5px] bg-transparent px-2 py-1 font-mono text-xs transition-colors ${
+                refreshing ? 'opacity-50' : 'opacity-100'
+              }`}
               title="Refresh"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)'
@@ -256,12 +236,7 @@ function ModsExpanded({
             {/* Add Files button */}
             <button
               onClick={handleAddFiles}
-              className="shrink-0 rounded px-3 py-1 text-xs font-semibold transition-colors"
-              style={{
-                border: '0.5px solid var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                background: 'transparent',
-              }}
+              className="text-text-secondary border-border-subtle shrink-0 rounded border-[0.5px] bg-transparent px-3 py-1 text-xs font-semibold transition-colors"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-surface)'
               }}
@@ -274,11 +249,7 @@ function ModsExpanded({
             {/* Add Content button */}
             <button
               onClick={openBrowse}
-              className="shrink-0 rounded px-3 py-1 text-xs font-semibold transition-colors"
-              style={{
-                background: 'var(--accent)',
-                color: 'var(--bg-base)',
-              }}
+              className="bg-accent text-canvas shrink-0 rounded px-3 py-1 text-xs font-semibold transition-colors"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.85'
               }}
@@ -294,10 +265,11 @@ function ModsExpanded({
 
       {/* Download progress bar */}
       {modProcess?.status === 'running' && (
-        <div className="w-full shrink-0" style={{ height: 2, background: 'var(--border-subtle)' }}>
+        <div className="bg-border-subtle h-0.5 w-full shrink-0">
           <div
-            className="h-full transition-all duration-300"
-            style={{ width: `${modProcess.percent}%`, background: 'var(--accent)' }}
+            className="bg-accent h-full transition-all duration-300"
+            // eslint-disable-next-line no-restricted-syntax -- width is a live download-progress percent
+            style={{ width: `${modProcess.percent}%` }}
           />
         </div>
       )}

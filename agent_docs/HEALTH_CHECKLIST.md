@@ -290,14 +290,55 @@ todo list, not a target.
     https://github.com/sandrogekeler/Konnekt/actions/runs/28631150720
 - Missing `--font-mono` theme token found during this pass, tracked
   separately: see "P2 — Missing `--font-mono` theme token" below.
-- ~665 `style={{}}` usages remain across the rest of the codebase (~49
-  files). Continue tile-by-tile — the remaining hotspots are all
-  substantially larger and more dynamic-content-heavy: mods (176), backups
-  (116), scheduler (88), config (80), the rest of `components/` (68),
-  worlds (45), players (32). These will need more deliberate scoping
-  (likely per-tile, not batched) and, for several, live `wails dev` + a
-  configured server to fully verify beyond what this sandbox's headless
-  preview can reach.
+- ✅ Fourth slice done: the **mods tile** — the single largest remaining
+  cluster, all 9 files (`frontend/src/tiles/mods/**`: `InstalledPanel.tsx`,
+  `ModPreviewDialog.tsx`, `ContentDetailPanel.tsx`, `BrowsePanel.tsx`,
+  `index.tsx`, `DependencyDialog.tsx`, `ContentCard.tsx`, `Pagination.tsx`,
+  `ModAboutBody.tsx`). 176 → 7 remaining, all genuinely dynamic and documented
+  with `eslint-disable-next-line no-restricted-syntax`: three live-percent
+  progress-bar widths (`index.tsx` x2, `InstalledPanel.tsx`), two live
+  user-controlled grid-column counts (`InstalledPanel.tsx`, `BrowsePanel.tsx`),
+  and the resizable detail panel's live `panelWidth`-derived width/transform
+  (`BrowsePanel.tsx` x2). Global warning count: 668 → 492. Added
+  `src/tiles/mods/**/*.tsx` to the ratcheted-`error` `files` glob in
+  `frontend/eslint.config.js`; `pnpm lint` passes with 0 errors, confirming
+  every remaining inline style in the tile is a documented exception.
+  - Static ternaries between two fixed values (color, background, opacity,
+    border, font-weight) converted to conditional `className`s throughout,
+    per the established rule — including several 3-way ternaries (e.g. a
+    version-type color lookup keyed by a plain `string` field, mirrored the
+    same way an already-existing ternary chain in `ModPreviewDialog.tsx`
+    handled it, for consistency between the two files).
+  - New conversion patterns established this pass, verified live via computed
+    `getComputedStyle()` checks against a running `pnpm dev` server (not just
+    typecheck/lint): `color-mix(in srgb, ...)` values as Tailwind arbitrary
+    `bg-[...]`/`border-[...]` (verified the mixed color resolves correctly);
+    `mask-image`/`-webkit-mask-image` gradients as arbitrary properties
+    (`[mask-image:...]`); `line-clamp-2` replacing the manual
+    `-webkit-box`/`-webkit-line-clamp` trick; `caret-accent` for `caretColor`;
+    opacity ternaries mapped onto Tailwind's opacity scale exactly (`0.55` →
+    `opacity-55`, `0.2` → `opacity-20`); a fixed-duration `transform`
+    transition (`280ms cubic-bezier(0.4,0,0.2,1)`) converted to
+    `duration-[280ms] ease-in-out` since Tailwind's `ease-in-out` *is* that
+    exact bezier curve — the `PANEL_SLIDE_MS` constant that previously held
+    this value was removed as dead code once inlined into the class, with a
+    comment linking the two so a future duration change updates both;
+    `calc(100vw-48px)`-style arbitrary values confirmed Tailwind auto-inserts
+    the required operator spacing even without explicit underscores.
+  - Not independently verified: the mods tile itself rendering end-to-end
+    inside the app. `index.tsx`'s `useMods` hook calls `EventsOn` and
+    `DetectServerLoader` on mount and crashes without the Wails bridge, so
+    only the 8 pure-presentational child components could be exercised
+    (verified via direct computed-style checks against a running Vite dev
+    server, not a full component mount) — a full visual pass needs `wails dev`
+    with a configured server, same limitation noted for backups/performance in
+    prior sessions.
+- ~490 `style={{}}` usages remain across the rest of the codebase (~48
+  files). Continue tile-by-tile — the remaining hotspots: backups (116),
+  scheduler (88), config (80), the rest of `components/` (68), worlds (45),
+  players (32). These will need more deliberate scoping (likely per-tile, not
+  batched) and, for several, live `wails dev` + a configured server to fully
+  verify beyond what this sandbox's headless preview can reach.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/

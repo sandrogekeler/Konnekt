@@ -5,8 +5,12 @@ import { usePopover } from '../../hooks/usePopover'
 import { ModPreviewDialog } from './ModPreviewDialog'
 import { fmtBytes } from '../../lib/format'
 import type {
-  InstalledMod, InstallProgress, ModProject, ModVersion,
-  ModUpdateInfo, ResolvedDependency,
+  InstalledMod,
+  InstallProgress,
+  ModProject,
+  ModVersion,
+  ModUpdateInfo,
+  ResolvedDependency,
 } from './useMods'
 
 interface Props {
@@ -46,44 +50,47 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'size', label: 'Size' },
 ]
 
-
 // ─── Sort dropdown ────────────────────────────────────────────────────────────
 
 function SortMenu({ sort, onSort }: { sort: SortKey; onSort: (v: SortKey) => void }) {
   const { open, toggle, close } = usePopover()
-  const label = SORT_OPTIONS.find(o => o.value === sort)?.label ?? 'Sort'
+  const label = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Sort'
 
   return (
     <div className="relative shrink-0">
       <button
         onClick={toggle}
-        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors"
-        style={{
-          border: '0.5px solid var(--border-subtle)',
-          background: open ? 'var(--hover-surface)' : 'transparent',
-          color: 'var(--text-muted)',
-          whiteSpace: 'nowrap',
-        }}
+        className={`border-border-subtle text-text-muted flex items-center gap-1 rounded border-[0.5px] px-2 py-1 font-mono text-xs whitespace-nowrap transition-colors ${
+          open ? 'bg-hover' : 'bg-transparent'
+        }`}
       >
-        <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>↕</span>
+        <span className="text-text-faint text-[10px]">↕</span>
         {label}
       </button>
       <Popover open={open} onClose={close}>
-        {SORT_OPTIONS.map(opt => {
+        {SORT_OPTIONS.map((opt) => {
           const active = opt.value === sort
           return (
             <button
               key={opt.value}
-              onClick={() => { onSort(opt.value); close() }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-              style={{
-                color: active ? 'var(--accent)' : 'var(--text-primary)',
-                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              onClick={() => {
+                onSort(opt.value)
+                close()
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                active
+                  ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                  : 'text-text-primary bg-transparent'
+              }`}
+              onMouseEnter={(e) => {
+                if (!active)
+                  (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
+              }}
+              onMouseLeave={(e) => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              <span className={`text-accent w-3 ${active ? 'opacity-100' : 'opacity-0'}`}>✓</span>
               {opt.label}
             </button>
           )
@@ -102,7 +109,12 @@ interface FilterMenuProps {
   onSourceFilter: (v: SourceFilter) => void
 }
 
-function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter }: FilterMenuProps) {
+function FilterMenu({
+  statusFilter,
+  sourceFilter,
+  onStatusFilter,
+  onSourceFilter,
+}: FilterMenuProps) {
   const { open, toggle, close } = usePopover()
   const active = statusFilter !== 'all' || sourceFilter !== 'all'
 
@@ -110,60 +122,66 @@ function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter
     <div className="relative shrink-0">
       <button
         onClick={toggle}
-        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors"
-        style={{
-          border: '0.5px solid var(--border-subtle)',
-          background: open ? 'var(--hover-surface)' : 'transparent',
-          color: active ? 'var(--accent)' : 'var(--text-muted)',
-          whiteSpace: 'nowrap',
-        }}
+        className={`border-border-subtle flex items-center gap-1 rounded border-[0.5px] px-2 py-1 font-mono text-xs whitespace-nowrap transition-colors ${
+          open ? 'bg-hover' : 'bg-transparent'
+        } ${active ? 'text-accent' : 'text-text-muted'}`}
       >
-        <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>☰</span>
+        <span className="text-text-faint text-[10px]">☰</span>
         Filter{active ? ' ·' : ''}
       </button>
       <Popover open={open} onClose={close}>
-        <div className="px-3 py-1.5 text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10, borderBottom: '0.5px solid var(--border-subtle)' }}>
+        <div className="text-text-faint border-border-subtle border-b-[0.5px] px-3 py-1.5 font-mono text-xs text-[10px]">
           Status
         </div>
-        {(['all', 'enabled', 'disabled'] as StatusFilter[]).map(v => {
+        {(['all', 'enabled', 'disabled'] as StatusFilter[]).map((v) => {
           const isActive = statusFilter === v
           const label = v === 'all' ? 'All' : v.charAt(0).toUpperCase() + v.slice(1)
           return (
             <button
               key={v}
               onClick={() => onStatusFilter(v)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-              style={{
-                color: isActive ? 'var(--accent)' : 'var(--text-primary)',
-                background: isActive ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                isActive
+                  ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                  : 'text-text-primary bg-transparent'
+              }`}
+              onMouseEnter={(e) => {
+                if (!isActive)
+                  (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
               }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseLeave={(e) => {
+                if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: isActive ? 1 : 0 }}>✓</span>
+              <span className={`text-accent w-3 ${isActive ? 'opacity-100' : 'opacity-0'}`}>✓</span>
               {label}
             </button>
           )
         })}
-        <div className="px-3 py-1.5 text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10, borderTop: '0.5px solid var(--border-subtle)', borderBottom: '0.5px solid var(--border-subtle)' }}>
+        <div className="text-text-faint border-border-subtle border-t-[0.5px] border-b-[0.5px] px-3 py-1.5 font-mono text-xs text-[10px]">
           Source
         </div>
-        {(['all', 'modrinth', 'local'] as SourceFilter[]).map(v => {
+        {(['all', 'modrinth', 'local'] as SourceFilter[]).map((v) => {
           const isActive = sourceFilter === v
           const label = v === 'all' ? 'All' : v.charAt(0).toUpperCase() + v.slice(1)
           return (
             <button
               key={v}
               onClick={() => onSourceFilter(v)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-              style={{
-                color: isActive ? 'var(--accent)' : 'var(--text-primary)',
-                background: isActive ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                isActive
+                  ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                  : 'text-text-primary bg-transparent'
+              }`}
+              onMouseEnter={(e) => {
+                if (!isActive)
+                  (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
               }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseLeave={(e) => {
+                if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: isActive ? 1 : 0 }}>✓</span>
+              <span className={`text-accent w-3 ${isActive ? 'opacity-100' : 'opacity-0'}`}>✓</span>
               {label}
             </button>
           )
@@ -176,12 +194,29 @@ function FilterMenu({ statusFilter, sourceFilter, onStatusFilter, onSourceFilter
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 export function InstalledPanel({
-  mods, loading, error, installProgress, installing, serverRunning, kind = 'mods',
+  mods,
+  loading,
+  error,
+  installProgress,
+  installing,
+  serverRunning,
+  kind = 'mods',
   updates,
-  onSetEnabled, onUninstall, onChangeVersion,
-  selectedProject, projectLoading, versions, versionsLoading, installError,
-  onSelectProject, onClearProject, onGetVersions, onGetAllVersions,
-  onResolveDeps, onInstall, onOpenInBrowser,
+  onSetEnabled,
+  onUninstall,
+  onChangeVersion,
+  selectedProject,
+  projectLoading,
+  versions,
+  versionsLoading,
+  installError,
+  onSelectProject,
+  onClearProject,
+  onGetVersions,
+  onGetAllVersions,
+  onResolveDeps,
+  onInstall,
+  onOpenInBrowser,
 }: Props) {
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('date')
@@ -195,7 +230,7 @@ export function InstalledPanel({
 
   // Filter + sort
   const filtered = mods
-    .filter(m => {
+    .filter((m) => {
       if (statusFilter === 'enabled' && !m.enabled) return false
       if (statusFilter === 'disabled' && m.enabled) return false
       if (sourceFilter !== 'all' && m.source !== sourceFilter) return false
@@ -214,14 +249,21 @@ export function InstalledPanel({
 
   const handleToggle = async (fileName: string, enabled: boolean) => {
     setTogglingFile(fileName)
-    try { await onSetEnabled(fileName, enabled) }
-    finally { setTogglingFile(null) }
+    try {
+      await onSetEnabled(fileName, enabled)
+    } finally {
+      setTogglingFile(null)
+    }
   }
 
   const handleUninstall = async (fileName: string) => {
     setUninstallingFile(fileName)
-    try { await onUninstall(fileName) }
-    finally { setUninstallingFile(null); setConfirmUninstall(null) }
+    try {
+      await onUninstall(fileName)
+    } finally {
+      setUninstallingFile(null)
+      setConfirmUninstall(null)
+    }
   }
 
   const openPreview = async (mod: InstalledMod) => {
@@ -237,24 +279,22 @@ export function InstalledPanel({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Toolbar */}
-      <div
-        className="flex items-center gap-2 px-3 py-2 shrink-0 flex-wrap"
-        style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-      >
-        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>⌕</span>
+      <div className="border-border-subtle flex shrink-0 flex-wrap items-center gap-2 border-b-[0.5px] px-3 py-2">
+        <span className="text-text-muted text-[11px]">⌕</span>
         <input
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Filter…"
-          className="flex-1 min-w-0 bg-transparent text-xs font-mono outline-none"
-          style={{ color: 'var(--text-primary)', minWidth: 60 }}
+          className="text-text-primary min-w-[60px] flex-1 bg-transparent font-mono text-xs outline-none"
         />
         {search && (
-          <button onClick={() => setSearch('')} style={{ color: 'var(--text-muted)', fontSize: 11 }}>✕</button>
+          <button onClick={() => setSearch('')} className="text-text-muted text-[11px]">
+            ✕
+          </button>
         )}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5">
           <FilterMenu
             statusFilter={statusFilter}
             sourceFilter={sourceFilter}
@@ -263,19 +303,14 @@ export function InstalledPanel({
           />
           <SortMenu sort={sortKey} onSort={setSortKey} />
           {/* Column picker */}
-          <div className="flex items-center rounded overflow-hidden shrink-0" style={{ border: '0.5px solid var(--border-subtle)' }}>
-            {([1, 2, 3, 4] as const).map(n => (
+          <div className="border-border-subtle flex shrink-0 items-center overflow-hidden rounded border-[0.5px]">
+            {([1, 2, 3, 4] as const).map((n) => (
               <button
                 key={n}
                 onClick={() => setNumCols(n)}
-                className="flex items-center justify-center text-xs font-mono transition-colors"
-                style={{
-                  width: 22,
-                  height: 24,
-                  background: numCols === n ? 'var(--hover-surface)' : 'transparent',
-                  color: numCols === n ? 'var(--accent)' : 'var(--text-faint)',
-                  borderRight: n < 4 ? '0.5px solid var(--border-subtle)' : 'none',
-                }}
+                className={`flex h-6 w-[22px] items-center justify-center font-mono text-xs transition-colors ${
+                  numCols === n ? 'bg-hover text-accent' : 'text-text-faint bg-transparent'
+                } ${n < 4 ? 'border-border-subtle border-r-[0.5px]' : 'border-r-[0.5px] border-transparent'}`}
                 title={`${n} column${n > 1 ? 's' : ''}`}
               >
                 {n}
@@ -287,38 +322,28 @@ export function InstalledPanel({
 
       {/* Server-running hint */}
       {serverRunning && (
-        <div
-          className="px-3 py-1.5 text-xs shrink-0"
-          style={{
-            background: 'rgba(245,158,11,0.08)',
-            color: 'var(--warning)',
-            borderBottom: '0.5px solid var(--border-subtle)',
-          }}
-        >
+        <div className="bg-warning/[0.08] text-warning border-border-subtle shrink-0 border-b-[0.5px] px-3 py-1.5 text-xs">
           Changes take effect after server restart
         </div>
       )}
 
       {/* List */}
       <div
-        className="flex-1 overflow-y-auto min-h-0 p-2"
-        style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: 8, alignContent: 'start' }}
+        className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-2"
+        // eslint-disable-next-line no-restricted-syntax -- gridTemplateColumns is the live user-picked column count
+        style={{ gridTemplateColumns: `repeat(${numCols}, 1fr)` }}
       >
-        {loading && (
-          <div className="px-3 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Loading…</div>
-        )}
-        {error && (
-          <div className="px-3 py-2 text-xs" style={{ color: 'var(--danger)' }}>{error}</div>
-        )}
+        {loading && <div className="text-text-muted px-3 py-4 text-xs">Loading…</div>}
+        {error && <div className="text-danger px-3 py-2 text-xs">{error}</div>}
         {!loading && filtered.length === 0 && (
-          <div className="px-3 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <div className="text-text-muted px-3 py-4 text-xs">
             {mods.length === 0
               ? `No ${kind} found in this server's ${kind}/ directory.`
               : 'No results match your filter.'}
           </div>
         )}
 
-        {filtered.map(mod => {
+        {filtered.map((mod) => {
           const bareName = mod.fileName.replace(/\.disabled$/, '')
           const isInstalling = !!installProgress[bareName] || !!installProgress[mod.fileName]
           const pct = installProgress[bareName] ?? installProgress[mod.fileName] ?? 0
@@ -330,123 +355,100 @@ export function InstalledPanel({
           return (
             <div
               key={mod.fileName}
-              className="flex items-center gap-3 transition-colors group"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '0.5px solid var(--border-subtle)',
-                borderRadius: 10,
-                padding: '10px 12px',
-                opacity: mod.enabled ? 1 : 0.55,
-              }}
-              onMouseEnter={e => {
+              className={`bg-surface border-border-subtle group flex items-center gap-3 rounded-[10px] border-[0.5px] p-[10px_12px] transition-colors ${
+                mod.enabled ? 'opacity-100' : 'opacity-55'
+              }`}
+              onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement
                 el.style.background = 'var(--hover-surface)'
                 el.style.borderColor = 'var(--border-hover)'
               }}
-              onMouseLeave={e => {
+              onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLElement
                 el.style.background = 'var(--bg-surface)'
                 el.style.borderColor = 'var(--border-subtle)'
               }}
             >
               {/* Icon */}
-              <div className="shrink-0" style={{ width: 40, height: 40 }}>
+              <div className="h-10 w-10 shrink-0">
                 {mod.iconUrl ? (
-                  <img
-                    src={mod.iconUrl}
-                    alt=""
-                    className="rounded"
-                    style={{ width: 40, height: 40, objectFit: 'cover' }}
-                  />
+                  <img src={mod.iconUrl} alt="" className="h-10 w-10 rounded object-cover" />
                 ) : (
-                  <div
-                    className="rounded flex items-center justify-center text-xs font-mono w-full h-full"
-                    style={{ background: 'var(--border-subtle)', color: 'var(--text-faint)' }}
-                  >
+                  <div className="bg-border-subtle text-text-faint flex h-full w-full items-center justify-center rounded font-mono text-xs">
                     &lt;&gt;
                   </div>
                 )}
               </div>
 
               {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-1.5">
                   <button
                     onClick={() => openPreview(mod)}
-                    className="truncate text-xs font-semibold text-left hover:underline"
-                    style={{ color: 'var(--text-primary)', background: 'none', padding: 0 }}
+                    className="text-text-primary truncate bg-transparent p-0 text-left text-xs font-semibold hover:underline"
                   >
                     {mod.displayName}
                   </button>
                   {numCols === 1 && mod.versionNumber && (
-                    <span className="shrink-0 text-xs font-mono" style={{ color: 'var(--text-muted)', fontSize: 10 }}>
+                    <span className="text-text-muted shrink-0 font-mono text-xs text-[10px]">
                       v{mod.versionNumber}
                     </span>
                   )}
                   {numCols === 1 && (
                     <span
-                      className="shrink-0 px-1 rounded text-xs"
-                      style={{
-                        background: mod.source === 'modrinth'
-                          ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.06)',
-                        color: mod.source === 'modrinth'
-                          ? 'var(--accent)' : 'var(--text-muted)',
-                        fontSize: 10,
-                      }}
+                      className={`shrink-0 rounded px-1 text-xs text-[10px] ${
+                        mod.source === 'modrinth'
+                          ? 'bg-accent/[0.12] text-accent'
+                          : 'text-text-muted bg-white/[0.06]'
+                      }`}
                     >
                       {mod.source}
                     </span>
                   )}
                 </div>
                 {numCols === 1 && (
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs font-mono truncate" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <span className="text-text-faint truncate font-mono text-xs text-[10px]">
                       {mod.fileName}
                     </span>
-                    <span className="shrink-0 text-xs" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                    <span className="text-text-faint shrink-0 text-xs text-[10px]">
                       {fmtBytes(mod.sizeBytes)}
                     </span>
                   </div>
                 )}
                 {isInstalling && (
-                  <div className="mt-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: 'var(--accent)' }} />
+                  <div className="bg-border-subtle mt-1 h-1 overflow-hidden rounded-full">
+                    <div
+                      className="bg-accent h-full rounded-full transition-all"
+                      // eslint-disable-next-line no-restricted-syntax -- width is a live install-progress percent
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                 )}
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex shrink-0 items-center gap-1.5">
                 {/* Change version button */}
                 {mod.source === 'modrinth' && mod.projectId && (
                   <button
                     onClick={() => openPreview(mod)}
-                    className="relative flex items-center justify-center rounded text-xs transition-colors"
-                    style={{
-                      width: 26,
-                      height: 26,
-                      border: '0.5px solid var(--border-subtle)',
-                      color: 'var(--text-muted)',
-                      background: 'transparent',
+                    className="border-border-subtle text-text-muted relative flex h-[26px] w-[26px] items-center justify-center rounded border-[0.5px] bg-transparent text-xs transition-colors"
+                    title={
+                      hasUpdate
+                        ? `Update available: v${updateInfo.latestVersionNumber}`
+                        : 'Change version'
+                    }
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
                     }}
-                    title={hasUpdate ? `Update available: v${updateInfo.latestVersionNumber}` : 'Change version'}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                    }}
                   >
                     ◎
                     {hasUpdate && (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          right: 2,
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: 'var(--accent)',
-                          border: '1.5px solid var(--bg-base)',
-                        }}
-                      />
+                      <span className="bg-accent border-canvas absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full border-[1.5px]" />
                     )}
                   </button>
                 )}
@@ -454,7 +456,7 @@ export function InstalledPanel({
                 {/* Enable/disable toggle */}
                 <Toggle
                   checked={mod.enabled}
-                  onChange={v => handleToggle(mod.fileName, v)}
+                  onChange={(v) => handleToggle(mod.fileName, v)}
                   disabled={isToggling || installing}
                 />
 
@@ -464,15 +466,15 @@ export function InstalledPanel({
                     <button
                       onClick={() => handleUninstall(mod.fileName)}
                       disabled={isUninstalling}
-                      className="px-2 py-0.5 rounded text-xs"
-                      style={{ background: 'var(--danger)', color: '#fff', opacity: isUninstalling ? 0.5 : 1 }}
+                      className={`bg-danger rounded px-2 py-0.5 text-xs text-white ${
+                        isUninstalling ? 'opacity-50' : 'opacity-100'
+                      }`}
                     >
                       {isUninstalling ? '…' : 'Confirm'}
                     </button>
                     <button
                       onClick={() => setConfirmUninstall(null)}
-                      className="px-2 py-0.5 rounded text-xs"
-                      style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
+                      className="bg-surface text-text-secondary rounded px-2 py-0.5 text-xs"
                     >
                       Cancel
                     </button>
@@ -480,21 +482,15 @@ export function InstalledPanel({
                 ) : (
                   <button
                     onClick={() => setConfirmUninstall(mod.fileName)}
-                    className="flex items-center justify-center rounded text-xs transition-colors opacity-0 group-hover:opacity-100"
-                    style={{
-                      width: 26,
-                      height: 26,
-                      border: '0.5px solid var(--border-subtle)',
-                      color: 'var(--text-muted)',
-                      background: 'transparent',
-                    }}
+                    className="border-border-subtle text-text-muted flex h-[26px] w-[26px] items-center justify-center rounded border-[0.5px] bg-transparent text-xs opacity-0 transition-colors group-hover:opacity-100"
                     title="Uninstall"
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--danger) 12%, transparent)'
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLElement).style.background =
+                        'color-mix(in srgb, var(--danger) 12%, transparent)'
                       ;(e.currentTarget as HTMLElement).style.color = 'var(--danger)'
                     }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'transparent'
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLElement).style.background = 'transparent'
                       ;(e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'
                     }}
                   >

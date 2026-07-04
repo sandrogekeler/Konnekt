@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { InstalledMod, ModProject, ModVersion, ModUpdateInfo, ResolvedDependency } from './useMods'
+import type {
+  InstalledMod,
+  ModProject,
+  ModVersion,
+  ModUpdateInfo,
+  ResolvedDependency,
+} from './useMods'
 import { DependencyDialog } from './DependencyDialog'
 import { ModAboutBody } from './ModAboutBody'
 import { fmtCount, fmtBytes, relativeTime } from '../../lib/format'
@@ -26,10 +32,21 @@ interface Props {
 type Tab = 'about' | 'versions'
 
 export function ModPreviewDialog({
-  mod, updateInfo, project, projectLoading, versions, versionsLoading,
-  installing, installError,
-  onClose, onGetVersions, onGetAllVersions, onResolveDeps, onInstall,
-  onChangeVersion, onOpenInBrowser,
+  mod,
+  updateInfo,
+  project,
+  projectLoading,
+  versions,
+  versionsLoading,
+  installing,
+  installError,
+  onClose,
+  onGetVersions,
+  onGetAllVersions,
+  onResolveDeps,
+  onInstall,
+  onChangeVersion,
+  onOpenInBrowser,
 }: Props) {
   const [tab, setTab] = useState<Tab>('about')
   const [showAllVersions, setShowAllVersions] = useState(false)
@@ -40,7 +57,9 @@ export function ModPreviewDialog({
   const isModrinth = mod.source === 'modrinth' && !!mod.projectId
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
@@ -56,35 +75,41 @@ export function ModPreviewDialog({
     onGetAllVersions(mod.projectId)
   }, [mod.projectId, onGetAllVersions])
 
-  const handleVersionInstall = useCallback(async (versionId: string) => {
-    try {
-      const resolved = await onResolveDeps(versionId)
-      const nonTrivial = (resolved ?? []).filter(d => !d.alreadyInstalled)
-      if (nonTrivial.length > 0) {
-        setDeps(resolved)
-        setPendingVersionId(versionId)
-        return
+  const handleVersionInstall = useCallback(
+    async (versionId: string) => {
+      try {
+        const resolved = await onResolveDeps(versionId)
+        const nonTrivial = (resolved ?? []).filter((d) => !d.alreadyInstalled)
+        if (nonTrivial.length > 0) {
+          setDeps(resolved)
+          setPendingVersionId(versionId)
+          return
+        }
+        setChangingVersion(true)
+        await onChangeVersion(mod.fileName, versionId)
+        onClose()
+      } catch {
+        // error surfaced via installError prop
+      } finally {
+        setChangingVersion(false)
       }
-      setChangingVersion(true)
-      await onChangeVersion(mod.fileName, versionId)
-      onClose()
-    } catch {
-      // error surfaced via installError prop
-    } finally {
-      setChangingVersion(false)
-    }
-  }, [mod.fileName, onResolveDeps, onChangeVersion, onClose])
+    },
+    [mod.fileName, onResolveDeps, onChangeVersion, onClose],
+  )
 
-  const handleDepConfirm = useCallback(async (versionIds: string[]) => {
-    setDeps(null)
-    setChangingVersion(true)
-    try {
-      await onInstall(versionIds)
-      onClose()
-    } finally {
-      setChangingVersion(false)
-    }
-  }, [onInstall, onClose])
+  const handleDepConfirm = useCallback(
+    async (versionIds: string[]) => {
+      setDeps(null)
+      setChangingVersion(true)
+      try {
+        await onInstall(versionIds)
+        onClose()
+      } finally {
+        setChangingVersion(false)
+      }
+    },
+    [onInstall, onClose],
+  )
 
   const icon = mod.iconUrl || project?.iconUrl
   const title = project?.title || mod.displayName
@@ -104,68 +129,37 @@ export function ModPreviewDialog({
       )}
 
       {/* Backdrop */}
-      <div
-        style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.65)' }}
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-[400] bg-black/65" onClick={onClose} />
 
       {/* Dialog */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 401,
-          width: 600,
-          maxWidth: 'calc(100vw - 48px)',
-          maxHeight: 'calc(100vh - 80px)',
-          display: 'flex',
-          flexDirection: 'column',
-          background: 'var(--bg-base)',
-          border: '0.5px solid var(--border-subtle)',
-          borderRadius: 12,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-          overflow: 'hidden',
-        }}
-      >
+      <div className="bg-canvas border-border-subtle fixed top-1/2 left-1/2 z-[401] flex max-h-[calc(100vh-80px)] w-[600px] max-w-[calc(100vw-48px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border-[0.5px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
         {/* Header */}
-        <div
-          className="flex items-start gap-3 px-4 pt-4 pb-3 shrink-0"
-          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-        >
+        <div className="border-border-subtle flex shrink-0 items-start gap-3 border-b-[0.5px] px-4 pt-4 pb-3">
           {icon ? (
-            <img src={icon} alt="" className="rounded shrink-0" style={{ width: 44, height: 44, objectFit: 'cover' }} />
+            <img src={icon} alt="" className="h-[44px] w-[44px] shrink-0 rounded object-cover" />
           ) : (
-            <div
-              className="rounded shrink-0 flex items-center justify-center text-xs font-mono"
-              style={{ width: 44, height: 44, background: 'var(--border-subtle)', color: 'var(--text-faint)' }}
-            >
+            <div className="bg-border-subtle text-text-faint flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded font-mono text-xs">
               &lt;&gt;
             </div>
           )}
 
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-              {title}
-            </div>
-            {author && (
-              <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>by {author}</div>
-            )}
+          <div className="min-w-0 flex-1">
+            <div className="text-text-primary truncate text-sm font-semibold">{title}</div>
+            {author && <div className="text-text-muted mt-0.5 text-xs">by {author}</div>}
             {project && (
-              <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <div className="mt-1 flex flex-wrap items-center gap-3">
                 {project.downloads > 0 && (
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                  <span className="text-text-faint font-mono text-xs text-[10px]">
                     ↓ {fmtCount(project.downloads)}
                   </span>
                 )}
                 {project.follows > 0 && (
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                  <span className="text-text-faint font-mono text-xs text-[10px]">
                     ♥ {fmtCount(project.follows)}
                   </span>
                 )}
                 {mod.versionNumber && (
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                  <span className="text-text-faint font-mono text-xs text-[10px]">
                     v{mod.versionNumber}
                   </span>
                 )}
@@ -173,29 +167,34 @@ export function ModPreviewDialog({
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {isModrinth && (
               <button
-                onClick={() => { onOpenInBrowser(); onClose() }}
-                className="px-2 py-1 rounded text-xs font-mono transition-colors"
-                style={{
-                  border: '0.5px solid var(--border-subtle)',
-                  color: 'var(--accent)',
-                  background: 'transparent',
-                  whiteSpace: 'nowrap',
+                onClick={() => {
+                  onOpenInBrowser()
+                  onClose()
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--accent) 10%, transparent)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                className="border-border-subtle text-accent rounded border-[0.5px] bg-transparent px-2 py-1 font-mono text-xs whitespace-nowrap transition-colors"
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background =
+                    'color-mix(in srgb, var(--accent) 10%, transparent)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                }}
               >
                 Open in Browser
               </button>
             )}
             <button
               onClick={onClose}
-              className="flex items-center justify-center w-6 h-6 rounded text-xs transition-colors"
-              style={{ color: 'var(--text-muted)', background: 'transparent' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              className="text-text-muted flex h-6 w-6 items-center justify-center rounded bg-transparent text-xs transition-colors"
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
               ✕
             </button>
@@ -204,21 +203,14 @@ export function ModPreviewDialog({
 
         {/* Tabs (only for Modrinth mods) */}
         {isModrinth && (
-          <div
-            className="flex items-center gap-0 px-4 shrink-0"
-            style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-          >
-            {(['about', 'versions'] as Tab[]).map(t => (
+          <div className="border-border-subtle flex shrink-0 items-center gap-0 border-b-[0.5px] px-4">
+            {(['about', 'versions'] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className="px-3 py-2 text-xs font-mono capitalize transition-colors"
-                style={{
-                  color: tab === t ? 'var(--accent)' : 'var(--text-muted)',
-                  borderBottom: tab === t ? '1.5px solid var(--accent)' : '1.5px solid transparent',
-                  background: 'transparent',
-                  marginBottom: -1,
-                }}
+                className={`-mb-px border-b-[1.5px] bg-transparent px-3 py-2 font-mono text-xs capitalize transition-colors ${
+                  tab === t ? 'text-accent border-accent' : 'text-text-muted border-transparent'
+                }`}
               >
                 {t}
               </button>
@@ -227,29 +219,29 @@ export function ModPreviewDialog({
         )}
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {!isModrinth ? (
             // Local mod — simple info card
-            <div className="px-4 py-4 space-y-2">
+            <div className="space-y-2 px-4 py-4">
               <div>
-                <div className="text-xs font-mono mb-1" style={{ color: 'var(--text-muted)' }}>File</div>
-                <div className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{mod.fileName}</div>
+                <div className="text-text-muted mb-1 font-mono text-xs">File</div>
+                <div className="text-text-primary font-mono text-xs">{mod.fileName}</div>
               </div>
               {mod.modId && (
                 <div>
-                  <div className="text-xs font-mono mb-1" style={{ color: 'var(--text-muted)' }}>Mod ID</div>
-                  <div className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{mod.modId}</div>
+                  <div className="text-text-muted mb-1 font-mono text-xs">Mod ID</div>
+                  <div className="text-text-primary font-mono text-xs">{mod.modId}</div>
                 </div>
               )}
               {mod.versionNumber && (
                 <div>
-                  <div className="text-xs font-mono mb-1" style={{ color: 'var(--text-muted)' }}>Version</div>
-                  <div className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{mod.versionNumber}</div>
+                  <div className="text-text-muted mb-1 font-mono text-xs">Version</div>
+                  <div className="text-text-primary font-mono text-xs">{mod.versionNumber}</div>
                 </div>
               )}
               <div>
-                <div className="text-xs font-mono mb-1" style={{ color: 'var(--text-muted)' }}>Size</div>
-                <div className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{fmtBytes(mod.sizeBytes)}</div>
+                <div className="text-text-muted mb-1 font-mono text-xs">Size</div>
+                <div className="text-text-primary font-mono text-xs">{fmtBytes(mod.sizeBytes)}</div>
               </div>
             </div>
           ) : tab === 'about' ? (
@@ -260,57 +252,57 @@ export function ModPreviewDialog({
             // Versions tab
             <div>
               {versionsLoading ? (
-                <div className="px-4 py-6 text-xs" style={{ color: 'var(--text-muted)' }}>Loading versions…</div>
+                <div className="text-text-muted px-4 py-6 text-xs">Loading versions…</div>
               ) : versions.length === 0 ? (
-                <div className="px-4 py-6 text-xs" style={{ color: 'var(--text-muted)' }}>No compatible versions found.</div>
+                <div className="text-text-muted px-4 py-6 text-xs">
+                  No compatible versions found.
+                </div>
               ) : (
                 <>
-                  {(installError) && (
-                    <div className="px-4 py-2 text-xs" style={{ color: 'var(--danger)' }}>{installError}</div>
+                  {installError && (
+                    <div className="text-danger px-4 py-2 text-xs">{installError}</div>
                   )}
-                  {versions.map(v => {
+                  {versions.map((v) => {
                     const isCurrent = v.id === mod.versionId
-                    const isLatestUpdate = updateInfo?.updateAvailable && v.id === updateInfo.latestVersionId
-                    const typeColor = v.versionType === 'release'
-                      ? 'var(--accent)'
-                      : v.versionType === 'beta'
-                      ? 'var(--warning)'
-                      : 'var(--danger)'
+                    const isLatestUpdate =
+                      updateInfo?.updateAvailable && v.id === updateInfo.latestVersionId
+                    const typeColorClass =
+                      v.versionType === 'release'
+                        ? 'text-accent'
+                        : v.versionType === 'beta'
+                          ? 'text-warning'
+                          : 'text-danger'
                     return (
                       <div
                         key={v.id}
-                        className="flex items-center gap-3 px-4 py-2.5 transition-colors"
-                        style={{
-                          borderBottom: '0.5px solid var(--border-subtle)',
-                          background: isCurrent ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'transparent',
-                        }}
+                        className={`border-border-subtle flex items-center gap-3 border-b-[0.5px] px-4 py-2.5 transition-colors ${
+                          isCurrent
+                            ? 'bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]'
+                            : 'bg-transparent'
+                        }`}
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-text-primary text-xs font-medium">
                               {v.versionNumber}
                             </span>
-                            <span className="text-xs font-mono shrink-0" style={{ color: typeColor, fontSize: 10 }}>
+                            <span
+                              className={`shrink-0 font-mono text-xs text-[10px] ${typeColorClass}`}
+                            >
                               {v.versionType}
                             </span>
                             {isCurrent && (
-                              <span
-                                className="px-1 rounded text-xs shrink-0"
-                                style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)', fontSize: 10 }}
-                              >
+                              <span className="text-accent shrink-0 rounded bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] px-1 text-xs text-[10px]">
                                 installed
                               </span>
                             )}
                             {isLatestUpdate && !isCurrent && (
-                              <span
-                                className="px-1 rounded text-xs shrink-0"
-                                style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)', fontSize: 10 }}
-                              >
+                              <span className="text-accent shrink-0 rounded bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] px-1 text-xs text-[10px]">
                                 latest
                               </span>
                             )}
                           </div>
-                          <div className="text-xs font-mono mt-0.5" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+                          <div className="text-text-faint mt-0.5 font-mono text-xs text-[10px]">
                             {v.gameVersions.slice(0, 3).join(', ')}
                             {v.gameVersions.length > 3 ? ` +${v.gameVersions.length - 3}` : ''}
                             {v.fileSize ? ` · ${fmtBytes(v.fileSize)}` : ''}
@@ -321,16 +313,18 @@ export function ModPreviewDialog({
                           <button
                             onClick={() => handleVersionInstall(v.id)}
                             disabled={installing || changingVersion}
-                            className="shrink-0 px-2 py-0.5 rounded text-xs transition-colors"
-                            style={{
-                              border: '0.5px solid var(--border-subtle)',
-                              color: 'var(--text-secondary)',
-                              opacity: (installing || changingVersion) ? 0.5 : 1,
+                            className={`border-border-subtle text-text-secondary shrink-0 rounded border-[0.5px] px-2 py-0.5 text-xs transition-colors ${
+                              installing || changingVersion ? 'opacity-50' : 'opacity-100'
+                            }`}
+                            onMouseEnter={(e) => {
+                              ;(e.currentTarget as HTMLElement).style.background =
+                                'var(--hover-surface)'
                             }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                            onMouseLeave={(e) => {
+                              ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                            }}
                           >
-                            {(installing || changingVersion) ? '…' : 'Switch'}
+                            {installing || changingVersion ? '…' : 'Switch'}
                           </button>
                         )}
                       </div>
@@ -339,10 +333,13 @@ export function ModPreviewDialog({
                   {!showAllVersions && (
                     <button
                       onClick={handleLoadAllVersions}
-                      className="w-full py-2 text-xs font-mono transition-colors"
-                      style={{ color: 'var(--text-muted)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
+                      className="text-text-muted w-full py-2 font-mono text-xs transition-colors"
+                      onMouseEnter={(e) => {
+                        ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
+                      }}
+                      onMouseLeave={(e) => {
+                        ;(e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'
+                      }}
                     >
                       Show all versions
                     </button>

@@ -14,7 +14,15 @@ interface ContentCardProps {
   onInstall: (versionIds: string[]) => Promise<void>
 }
 
-export function ContentCard({ project, selected, installing, alreadyInstalled, onClick, onInstallLatest, onInstall }: ContentCardProps) {
+export function ContentCard({
+  project,
+  selected,
+  installing,
+  alreadyInstalled,
+  onClick,
+  onInstallLatest,
+  onInstall,
+}: ContentCardProps) {
   const visibleCategories = (project.categories ?? []).slice(0, 3)
   const [quickInstalling, setQuickInstalling] = useState(false)
   const [done, setDone] = useState(false)
@@ -70,50 +78,34 @@ export function ContentCard({ project, selected, installing, alreadyInstalled, o
         role="button"
         tabIndex={0}
         onClick={onClick}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick() }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') onClick()
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="flex flex-col text-left w-full h-full transition-all relative"
-        style={{
-          background: selected
-            ? 'color-mix(in srgb, var(--accent) 8%, var(--bg-surface))'
-            : hovered ? 'var(--hover-surface)' : 'var(--bg-surface)',
-          border: selected
-            ? '0.5px solid color-mix(in srgb, var(--accent) 40%, transparent)'
-            : `0.5px solid ${hovered ? 'var(--border-hover)' : 'var(--border-subtle)'}`,
-          borderRadius: 10,
-          padding: '10px',
-          cursor: 'pointer',
-          outline: 'none',
-          userSelect: 'none',
-        }}
+        className={`relative flex h-full w-full cursor-pointer flex-col rounded-[10px] p-2.5 text-left transition-all outline-none select-none ${
+          selected
+            ? 'border-[0.5px] border-[color-mix(in_srgb,var(--accent)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,var(--bg-surface))]'
+            : hovered
+              ? 'bg-hover border-border-hover border-[0.5px]'
+              : 'bg-surface border-border-subtle border-[0.5px]'
+        }`}
       >
         {/* Icon + title row */}
-        <div className="flex items-start gap-2 mb-1.5">
+        <div className="mb-1.5 flex items-start gap-2">
           {project.iconUrl ? (
-            <img
-              src={project.iconUrl}
-              alt=""
-              className="rounded shrink-0"
-              style={{ width: 36, height: 36, objectFit: 'cover' }}
-            />
+            <img src={project.iconUrl} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
           ) : (
-            <div
-              className="rounded shrink-0 flex items-center justify-center text-xs font-mono"
-              style={{ width: 36, height: 36, background: 'var(--border-subtle)', color: 'var(--text-faint)' }}
-            >
+            <div className="bg-border-subtle text-text-faint flex h-9 w-9 shrink-0 items-center justify-center rounded font-mono text-xs">
               &lt;&gt;
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <div
-              className="text-xs font-semibold leading-tight truncate"
-              style={{ color: 'var(--text-primary)' }}
-            >
+          <div className="min-w-0 flex-1">
+            <div className="text-text-primary truncate text-xs leading-tight font-semibold">
               {project.title}
             </div>
             {project.author && (
-              <div className="text-xs truncate mt-0.5" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+              <div className="text-text-faint mt-0.5 truncate text-xs text-[10px]">
                 by {project.author}
               </div>
             )}
@@ -121,33 +113,24 @@ export function ContentCard({ project, selected, installing, alreadyInstalled, o
         </div>
 
         {/* Description */}
-        <p
-          className="text-xs leading-relaxed flex-1 mb-2"
-          style={{
-            color: 'var(--text-muted)',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
+        <p className="text-text-muted mb-2 line-clamp-2 flex-1 text-xs leading-relaxed">
           {project.description}
         </p>
 
         {/* Stats row */}
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="mb-1.5 flex items-center gap-2">
           {project.downloads > 0 && (
-            <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+            <span className="text-text-faint font-mono text-xs text-[10px]">
               ↓ {fmtCount(project.downloads)}
             </span>
           )}
           {project.follows > 0 && (
-            <span className="text-xs font-mono" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+            <span className="text-text-faint font-mono text-xs text-[10px]">
               ♥ {fmtCount(project.follows)}
             </span>
           )}
           {project.dateModified && (
-            <span className="text-xs font-mono ml-auto" style={{ color: 'var(--text-faint)', fontSize: 10 }}>
+            <span className="text-text-faint ml-auto font-mono text-xs text-[10px]">
               {relativeTime(project.dateModified)}
             </span>
           )}
@@ -155,23 +138,11 @@ export function ContentCard({ project, selected, installing, alreadyInstalled, o
 
         {/* Category tags — gradient mask fades them out on the left where the button sits */}
         {visibleCategories.length > 0 && (
-          <div
-            className="flex flex-wrap gap-1"
-            style={{
-              maskImage: 'linear-gradient(to left, transparent 32px, black 46px)',
-              WebkitMaskImage: 'linear-gradient(to left, transparent 32px, black 46px)',
-            }}
-          >
-            {visibleCategories.map(cat => (
+          <div className="flex flex-wrap gap-1 [mask-image:linear-gradient(to_left,transparent_32px,black_46px)] [-webkit-mask-image:linear-gradient(to_left,transparent_32px,black_46px)]">
+            {visibleCategories.map((cat) => (
               <span
                 key={cat}
-                className="px-1.5 py-px rounded text-xs font-mono"
-                style={{
-                  background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
-                  color: 'var(--accent)',
-                  border: '0.5px solid color-mix(in srgb, var(--accent) 25%, transparent)',
-                  fontSize: 10,
-                }}
+                className="text-accent rounded border-[0.5px] border-[color-mix(in_srgb,var(--accent)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-1.5 py-px font-mono text-xs text-[10px]"
               >
                 {cat}
               </span>
@@ -184,43 +155,25 @@ export function ContentCard({ project, selected, installing, alreadyInstalled, o
           onClick={handleQuickInstall}
           disabled={busy || alreadyInstalled}
           title={showGrey ? 'Already installed' : done ? 'Installed!' : 'Install latest version'}
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            width: 22,
-            height: 22,
-            borderRadius: 6,
-            border: showGrey
-              ? '0.5px solid var(--border-subtle)'
-              : '1px solid var(--accent)',
-            background: 'transparent',
-            color: showGrey ? 'var(--text-faint)' : 'var(--accent)',
-            fontSize: 13,
-            lineHeight: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingBottom: 1,
-            cursor: (busy || alreadyInstalled) ? 'default' : 'pointer',
-            opacity: hovered ? 1 : 0.2,
-            transition: 'opacity 200ms ease',
-            zIndex: 1,
+          className={`absolute right-2 bottom-2 z-[1] flex h-[22px] w-[22px] items-center justify-center rounded-md bg-transparent pb-px text-[13px] leading-none [transition:opacity_200ms_ease] ${
+            showGrey
+              ? 'border-border-subtle text-text-faint border-[0.5px]'
+              : 'border-accent text-accent border'
+          } ${busy || alreadyInstalled ? 'cursor-default' : 'cursor-pointer'} ${hovered ? 'opacity-100' : 'opacity-20'}`}
+          onMouseEnter={(e) => {
+            if (!showGrey && !busy) {
+              const el = e.currentTarget as HTMLElement
+              el.style.background = 'var(--accent)'
+              el.style.color = 'var(--bg-base)'
+            }
           }}
-        onMouseEnter={e => {
-          if (!showGrey && !busy) {
-            const el = e.currentTarget as HTMLElement
-            el.style.background = 'var(--accent)'
-            el.style.color = 'var(--bg-base)'
-          }
-        }}
-        onMouseLeave={e => {
-          if (!showGrey) {
-            const el = e.currentTarget as HTMLElement
-            el.style.background = 'transparent'
-            el.style.color = 'var(--accent)'
-          }
-        }}
+          onMouseLeave={(e) => {
+            if (!showGrey) {
+              const el = e.currentTarget as HTMLElement
+              el.style.background = 'transparent'
+              el.style.color = 'var(--accent)'
+            }
+          }}
         >
           {quickInstalling ? '…' : '+'}
         </button>

@@ -33,16 +33,17 @@ interface Props {
 }
 
 const DEFAULT_PANEL_WIDTH = 440
-const MIN_PANEL_WIDTH = 300   // narrowest the detail panel can get
-const MIN_GRID_WIDTH = 232    // narrowest the grid can get: 1 card (200px) + padding (24px) + gap (8px)
-const PANEL_SLIDE_MS = 280    // ms — detail panel slide-in/out
+const MIN_PANEL_WIDTH = 300 // narrowest the detail panel can get
+const MIN_GRID_WIDTH = 232 // narrowest the grid can get: 1 card (200px) + padding (24px) + gap (8px)
+// Detail panel slide-in/out duration — kept as the `duration-[280ms]` class below;
+// update both together if this ever needs to change.
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
-  { value: '',           label: 'Relevance' },
-  { value: 'downloads',  label: 'Downloads' },
-  { value: 'follows',    label: 'Popularity' },
-  { value: 'newest',     label: 'Date published' },
-  { value: 'updated',    label: 'Updated' },
+  { value: '', label: 'Relevance' },
+  { value: 'downloads', label: 'Downloads' },
+  { value: 'follows', label: 'Popularity' },
+  { value: 'newest', label: 'Date published' },
+  { value: 'updated', label: 'Updated' },
 ]
 
 // ─── Sort dropdown ─────────────────────────────────────────────────────────────
@@ -54,40 +55,44 @@ interface SortMenuProps {
 
 function SortMenu({ sort, onSort }: SortMenuProps) {
   const { open, toggle, close } = usePopover()
-  const activeLabel = SORT_OPTIONS.find(o => o.value === sort)?.label ?? 'Relevance'
+  const activeLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Relevance'
 
   return (
     <div className="relative shrink-0">
       <button
         onClick={toggle}
-        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
-        style={{
-          border: '0.5px solid var(--border-subtle)',
-          background: open ? 'var(--hover-surface)' : 'transparent',
-          color: sort ? 'var(--accent)' : 'var(--text-muted)',
-          whiteSpace: 'nowrap',
-        }}
+        className={`border-border-subtle flex shrink-0 items-center gap-1 rounded border-[0.5px] px-2 py-1 font-mono text-xs whitespace-nowrap transition-colors ${
+          open ? 'bg-hover' : 'bg-transparent'
+        } ${sort ? 'text-accent' : 'text-text-muted'}`}
       >
-        <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>↕</span>
+        <span className="text-text-faint text-[10px]">↕</span>
         {activeLabel}
       </button>
 
       <Popover open={open} onClose={close}>
-        {SORT_OPTIONS.map(opt => {
+        {SORT_OPTIONS.map((opt) => {
           const active = opt.value === sort
           return (
             <button
               key={opt.value}
-              onClick={() => { onSort(opt.value); close() }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-              style={{
-                color: active ? 'var(--accent)' : 'var(--text-primary)',
-                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              onClick={() => {
+                onSort(opt.value)
+                close()
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                active
+                  ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                  : 'text-text-primary bg-transparent'
+              }`}
+              onMouseEnter={(e) => {
+                if (!active)
+                  (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
+              }}
+              onMouseLeave={(e) => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              <span className={`text-accent w-3 ${active ? 'opacity-100' : 'opacity-0'}`}>✓</span>
               {opt.label}
             </button>
           )
@@ -115,50 +120,50 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
     <div className="relative shrink-0">
       <button
         onClick={disabled ? undefined : toggle}
-        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors shrink-0"
-        style={{
-          border: '0.5px solid var(--border-subtle)',
-          background: open ? 'var(--hover-surface)' : 'transparent',
-          color: disabled ? 'var(--text-faint)' : count > 0 ? 'var(--accent)' : 'var(--text-muted)',
-          whiteSpace: 'nowrap',
-          cursor: disabled ? 'default' : 'pointer',
-          opacity: disabled ? 0.5 : 1,
-        }}
+        className={`border-border-subtle flex shrink-0 items-center gap-1 rounded border-[0.5px] px-2 py-1 font-mono text-xs whitespace-nowrap transition-colors ${
+          open ? 'bg-hover' : 'bg-transparent'
+        } ${disabled ? 'text-text-faint cursor-default opacity-50' : count > 0 ? 'text-accent cursor-pointer opacity-100' : 'text-text-muted cursor-pointer opacity-100'}`}
       >
-        <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>☰</span>
+        <span className="text-text-faint text-[10px]">☰</span>
         Categories{count > 0 ? ` · ${count}` : ''}
       </button>
 
       <Popover open={open} onClose={close} width={200} maxHeight={300}>
         <button
           onClick={onClear}
-          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-          style={{
-            color: count === 0 ? 'var(--accent)' : 'var(--text-muted)',
-            borderBottom: '0.5px solid var(--border-subtle)',
-            background: 'transparent',
+          className={`border-border-subtle flex w-full items-center gap-2 border-b-[0.5px] bg-transparent px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+            count === 0 ? 'text-accent' : 'text-text-muted'
+          }`}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+          }}
         >
-          <span style={{ width: 12, color: 'var(--accent)', opacity: count === 0 ? 1 : 0 }}>✓</span>
+          <span className={`text-accent w-3 ${count === 0 ? 'opacity-100' : 'opacity-0'}`}>✓</span>
           All
         </button>
-        {categories.map(cat => {
+        {categories.map((cat) => {
           const active = selectedCats.includes(cat)
           return (
             <button
               key={cat}
               onClick={() => onToggle(cat)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-left transition-colors"
-              style={{
-                color: active ? 'var(--accent)' : 'var(--text-primary)',
-                background: active ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                active
+                  ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                  : 'text-text-primary bg-transparent'
+              }`}
+              onMouseEnter={(e) => {
+                if (!active)
+                  (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)' }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseLeave={(e) => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
-              <span style={{ width: 12, color: 'var(--accent)', opacity: active ? 1 : 0 }}>✓</span>
+              <span className={`text-accent w-3 ${active ? 'opacity-100' : 'opacity-0'}`}>✓</span>
               {cat}
             </button>
           )
@@ -171,12 +176,28 @@ function CategoriesMenu({ categories, selectedCats, onToggle, onClear }: Categor
 // ─── BrowsePanel ───────────────────────────────────────────────────────────────
 
 export function BrowsePanel({
-  results, total, offset, loading, error, categories,
-  selectedProject, projectLoading, versions, versionsLoading,
-  installing, installError,
-  onSearch, onSelectProject, onClearProject,
-  onGetVersions, onGetAllVersions, onResolveDeps, onInstall, onInstallLatest,
-  moreByAuthor, installedProjectIds,
+  results,
+  total,
+  offset,
+  loading,
+  error,
+  categories,
+  selectedProject,
+  projectLoading,
+  versions,
+  versionsLoading,
+  installing,
+  installError,
+  onSearch,
+  onSelectProject,
+  onClearProject,
+  onGetVersions,
+  onGetAllVersions,
+  onResolveDeps,
+  onInstall,
+  onInstallLatest,
+  moreByAuthor,
+  installedProjectIds,
 }: Props) {
   const [query, setQuery] = useState('')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
@@ -190,38 +211,54 @@ export function BrowsePanel({
   const mainRowRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    const startX = e.clientX
-    const startWidth = panelWidth
-    setResizeActive(true)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
+  const handleResizeMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const startX = e.clientX
+      const startWidth = panelWidth
+      setResizeActive(true)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
 
-    const onMouseMove = (ev: MouseEvent) => {
-      const delta = startX - ev.clientX // drag left → panel grows
-      const totalWidth = mainRowRef.current?.offsetWidth ?? 800
-      const maxWidth = totalWidth - MIN_GRID_WIDTH
-      setPanelWidth(Math.max(MIN_PANEL_WIDTH, Math.min(startWidth + delta, maxWidth)))
-    }
-    const onMouseUp = () => {
-      setResizeActive(false)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
-    }
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
-  }, [panelWidth])
+      const onMouseMove = (ev: MouseEvent) => {
+        const delta = startX - ev.clientX // drag left → panel grows
+        const totalWidth = mainRowRef.current?.offsetWidth ?? 800
+        const maxWidth = totalWidth - MIN_GRID_WIDTH
+        setPanelWidth(Math.max(MIN_PANEL_WIDTH, Math.min(startWidth + delta, maxWidth)))
+      }
+      const onMouseUp = () => {
+        setResizeActive(false)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        document.removeEventListener('mousemove', onMouseMove)
+        document.removeEventListener('mouseup', onMouseUp)
+      }
+      document.addEventListener('mousemove', onMouseMove)
+      document.addEventListener('mouseup', onMouseUp)
+    },
+    [panelWidth],
+  )
 
   // ── Animation ──────────────────────────────────────────────────────────────
   const panelOpen = !!selectedProject
-  const { displayResults, displayTotal, numCols, gridVisible, layoutOpen, pagePhase, pageDirection, getTileDelay, handlePage } =
-    useGridPageAnimation({
-      results, total, loading, panelOpen, containerRef,
-      onSearch: (offset) => onSearch(query, selectedCats, offset, sortBy),
-    })
+  const {
+    displayResults,
+    displayTotal,
+    numCols,
+    gridVisible,
+    layoutOpen,
+    pagePhase,
+    pageDirection,
+    getTileDelay,
+    handlePage,
+  } = useGridPageAnimation({
+    results,
+    total,
+    loading,
+    panelOpen,
+    containerRef,
+    onSearch: (offset) => onSearch(query, selectedCats, offset, sortBy),
+  })
 
   // Keep last project so the detail panel content doesn't blank during close animation
   const lastProjectRef = useRef<ModProject | null>(null)
@@ -238,50 +275,57 @@ export function BrowsePanel({
 
   // ── More by author ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedProject?.author) { setMoreProjects([]); return }
+    if (!selectedProject?.author) {
+      setMoreProjects([])
+      return
+    }
     let cancelled = false
     moreByAuthor(selectedProject.author, selectedProject.id)
-      .then(ps => { if (!cancelled) setMoreProjects(ps) })
+      .then((ps) => {
+        if (!cancelled) setMoreProjects(ps)
+      })
       .catch(() => {})
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [selectedProject?.id, selectedProject?.author]) // intentionally omit moreByAuthor
 
   const toggleCat = useCallback((cat: string) => {
-    setSelectedCats(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    )
+    setSelectedCats((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]))
   }, [])
 
   const clearCats = useCallback(() => setSelectedCats([]), [])
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Search bar + Sort + Categories controls */}
-      <div
-        className="flex items-center gap-2 px-3 py-2 shrink-0"
-        style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-border-subtle flex shrink-0 items-center gap-2 border-b-[0.5px] px-3 py-2">
         <div
-          className="flex items-center gap-2 flex-1 px-2 py-1 rounded"
-          style={{ border: '0.5px solid var(--border-subtle)', background: 'var(--bg-base)' }}
-          onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent)' }}
-          onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)' }}
+          className="border-border-subtle bg-canvas flex flex-1 items-center gap-2 rounded border-[0.5px] px-2 py-1"
+          onFocusCapture={(e) => {
+            ;(e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent)'
+          }}
+          onBlurCapture={(e) => {
+            ;(e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)'
+          }}
         >
-          <span className="text-xs select-none shrink-0" style={{ color: 'var(--text-faint)' }}>⌕</span>
+          <span className="text-text-faint shrink-0 text-xs select-none">⌕</span>
           <input
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Search Modrinth…"
-            className="flex-1 min-w-0 bg-transparent text-xs font-mono outline-none"
-            style={{ color: 'var(--text-primary)', caretColor: 'var(--accent)' }}
+            className="text-text-primary caret-accent min-w-0 flex-1 bg-transparent font-mono text-xs outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="shrink-0 text-xs transition-colors"
-              style={{ color: 'var(--text-faint)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+              className="text-text-faint shrink-0 text-xs transition-colors"
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'
+              }}
             >
               ×
             </button>
@@ -299,53 +343,45 @@ export function BrowsePanel({
 
       {/* Active category chips — only shown when filters are active */}
       {selectedCats.length > 0 && (
-        <div
-          className="flex items-center gap-1.5 px-3 py-2 shrink-0 flex-wrap"
-          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-        >
-          {selectedCats.map(cat => (
+        <div className="border-border-subtle flex shrink-0 flex-wrap items-center gap-1.5 border-b-[0.5px] px-3 py-2">
+          {selectedCats.map((cat) => (
             <button
               key={cat}
               onClick={() => toggleCat(cat)}
-              className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono transition-colors shrink-0"
-              style={{
-                background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
-                color: 'var(--accent)',
-                border: '0.5px solid color-mix(in srgb, var(--accent) 35%, transparent)',
-                fontWeight: 600,
-              }}
+              className="text-accent flex shrink-0 items-center gap-1 rounded border-[0.5px] border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] px-2 py-0.5 font-mono text-xs font-semibold transition-colors"
             >
               {cat}
-              <span style={{ opacity: 0.7, fontSize: 10 }}>×</span>
+              <span className="text-[10px] opacity-70">×</span>
             </button>
           ))}
           <button
             onClick={clearCats}
-            className="px-2 py-0.5 rounded text-xs font-mono transition-colors shrink-0"
-            style={{ color: 'var(--text-faint)', border: '0.5px solid transparent' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-faint)' }}
+            className="text-text-faint shrink-0 rounded border-[0.5px] border-transparent px-2 py-0.5 font-mono text-xs transition-colors"
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLElement).style.color = 'var(--text-faint)'
+            }}
           >
             Clear all
           </button>
         </div>
       )}
 
-      {error && (
-        <div className="px-3 py-1.5 text-xs shrink-0" style={{ color: 'var(--danger)' }}>{error}</div>
-      )}
+      {error && <div className="text-danger shrink-0 px-3 py-1.5 text-xs">{error}</div>}
 
       {/* Main area: grid (left) + detail panel (right) */}
-      <div ref={mainRowRef} className="flex flex-1 min-h-0 overflow-hidden">
-        <div ref={containerRef} className="flex flex-col min-h-0 overflow-hidden" style={{ flex: 1, minWidth: 0 }}>
-          <div className="flex-1 overflow-y-auto min-h-0 p-3">
+      <div ref={mainRowRef} className="flex min-h-0 flex-1 overflow-hidden">
+        <div ref={containerRef} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {loading && displayResults.length === 0 && (
-              <div className="text-xs py-4 text-center animate-pulse" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-text-muted animate-pulse py-4 text-center text-xs">
                 Searching…
               </div>
             )}
             {!loading && !error && displayResults.length === 0 && (
-              <div className="text-xs py-4 text-center" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-text-muted py-4 text-center text-xs">
                 {query || selectedCats.length > 0
                   ? 'No results. Try different keywords or categories.'
                   : 'Search Modrinth for mods and plugins.'}
@@ -353,14 +389,21 @@ export function BrowsePanel({
             )}
 
             {displayResults.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 8 }}>
+              // eslint-disable-next-line no-restricted-syntax -- gridCols is a live numCols-derived template value
+              <div className="grid gap-2" style={{ gridTemplateColumns: gridCols }}>
                 {displayResults.map((project, index) => (
                   <div
                     key={project.id}
-                    style={{
-                      minWidth: 0,
-                      ...getTileStyle(getTileDelay(project.id), index % numCols, numCols, pagePhase, gridVisible, pageDirection),
-                    }}
+                    className="min-w-0"
+                    // eslint-disable-next-line no-restricted-syntax -- computed per-tile page animation (delay/transform)
+                    style={getTileStyle(
+                      getTileDelay(project.id),
+                      index % numCols,
+                      numCols,
+                      pagePhase,
+                      gridVisible,
+                      pageDirection,
+                    )}
                   >
                     <ContentCard
                       project={project}
@@ -377,23 +420,18 @@ export function BrowsePanel({
             )}
           </div>
 
-          <Pagination
-            total={displayTotal}
-            offset={offset}
-            onPage={handlePage}
-          />
+          <Pagination total={displayTotal} offset={offset} onPage={handlePage} />
         </div>
 
         {/* Detail panel wrapper — width is user-resizable */}
         <div
-          style={{
-            width: layoutOpen ? panelWidth : 0,
-            minWidth: 0,
-            flexShrink: 0,
-            overflow: 'hidden',
-            position: 'relative',
-            borderLeft: layoutOpen ? '0.5px solid var(--border-subtle)' : 'none',
-          }}
+          className={`relative min-w-0 shrink-0 overflow-hidden ${
+            layoutOpen
+              ? 'border-border-subtle border-l-[0.5px]'
+              : 'border-l-[0.5px] border-transparent'
+          }`}
+          // eslint-disable-next-line no-restricted-syntax -- panelWidth is the live user-resized width
+          style={{ width: layoutOpen ? panelWidth : 0 }}
         >
           {/* Drag handle — sits on top of the left border */}
           {layoutOpen && (
@@ -401,27 +439,18 @@ export function BrowsePanel({
               onMouseDown={handleResizeMouseDown}
               onMouseEnter={() => setResizeHover(true)}
               onMouseLeave={() => setResizeHover(false)}
-              style={{
-                position: 'absolute',
-                left: -3,
-                top: 0,
-                bottom: 0,
-                width: 6,
-                cursor: 'col-resize',
-                zIndex: 10,
-                borderLeft: `2px solid ${resizeHover || resizeActive ? 'var(--accent)' : 'transparent'}`,
-                transition: 'border-color 150ms ease',
-              }}
+              className={`absolute top-0 bottom-0 -left-[3px] z-10 w-1.5 cursor-col-resize border-l-2 [transition:border-color_150ms_ease] ${
+                resizeHover || resizeActive ? 'border-accent' : 'border-transparent'
+              }`}
             />
           )}
 
           <div
+            className="h-full transition-transform duration-[280ms] ease-in-out will-change-transform"
+            // eslint-disable-next-line no-restricted-syntax -- width/transform depend on the live panelWidth
             style={{
               width: panelWidth,
-              height: '100%',
               transform: panelOpen ? 'translateX(0)' : `translateX(${panelWidth}px)`,
-              transition: `transform ${PANEL_SLIDE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-              willChange: 'transform',
             }}
           >
             {layoutOpen && displayProject && (
