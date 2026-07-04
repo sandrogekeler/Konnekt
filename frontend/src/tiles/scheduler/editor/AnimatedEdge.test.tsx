@@ -78,6 +78,32 @@ describe('AnimatedEdge', () => {
     expect(path?.getAttribute('style')).toContain('stroke: var(--accent)')
   })
 
+  it('highlights the visible path with a darker accent on hover', () => {
+    const { container } = renderEdge()
+    settle(container)
+    const interaction = container.querySelector('.react-flow__edge-interaction')!
+    fireEvent.mouseEnter(interaction)
+    const path = container.querySelector('.react-flow__edge-path')
+    const hoverStyle = path?.getAttribute('style') ?? ''
+    expect(hoverStyle).toContain('color-mix(in srgb, var(--accent) 60%, black)')
+    expect(hoverStyle).not.toContain('stroke: var(--accent);')
+
+    fireEvent.mouseLeave(interaction)
+    expect(container.querySelector('.react-flow__edge-path')?.getAttribute('style') ?? '').not.toContain(
+      'color-mix',
+    )
+  })
+
+  it('lets selection win over hover so they read as visually distinct states', () => {
+    const { container } = renderEdge({ selected: true })
+    settle(container)
+    const interaction = container.querySelector('.react-flow__edge-interaction')!
+    fireEvent.mouseEnter(interaction)
+    const path = container.querySelector('.react-flow__edge-path')
+    expect(path?.getAttribute('style')).toContain('stroke: var(--accent);')
+    expect(path?.getAttribute('style')).not.toContain('color-mix')
+  })
+
   it('lets a fired edge win over selection', () => {
     const { container } = render(
       <SchedulerCtx.Provider

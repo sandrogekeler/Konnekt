@@ -15,10 +15,9 @@
   stroke: var(--text-faint);
   stroke-width: 1.5;
 }
-.react-flow__edge.selected .react-flow__edge-path,
-.react-flow__edge:hover .react-flow__edge-path {
-  stroke: var(--accent);
-}
+/* Hover/selected/fired/cycle stroke overrides are driven from AnimatedEdge.tsx
+   (inline styles), not CSS — a data edge's inline data-type stroke color would
+   otherwise beat a CSS-only rule here, so hover/selected wouldn't show on it. */
 .react-flow__connectionline {
   stroke: var(--accent);
   stroke-width: 1.5;

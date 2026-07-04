@@ -9,6 +9,7 @@ export function AnimatedEdge({
 }: EdgeProps) {
   const { firedEdges, cycleEdges } = useContext(SchedulerCtx)
   const [animDone, setAnimDone] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   const [d] = getSmoothStepPath({
     sourceX, sourceY, sourcePosition,
@@ -22,14 +23,18 @@ export function AnimatedEdge({
   const inCycle = cycleEdges.has(id)
 
   // Live/static highlight overrides the resting stroke. Fired (a control branch
-  // that actually executed) wins over user selection, which wins over a static
-  // cycle warning. Applied after `...style` so it wins even on data edges,
-  // whose inline `style.stroke` would otherwise beat the CSS `.selected` rule.
+  // that actually executed) wins over user selection, which wins over hover,
+  // which wins over a static cycle warning. Applied after `...style` so it
+  // wins even on data edges, whose inline `style.stroke` (the port's data-type
+  // color) would otherwise beat a CSS-only `.selected`/`:hover` rule — this is
+  // driven entirely from JS rather than CSS so both edge kinds behave the same.
   let highlight: CSSProperties = {}
   if (fired) {
     highlight = { stroke: 'var(--accent)', strokeWidth: 2.5, filter: 'drop-shadow(0 0 3px var(--accent))' }
   } else if (selected) {
     highlight = { stroke: 'var(--accent)', strokeWidth: 2.5 }
+  } else if (hovered) {
+    highlight = { stroke: 'color-mix(in srgb, var(--accent) 60%, black)', strokeWidth: 2 }
   } else if (inCycle) {
     highlight = { stroke: '#f59e0b', strokeWidth: 2 }
   }
@@ -47,6 +52,8 @@ export function AnimatedEdge({
       stroke="transparent"
       strokeWidth={20}
       style={{ pointerEvents: 'stroke' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     />
   )
 
