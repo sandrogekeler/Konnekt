@@ -414,12 +414,90 @@ todo list, not a target.
     with no new console errors beyond the pre-existing `quick-commands`
     `window.go`-unavailable one. A full visual pass needs `wails dev` with a
     configured server, same as backups/worlds/performance previously.
-- ~317 `style={{}}` usages remain across the rest of the codebase (~31
-  files). Continue tile-by-tile — the remaining hotspots: scheduler (90),
-  config (80), the rest of `components/` (70), worlds (45), players (32).
-  These will need more deliberate scoping (likely per-tile, not batched) and,
-  for several, live `wails dev` + a configured server to fully verify beyond
-  what this sandbox's headless preview can reach.
+- ✅ **Sixth slice done: the scheduler tile** (`frontend/src/tiles/scheduler/**`,
+  a React Flow/xyflow visual node editor) — the next-largest remaining
+  cluster. A recount against `pnpm lint`'s own output (not just `grep`) found
+  99 real occurrences across 8 `.tsx` files, not the ~90 first estimated —
+  `GraphEditor.tsx` (19, not 14), `NodeDataPanel.tsx` (13, not 11), and
+  `QuickAddMenu.tsx` (15, not 14) were undercounted. All 8 files converge to
+  **zero or a small, fully-documented set of exceptions**: `SchedulerSummary.tsx`,
+  `BlockPalette.tsx`, `NodeConfigPanel.tsx`, and `NodeDataPanel.tsx` reach
+  **zero** remaining inline styles; `GraphEditor.tsx` keeps 1 (the `MiniMap`
+  position override — see below); `QuickAddMenu.tsx` keeps 2 (viewport-computed
+  popup positions); `AnimatedEdge.tsx` keeps its original 3 (xyflow-provided
+  style spreads + per-instance animation delay, unchanged in shape, now with
+  disable comments); `BlockNode.tsx` keeps 10 (the most complex file — see
+  below). Added `src/tiles/scheduler/**/*.tsx` to the ratcheted-`error` `files`
+  glob in `frontend/eslint.config.js`; `pnpm lint` passes with 0 errors,
+  global warning count 376 → 277 (all 99 scheduler occurrences resolved).
+  - **Tailwind v4's default palette does not render pixel-identical to the
+    classic hex values baked into this codebase** — verified by checking
+    `frontend/src/style.css`'s tokens directly rather than assuming a v3-era
+    hex-to-stock-color match: only `#22c55e`/`#f59e0b` matched existing tokens
+    exactly (`--success`/`--warning`, converted to `text-success`/`border-warning`
+    etc.); every other hardcoded hex in the tile (`#ef4444`, `#7c3aed`,
+    `#60a5fa`, `#1e3a5f`, category colors) had no exact stock-Tailwind match
+    and became arbitrary-value brackets (`text-[#ef4444]`) instead — this
+    still converts the occurrence fully (it's a static literal either way),
+    it just isn't a *named* class. A hardcoded hex needing an arbitrary
+    bracket is not the same as a value needing to *stay inline* — several
+    sites in `NodeConfigPanel.tsx`/`NodeDataPanel.tsx` initially assumed to
+    need "stay inline" exceptions for their odd colors converted fully once
+    this distinction was made.
+  - **`GraphEditor.tsx`'s `btn()` inline-style factory → `btnClass()`
+    className factory** was the single biggest win in the slice, clearing 7
+    of 19 occurrences in one refactor (every toolbar button call site). Also
+    fixed a miscategorization risk before it shipped: `opacity: saving ? 0.5
+    : 1` is a plain two-fixed-value ternary (rule already established in
+    prior slices), not a value that needs to stay inline — converted to a
+    conditional `opacity-50` class. The `ReactFlow` component's `style={{
+    background: 'var(--bg-base)' }}` prop turned out to be fully redundant
+    dead code (`scheduler.css`'s `.react-flow` rule already sets that
+    background) and was deleted outright rather than converted.
+  - **New pattern: category-keyed lookup tables shared across files.** Block
+    categories (`trigger/action/control/notify/data`) are a closed 5-value
+    set already backing `CATEGORY_COLOR`/`CATEGORY_ICON` in `blockMeta.ts`.
+    Added sibling `CATEGORY_TEXT_CLASS`/`CATEGORY_BORDER_CLASS` maps in the
+    same file, consumed by `BlockPalette.tsx` and `QuickAddMenu.tsx` (both
+    the search-result and category-browse list items) — the same "N-way
+    ternary keyed by a closed string union → className lookup" rule used for
+    `KIND_CLASS` in the notifications slice, just with the lookup shared
+    across files instead of local to one.
+  - **`BlockNode.tsx` needed the most careful splitting of any file this
+    session**: its wrapper mixed a genuinely per-node computed `height`
+    (from port count) with a run-state border/shadow that's actually a
+    *closed set of 4 states* (running/success/failed/cycle) — treating the
+    whole multi-property style object as one atomic "stays inline" unit
+    would have missed that the run-state part is static. Split into a local
+    `RUN_STATE_CLASS` lookup (converts) plus a much smaller inline object
+    holding only `height` and, in the default/selected case, the per-category
+    `borderColor` (stays, since `CATEGORY_COLOR` values vary per block).
+    `@xyflow/react`'s `Handle` component was confirmed (via its exported
+    types and compiled source) to forward and merge both `className` and
+    `style` independently, so the Handle's static size/shape/background
+    converted to `className`, leaving only its per-port computed `top`
+    inline — narrower than assumed possible going in.
+  - Verified: `pnpm typecheck` (0 errors), `pnpm lint` (0 errors, 376 → 277
+    warnings), `pnpm test` (131/131 unchanged, including
+    `AnimatedEdge.test.tsx`'s 10 tests which assert on literal `style`
+    attribute strings — confirmed they still pass verbatim since that file's
+    styles stayed inline), `pnpm build` (entry chunk ~479 KB gzip per
+    `check-bundle`'s own measurement, flat/consistent with the trend from
+    every prior slice), `pnpm check-bundle` (well under the 550 KB budget).
+  - Not independently verified: live rendering of the tile's canvas/editor
+    itself. Confirmed via a running dev server that the Scheduler sidebar
+    button no-ops without a configured server (same server-scoped-tile guard
+    documented in every prior slice) and produces no *new* console errors
+    beyond the pre-existing `quick-commands` `window.go`-unavailable ones —
+    but the node editor, drag/connect interactions, and run-state glow
+    colors need `wails dev` with a real server to see rendered, same
+    limitation as backups/mods/worlds/performance previously.
+- ~280 `style={{}}` usages remain across the rest of the codebase (~23
+  files). Continue tile-by-tile — the remaining hotspots: config (80), the
+  rest of `components/` (~64), worlds (45), players (32). These will need
+  more deliberate scoping (likely per-tile, not batched) and, for several,
+  live `wails dev` + a configured server to fully verify beyond what this
+  sandbox's headless preview can reach.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/
@@ -658,10 +736,11 @@ todo list, not a target.
     `defMap`/cycle-detection sets all `useMemo`'d; static `nodeTypes`/
     `edgeTypes`; 200-cap history ring; deliberate cadences (30s frontend
     countdown, 1-min backend ticker); 500-node/30-min/60s-per-node guards.
-  - **Clean: GAP.** 89 inline `style={{}}` across 8 scheduler files
-    (`frontend/src/tiles/scheduler/**`) — the largest untouched cluster in
-    the Milestone 2 inline-style migration (see that section above); not yet
-    in the ESLint error-ratchet glob.
+  - **Clean: was a GAP, now ✅ closed.** At the time of this audit, 89 inline
+    `style={{}}` sat across 8 scheduler files, not yet in the ESLint
+    error-ratchet glob. Resolved in the Milestone 2 sixth slice (see that
+    section above) — recounted at 99 real occurrences, converted to 0-10
+    documented exceptions per file, glob added, `pnpm lint` 0 errors.
   - **Scalable: 1 GAP remaining.** No `useSchedulerStore` — state lives in
     local `useState` inside `useScheduler.ts`, contradicting CLAUDE.md's
     one-Zustand-store-per-domain rule (confirmed drift, not just suspected).
@@ -695,11 +774,11 @@ todo list, not a target.
   zip-slip/data-type-validation tests. `pnpm test` (88 tests), `pnpm typecheck`,
   and `pnpm lint` all green.
 - **Remaining scheduler backlog** (deferred, not fixed this session):
-  the `useSchedulerStore` Zustand migration; the scheduler's inline-style
-  Milestone-2 slice; the next-run poll → event switch; offline-error surfacing
-  in `useScheduler`. (The `localStorage` → Go-file-I/O migration and
-  `useScheduler`-hook test coverage, both listed here previously, have since
-  been completed.)
+  the `useSchedulerStore` Zustand migration; the next-run poll → event
+  switch; offline-error surfacing in `useScheduler`. (The `localStorage` →
+  Go-file-I/O migration, `useScheduler`-hook test coverage, and the
+  scheduler's inline-style Milestone-2 slice, all listed here previously,
+  have since been completed.)
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart

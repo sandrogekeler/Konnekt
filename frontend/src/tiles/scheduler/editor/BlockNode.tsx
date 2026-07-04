@@ -10,9 +10,17 @@ const HEADER_H = 30
 const INFO_H = 20
 const ROW_H = 22
 const PAD = 6
-// The Handle's own box is xyflow's actual grab/drop hit area, not just its visual
-// dot — sized well past the visible dot (below) so connections are easy to grab.
-const HANDLE_HIT_SIZE = 18
+
+// Border/shadow per run-state — a closed set of 4 states, independent of the
+// per-node computed height/category-color that must stay inline (see below).
+// `.node-running`'s own CSS animation (scheduler.css) drives its box-shadow, so
+// no shadow class is needed for that state.
+const RUN_STATE_CLASS: Record<string, string> = {
+  running: 'border-accent border-2',
+  success: 'border-success border-2 shadow-[0_0_0_1px_#22c55e55,0_0_12px_#22c55e44]',
+  failed: 'border-[#ef4444] border-2 shadow-[0_0_0_1px_#ef444466,0_0_12px_#ef444455]',
+  cycle: 'border-warning border-[1.5px] shadow-[0_0_0_1px_#f59e0b55]',
+}
 
 export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<BlockFlowNode>) {
   const nd = data as NodeData
@@ -91,98 +99,62 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
   const totalH = HEADER_H + (hint !== undefined ? INFO_H : 0) + bodyH
   const portTop = HEADER_H + (hint !== undefined ? INFO_H : 0) + PAD
 
-  let borderColor = selected ? 'var(--accent)' : color
-  let borderWidth = selected ? 1.5 : 1
-  let boxShadow: string | undefined
+  // Border/shadow: the 4 run-states are a closed set (RUN_STATE_CLASS); the
+  // remaining default/selected case's color is a genuinely per-node dynamic
+  // value (CATEGORY_COLOR), so it's the one part that must stay inline.
   let stateClass = ''
+  let borderClass: string
+  let borderStyle: { borderColor?: string } | undefined
   if (runState === 'running') {
-    borderColor = 'var(--accent)'
-    borderWidth = 2
+    borderClass = RUN_STATE_CLASS.running
     stateClass = 'node-running'
   } else if (runState === 'success') {
-    borderColor = '#22c55e'
-    borderWidth = 2
-    boxShadow = '0 0 0 1px #22c55e55, 0 0 12px #22c55e44'
+    borderClass = RUN_STATE_CLASS.success
   } else if (runState === 'failed') {
-    borderColor = '#ef4444'
-    borderWidth = 2
-    boxShadow = '0 0 0 1px #ef444466, 0 0 12px #ef444455'
+    borderClass = RUN_STATE_CLASS.failed
   } else if (inCycle) {
-    borderColor = '#f59e0b'
-    borderWidth = 1.5
-    boxShadow = '0 0 0 1px #f59e0b55'
+    borderClass = RUN_STATE_CLASS.cycle
+  } else if (selected) {
+    borderClass = 'border-accent border-[1.5px]'
+  } else {
+    borderClass = 'border'
+    borderStyle = { borderColor: color }
   }
 
   const hasExpandablePorts = dataIns.length > visibleDataIns.length || dataIns.length > 0
 
   return (
     <div
-      className={`node-entrance ${stateClass}`}
+      className={`node-entrance bg-elevated relative min-w-[180px] overflow-hidden rounded ${stateClass} ${borderClass}`}
+      // eslint-disable-next-line no-restricted-syntax -- height is computed from port count; --node-anim-delay is a per-node CSS custom property; default-state borderColor comes from the per-category CATEGORY_COLOR map, not a static value
       style={
         {
           '--node-anim-delay': `${data._animDelay ?? 0}ms`,
-          background: 'var(--bg-elevated)',
-          border: `${borderWidth}px solid ${borderColor}`,
-          borderRadius: 4,
-          minWidth: 180,
           height: totalH,
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow,
+          ...borderStyle,
         } as React.CSSProperties
       }
     >
       {/* Header */}
       <div
-        style={{
-          height: HEADER_H,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          paddingLeft: 10,
-          paddingRight: 10,
-          borderBottom: `0.5px solid ${color}20`,
-        }}
+        className="flex h-[30px] items-center gap-1.5 px-2.5"
+        // eslint-disable-next-line no-restricted-syntax -- border color is derived from the per-category CATEGORY_COLOR map
+        style={{ borderBottom: `0.5px solid ${color}20` }}
       >
         <span
-          style={{
-            fontSize: 10,
-            fontFamily: 'monospace',
-            fontWeight: 700,
-            color,
-            letterSpacing: '0.05em',
-            flexShrink: 0,
-          }}
+          className="shrink-0 font-mono text-[10px] font-bold tracking-wider"
+          // eslint-disable-next-line no-restricted-syntax -- color varies per block category (CATEGORY_COLOR)
+          style={{ color }}
         >
           {icon}
         </span>
-        <span
-          style={{
-            fontSize: 11,
-            fontFamily: 'monospace',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            flex: 1,
-          }}
-        >
+        <span className="text-text-primary flex-1 truncate font-mono text-[11px] font-semibold">
           {nd.label}
         </span>
         {hasExpandablePorts && (
           <span
             onClick={() => onToggleCollapse(nd.id as string)}
-            className="nodrag"
-            style={{
-              fontSize: 9,
-              fontFamily: 'monospace',
-              color: 'var(--text-faint)',
-              cursor: 'pointer',
-              flexShrink: 0,
-              userSelect: 'none',
-              paddingLeft: 4,
-            }}
+            className="nodrag text-text-faint shrink-0 cursor-pointer pl-1 font-mono text-[9px] select-none"
             title={isCollapsed ? 'Expand ports' : 'Collapse ports'}
           >
             {isCollapsed ? '▸' : '▾'}
@@ -192,22 +164,7 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
 
       {/* Config hint */}
       {hint !== undefined && (
-        <div
-          style={{
-            height: INFO_H,
-            display: 'flex',
-            alignItems: 'center',
-            paddingLeft: 10,
-            paddingRight: 10,
-            fontSize: 9,
-            fontFamily: 'monospace',
-            color: 'var(--text-faint)',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            borderBottom: '0.5px solid var(--border-subtle)',
-          }}
-        >
+        <div className="text-text-faint border-border-subtle flex h-5 items-center truncate border-b-[0.5px] px-2.5 font-mono text-[9px]">
           {String(hint)}
         </div>
       )}
@@ -216,17 +173,9 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
       {leftPorts.map((p, i) => (
         <div
           key={p.id}
-          style={{
-            position: 'absolute',
-            left: 14,
-            top: portTop + i * ROW_H,
-            height: ROW_H,
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 9,
-            fontFamily: 'monospace',
-            color: p.color,
-          }}
+          className="absolute left-3.5 flex h-[22px] items-center font-mono text-[9px]"
+          // eslint-disable-next-line no-restricted-syntax -- top is computed from port index/count; color is the port's data-type/control color
+          style={{ top: portTop + i * ROW_H, color: p.color }}
         >
           {p.label}
         </div>
@@ -236,18 +185,9 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
       {rightPorts.map((p, i) => (
         <div
           key={p.id}
-          style={{
-            position: 'absolute',
-            right: 14,
-            top: portTop + i * ROW_H,
-            height: ROW_H,
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 9,
-            fontFamily: 'monospace',
-            color: p.color,
-            textAlign: 'right',
-          }}
+          className="absolute right-3.5 flex h-[22px] items-center text-right font-mono text-[9px]"
+          // eslint-disable-next-line no-restricted-syntax -- top is computed from port index/count; color is the port's data-type/control color
+          style={{ top: portTop + i * ROW_H, color: p.color }}
         >
           {p.label}
         </div>
@@ -261,28 +201,19 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
           id={p.id}
           type="target"
           position={Position.Left}
-          style={{
-            top: portTop + i * ROW_H + ROW_H / 2,
-            width: HANDLE_HIT_SIZE,
-            height: HANDLE_HIT_SIZE,
-            background: 'var(--hover-surface)',
-            // Border comes from scheduler.css's `.react-flow__handle` rule
-            // (needs `!important` to beat xyflow's own inline-styled default).
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          // The Handle's own box is xyflow's actual grab/drop hit area, not just
+          // its visual dot — sized well past the visible dot (below) so
+          // connections are easy to grab. Border comes from scheduler.css's
+          // `.react-flow__handle` rule (needs `!important` to beat xyflow's own
+          // inline-styled default).
+          className="bg-hover flex h-[18px] w-[18px] items-center justify-center rounded-full"
+          // eslint-disable-next-line no-restricted-syntax -- top is computed from port index/count
+          style={{ top: portTop + i * ROW_H + ROW_H / 2 }}
         >
           <span
-            style={{
-              pointerEvents: 'none',
-              display: 'block',
-              width: p.isData ? 6 : 8,
-              height: p.isData ? 6 : 8,
-              background: p.color,
-              borderRadius: p.isData ? 2 : '50%',
-            }}
+            className={`pointer-events-none block ${p.isData ? 'h-1.5 w-1.5 rounded-sm' : 'h-2 w-2 rounded-full'}`}
+            // eslint-disable-next-line no-restricted-syntax -- port color varies by data-type/control-port kind
+            style={{ background: p.color }}
           />
         </Handle>
       ))}
@@ -294,13 +225,9 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
           id={p.id}
           type="target"
           position={Position.Left}
-          style={{
-            top: portTop + ROW_H / 2,
-            opacity: 0,
-            pointerEvents: 'none',
-            width: 0,
-            height: 0,
-          }}
+          className="pointer-events-none h-0 w-0 opacity-0"
+          // eslint-disable-next-line no-restricted-syntax -- top is computed from port index/count
+          style={{ top: portTop + ROW_H / 2 }}
         />
       ))}
 
@@ -311,28 +238,19 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
           id={p.id}
           type="source"
           position={Position.Right}
-          style={{
-            top: portTop + i * ROW_H + ROW_H / 2,
-            width: HANDLE_HIT_SIZE,
-            height: HANDLE_HIT_SIZE,
-            background: 'var(--hover-surface)',
-            // Border comes from scheduler.css's `.react-flow__handle` rule
-            // (needs `!important` to beat xyflow's own inline-styled default).
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          // The Handle's own box is xyflow's actual grab/drop hit area, not just
+          // its visual dot — sized well past the visible dot (below) so
+          // connections are easy to grab. Border comes from scheduler.css's
+          // `.react-flow__handle` rule (needs `!important` to beat xyflow's own
+          // inline-styled default).
+          className="bg-hover flex h-[18px] w-[18px] items-center justify-center rounded-full"
+          // eslint-disable-next-line no-restricted-syntax -- top is computed from port index/count
+          style={{ top: portTop + i * ROW_H + ROW_H / 2 }}
         >
           <span
-            style={{
-              pointerEvents: 'none',
-              display: 'block',
-              width: p.isData ? 6 : 8,
-              height: p.isData ? 6 : 8,
-              background: p.color,
-              borderRadius: p.isData ? 2 : '50%',
-            }}
+            className={`pointer-events-none block ${p.isData ? 'h-1.5 w-1.5 rounded-sm' : 'h-2 w-2 rounded-full'}`}
+            // eslint-disable-next-line no-restricted-syntax -- port color varies by data-type/control-port kind
+            style={{ background: p.color }}
           />
         </Handle>
       ))}

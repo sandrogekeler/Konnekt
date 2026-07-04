@@ -24,9 +24,7 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
   if (!def) {
     return (
       <div className="p-3">
-        <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
-          unknown block type
-        </span>
+        <span className="text-text-faint font-mono text-xs">unknown block type</span>
       </div>
     )
   }
@@ -36,27 +34,16 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
   if (fields.length === 0) {
     return (
       <div className="p-3">
-        <div
-          className="mb-2 font-mono text-xs font-semibold"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {def.label}
-        </div>
-        <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
-          {def.description}
-        </span>
+        <div className="text-text-primary mb-2 font-mono text-xs font-semibold">{def.label}</div>
+        <span className="text-text-faint font-mono text-xs">{def.description}</span>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-2 p-3">
-      <div className="font-mono text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-        {def.label}
-      </div>
-      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-        {def.description}
-      </div>
+      <div className="text-text-primary font-mono text-xs font-semibold">{def.label}</div>
+      <div className="text-text-muted text-xs">{def.description}</div>
 
       {fields.map((field) => {
         const val = data.config?.[field.key] ?? field.default ?? ''
@@ -64,32 +51,18 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
 
         return (
           <div key={field.key} className="flex flex-col gap-0.5">
-            <label
-              className="flex items-center gap-1 font-mono text-xs"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <label className="text-text-muted flex items-center gap-1 font-mono text-xs">
               {field.label}
-              {field.required && <span style={{ color: '#ef4444' }}>*</span>}
+              {field.required && <span className="text-[#ef4444]">*</span>}
               {isWired && (
-                <span
-                  className="ml-1 rounded px-1 text-xs"
-                  style={{ background: '#1e3a5f', color: '#60a5fa', fontSize: 9 }}
-                >
+                <span className="ml-1 rounded bg-[#1e3a5f] px-1 text-[9px] text-[#60a5fa]">
                   wired
                 </span>
               )}
             </label>
 
             {isWired ? (
-              <div
-                className="rounded px-2 py-1 font-mono text-xs"
-                style={{
-                  background: 'var(--bg-base)',
-                  border: '0.5px solid #1e3a5f',
-                  color: '#60a5fa',
-                  minHeight: 26,
-                }}
-              >
+              <div className="bg-canvas min-h-[26px] rounded border-[0.5px] border-[#1e3a5f] px-2 py-1 font-mono text-xs text-[#60a5fa]">
                 ← data edge
               </div>
             ) : field.type === 'bool' ? (
@@ -98,23 +71,15 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                   type="checkbox"
                   checked={Boolean(val)}
                   onChange={(e) => onChange(field.key, e.target.checked)}
-                  style={{ accentColor: 'var(--accent)' }}
+                  className="accent-accent"
                 />
-                <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {val ? 'true' : 'false'}
-                </span>
+                <span className="text-text-muted font-mono text-xs">{val ? 'true' : 'false'}</span>
               </label>
             ) : field.type === 'select' ? (
               <select
                 value={String(val)}
                 onChange={(e) => onChange(field.key, e.target.value)}
-                className="rounded px-2 py-1 font-mono text-xs"
-                style={{
-                  background: 'var(--bg-base)',
-                  border: '0.5px solid var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
+                className="bg-canvas border-border-subtle text-text-primary rounded border-[0.5px] px-2 py-1 font-mono text-xs outline-none"
               >
                 {field.options?.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -130,13 +95,7 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                   value={String(val)}
                   placeholder="@server.motd or @myValue"
                   onChange={(e) => onChange(field.key, e.target.value)}
-                  className="rounded px-2 py-1 font-mono text-xs"
-                  style={{
-                    background: 'var(--bg-surface)',
-                    border: '0.5px solid var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                  }}
+                  className="bg-surface border-border-subtle text-text-primary rounded border-[0.5px] px-2 py-1 font-mono text-xs outline-none"
                 />
                 <datalist id={`attrs-${nodeId}-${field.key}`}>
                   {field.options?.map((opt) => (
@@ -145,7 +104,7 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                     </option>
                   ))}
                 </datalist>
-                <span className="text-xs" style={{ color: 'var(--text-faint)', fontSize: 9 }}>
+                <span className="text-text-faint text-[9px]">
                   Type a built-in or custom attribute name.
                 </span>
               </>
@@ -156,39 +115,21 @@ export function NodeConfigPanel({ nodeId, data, def, edges, onChange }: Props) {
                 onChange={(e) =>
                   onChange(field.key, e.target.value === '' ? '' : Number(e.target.value))
                 }
-                className="rounded px-2 py-1 font-mono text-xs"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '0.5px solid var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
+                className="bg-surface border-border-subtle text-text-primary rounded border-[0.5px] px-2 py-1 font-mono text-xs outline-none"
               />
             ) : field.type === 'command' ? (
               <textarea
                 value={String(val)}
                 onChange={(e) => onChange(field.key, e.target.value)}
                 rows={2}
-                className="resize-none rounded px-2 py-1 font-mono text-xs"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '0.5px solid var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
+                className="bg-surface border-border-subtle text-text-primary resize-none rounded border-[0.5px] px-2 py-1 font-mono text-xs outline-none"
               />
             ) : (
               <input
                 type="text"
                 value={String(val)}
                 onChange={(e) => onChange(field.key, e.target.value)}
-                className="rounded px-2 py-1 font-mono text-xs"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '0.5px solid var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
+                className="bg-surface border-border-subtle text-text-primary rounded border-[0.5px] px-2 py-1 font-mono text-xs outline-none"
               />
             )}
           </div>

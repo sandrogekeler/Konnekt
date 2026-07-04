@@ -15,6 +15,7 @@ import {
   type Node as FlowNode,
   type Edge as FlowEdge,
 } from '@xyflow/react'
+import { CATEGORY_COLOR } from './blockMeta'
 import { SchedulerCtx, type NodeRunState } from './schedulerContext'
 import { BlockNode } from './BlockNode'
 import { AnimatedEdge } from './AnimatedEdge'
@@ -511,29 +512,20 @@ function GraphEditorInner({
     [defMap, edges, collapsed, onToggleCollapse, nodeRunState, firedEdges, cycleNodes, cycleEdges],
   )
 
-  // ── Toolbar button style helper ───────────────────────────────────────────
-  const btn = (active = false, danger = false): React.CSSProperties => ({
-    padding: '2px 8px',
-    borderRadius: 4,
-    fontSize: 11,
-    fontFamily: 'monospace',
-    cursor: 'pointer',
-    background: active ? 'var(--accent)' : danger ? 'transparent' : 'var(--bg-surface)',
-    color: active ? '#000' : danger ? '#ef4444' : 'var(--text-muted)',
-    border: `0.5px solid ${danger ? '#ef4444' : 'var(--border-subtle)'}`,
-  })
+  // ── Toolbar button className helper ───────────────────────────────────────
+  function btnClass(active = false, danger = false): string {
+    const base = 'cursor-pointer rounded border-[0.5px] px-2 py-0.5 text-[11px] font-mono'
+    const borderClass = danger ? 'border-[#ef4444]' : 'border-border-subtle'
+    if (active) return `${base} ${borderClass} bg-accent text-black`
+    if (danger) return `${base} ${borderClass} bg-transparent text-[#ef4444]`
+    return `${base} ${borderClass} bg-surface text-text-muted`
+  }
 
   return (
     <SchedulerCtx.Provider value={ctxValue}>
-      <div className="flex flex-col" style={{ height: '100%' }}>
+      <div className="flex h-full flex-col">
         {/* ── Toolbar ──────────────────────────────────────────────────── */}
-        <div
-          className="flex shrink-0 flex-wrap items-center gap-2 px-3 py-1.5"
-          style={{
-            borderBottom: '0.5px solid var(--border-subtle)',
-            background: 'var(--bg-surface)',
-          }}
-        >
+        <div className="border-border-subtle bg-surface flex shrink-0 flex-wrap items-center gap-2 border-b-[0.5px] px-3 py-1.5">
           {/* Graph selector */}
           <select
             value={graphId ?? ''}
@@ -541,16 +533,7 @@ function GraphEditorInner({
               const g = graphs.find((x) => x.id === e.target.value)
               if (g) loadGraph(g)
             }}
-            style={{
-              background: 'var(--bg-base)',
-              border: '0.5px solid var(--border-subtle)',
-              color: 'var(--text-primary)',
-              borderRadius: 4,
-              padding: '2px 6px',
-              fontSize: 11,
-              fontFamily: 'monospace',
-              maxWidth: 160,
-            }}
+            className="bg-canvas border-border-subtle text-text-primary max-w-[160px] rounded border-[0.5px] px-1.5 py-0.5 font-mono text-[11px]"
           >
             {graphs.length === 0 && <option value="">— no graphs —</option>}
             {graphs.map((g) => (
@@ -569,73 +552,52 @@ function GraphEditorInner({
               onChange={(e) => setGraphName(e.target.value)}
               onBlur={() => setNameEditing(false)}
               onKeyDown={(e) => e.key === 'Enter' && setNameEditing(false)}
-              style={{
-                background: 'var(--bg-base)',
-                border: '0.5px solid var(--accent)',
-                color: 'var(--text-primary)',
-                borderRadius: 4,
-                padding: '2px 6px',
-                fontSize: 11,
-                fontFamily: 'monospace',
-                width: 140,
-                outline: 'none',
-              }}
+              className="bg-canvas border-accent text-text-primary w-[140px] rounded border-[0.5px] px-1.5 py-0.5 font-mono text-[11px] outline-none"
             />
           ) : (
             <span
               onClick={() => setNameEditing(true)}
-              style={{
-                fontSize: 11,
-                fontFamily: 'monospace',
-                color: 'var(--text-muted)',
-                cursor: 'text',
-                borderBottom: '0.5px dashed var(--border-subtle)',
-                minWidth: 60,
-              }}
+              className="text-text-muted border-border-subtle min-w-[60px] cursor-text border-b-[0.5px] border-dashed font-mono text-[11px]"
               title="Click to rename"
             >
               {graphName || 'Untitled'}
             </span>
           )}
 
-          <div style={{ height: 16, width: 0.5, background: 'var(--border-subtle)' }} />
+          <div className="bg-border-subtle h-4 w-[0.5px]" />
 
-          <button style={btn()} onClick={handleNew}>
+          <button className={btnClass()} onClick={handleNew}>
             new
           </button>
 
           {graphId && (
-            <button style={btn(graphEnabled)} onClick={handleToggleEnabled}>
+            <button className={btnClass(graphEnabled)} onClick={handleToggleEnabled}>
               {graphEnabled ? '[on]' : '[off]'}
             </button>
           )}
 
-          <div style={{ flex: 1 }} />
+          <div className="flex-1" />
 
-          {runStatus && (
-            <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-faint)' }}>
-              {runStatus}
-            </span>
-          )}
+          {runStatus && <span className="text-text-faint font-mono text-[10px]">{runStatus}</span>}
 
           {(() => {
             const selCount =
               nodes.filter((n) => n.selected).length + edges.filter((e) => e.selected).length
             return selCount > 0 ? (
-              <button style={btn(false, true)} onClick={handleDeleteSelected}>
+              <button className={btnClass(false, true)} onClick={handleDeleteSelected}>
                 del {selCount}
               </button>
             ) : null
           })()}
 
           {graphId && (
-            <button style={btn()} onClick={handleRun}>
+            <button className={btnClass()} onClick={handleRun}>
               run
             </button>
           )}
 
           <button
-            style={{ ...btn(), opacity: saving ? 0.5 : 1 }}
+            className={`${btnClass()} ${saving ? 'opacity-50' : ''}`}
             onClick={handleSave}
             disabled={saving}
           >
@@ -643,7 +605,7 @@ function GraphEditorInner({
           </button>
 
           {graphId && (
-            <button style={btn(false, true)} onClick={handleDelete}>
+            <button className={btnClass(false, true)} onClick={handleDelete}>
               del graph
             </button>
           )}
@@ -673,19 +635,16 @@ function GraphEditorInner({
               deleteKeyCode="Delete"
               panOnDrag={[1, 2]}
               selectionOnDrag
-              style={{ background: 'var(--bg-base)' }}
             >
               <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
               <Controls showInteractive={false} />
               <MiniMap
+                // eslint-disable-next-line no-restricted-syntax -- overrides xyflow's default 10px Panel offset; a stylesheet className would race the library's own CSS specificity
                 style={{ bottom: 8, right: 8 }}
                 nodeColor={(n) => {
                   const bt = (n.data as NodeData | undefined)?.blockType ?? ''
-                  if (bt.startsWith('trigger.')) return '#7c3aed'
-                  if (bt.startsWith('action.')) return '#0369a1'
-                  if (bt.startsWith('control.')) return '#b45309'
-                  if (bt.startsWith('data.')) return '#0e7490'
-                  return '#047857'
+                  const category = bt.split('.')[0]
+                  return CATEGORY_COLOR[category] ?? CATEGORY_COLOR.notify
                 }}
               />
             </ReactFlow>
@@ -693,31 +652,18 @@ function GraphEditorInner({
 
           {/* Node config / data panel */}
           {selectedNode && (
-            <div
-              className="flex shrink-0 flex-col overflow-y-auto"
-              style={{
-                width: 224,
-                borderLeft: '0.5px solid var(--border-subtle)',
-                background: 'var(--bg-base)',
-              }}
-            >
+            <div className="border-border-subtle bg-canvas flex w-56 shrink-0 flex-col overflow-y-auto border-l-[0.5px]">
               {/* Tabs */}
-              <div
-                className="flex shrink-0"
-                style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-              >
+              <div className="border-border-subtle flex shrink-0 border-b-[0.5px]">
                 {(['config', 'data'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setPanelTab(tab)}
-                    className="flex-1 py-1.5 font-mono text-xs"
-                    style={{
-                      background: panelTab === tab ? 'var(--bg-surface)' : 'transparent',
-                      color: panelTab === tab ? 'var(--text-primary)' : 'var(--text-faint)',
-                      borderBottom:
-                        panelTab === tab ? '1px solid var(--accent)' : '1px solid transparent',
-                      cursor: 'pointer',
-                    }}
+                    className={`flex-1 cursor-pointer border-b py-1.5 font-mono text-xs ${
+                      panelTab === tab
+                        ? 'bg-surface text-text-primary border-accent'
+                        : 'text-text-faint border-transparent bg-transparent'
+                    }`}
                   >
                     {tab}
                   </button>
