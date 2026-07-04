@@ -48,6 +48,14 @@ wails build              # Production build smoke test
       CLAUDE.md's Code style section). `eslint.config.js`'s `no-restricted-syntax`
       rule flags remaining inline styles at `warn`; ratchet per directory to
       `error` as Milestone 2's migration clears each tile.
+- [ ] New transition/animation durations and easing curves reuse an existing
+      `--duration-*`/`--ease-*` token (`frontend/src/style.css`'s `@theme
+      inline` block) unless the motion is genuinely unique (e.g. a one-off
+      decorative loop) — no undocumented one-off magic numbers. This isn't
+      "all animations must look identical": a snappy hover, a panel
+      slide/open-close, and a decorative splash/spin legitimately warrant
+      different timing — the goal is a shared vocabulary for the common
+      cases, not uniformity.
 - [x] No committed build artifacts (`*.syso`, `frontend/dist/`, `build/bin/`)
       — `.gitignore` covers them.
 - [x] No stray root-level scratch/design docs left un-triaged (either promoted
