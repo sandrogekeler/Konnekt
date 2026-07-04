@@ -20,7 +20,7 @@ Add and configure any number of server instances — jar path, JVM arguments, wo
 
 Stream server logs in real time, send commands directly, and set up your own quick-command buttons for the actions you run most.
 
-![Live console placeholder](docs/images/live-console.png)
+![Live console](docs/images/live-console.png)
 
 ### Stats & performance
 
@@ -38,37 +38,38 @@ See who's online and kick, ban, or pardon players without leaving the dashboard.
 
 A node-based automation editor: wire up triggers (a player joining or leaving, the server stopping, TPS dropping below a threshold, a cron/interval/time-of-day schedule) to actions (run a console command, send an RCON command, trigger a backup, make an HTTP request, wait, start/stop/restart the server) and control/data blocks (conditions, math, randomness, server attributes). Runs are tracked with history and next-run predictions.
 
-![Visual scheduler placeholder](docs/images/visual-scheduler.png)
+![Visual scheduler](docs/images/visual-scheduler.png)
 
 ### World management
 
 A 3D visualizer for navigating your server's worlds and dimensions — switch the active world, rename, duplicate, delete, back up individual worlds, and inspect NBT metadata.
 
-![World management placeholder](docs/images/world-management.png)
+![World management](docs/images/world-management-1.png)
+![World management](docs/images/world-management-2.png)
 
 ### Backups
 
 Manual or scheduled backups of full servers or individual worlds, with safe restore (validated paths, extract-then-swap), progress feedback, and history.
 
-![Backups placeholder](docs/images/backups.png)
+![Backups](docs/images/backups.png)
 
 ### Server config editor
 
 Browse and edit `server.properties` and other config files (JSON/YAML/TOML) through a form view or raw text editor.
 
-![Config editor placeholder](docs/images/config-editor.png)
+![Server config editor](docs/images/server-config.png)
 
 ### Mods & plugins
 
 Browse and search Modrinth from inside the app, resolve dependencies, install or uninstall, enable/disable, check for updates, or install a local jar. Konnekt detects your server's loader (Fabric, Forge, Paper, etc.) automatically.
 
-![Mods and plugins placeholder](docs/images/mods-plugins.png)
+![Mods and plugins](docs/images/mods-plugins.png)
 
 ### Customizable tile dashboard
 
 Every feature lives in a draggable, resizable tile that snaps to a grid. Stash tiles you're not using in the crate, maximize the ones you need, and save named layout presets.
 
-![Tile dashboard placeholder](docs/images/tile-dashboard.png)
+![Tile dashboard](docs/images/tile-dashboard.png)
 
 ### Notifications
 
