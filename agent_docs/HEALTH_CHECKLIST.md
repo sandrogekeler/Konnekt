@@ -378,11 +378,40 @@ todo list, not a target.
   nil-context-safe). Verified the data-type-validation guard test actually
   fails when that guard is disabled, then restored it — same technique as the
   zip-slip test above.
-- Deferred follow-up — **Wails-mocked store tests**: `useTileStore`,
-  `useLayoutStore`, `useServerConfigStore`, `useSettingsStore` all call
-  generated `wailsjs/go/main/App` bindings directly; testing their
-  load/save/CRUD logic needs `vi.mock('../../wailsjs/go/main/App')`. Also
-  untested: the two custom hooks (`useWailsCall`, `usePopover`).
+- ✅ **Wails-mocked store tests — harness established, 4 stores + `useScheduler`
+  covered.** Added the first `vi.mock('../../wailsjs/go/main/App')` pattern in
+  the repo (a plain hoisted auto-mock — no `vite.config.ts` or setup-file
+  changes needed): `useSettingsStore.test.ts` (7 tests — payload merge,
+  invalid-value fallback per validated field, load-rejects-to-defaults),
+  `useTileStore.test.ts` (6 — saved/empty/rejecting `loadTiles`, dedup on
+  `addTile`, active↔crate moves), `useLayoutStore.test.ts` (13 — preset
+  seeding, active-layout override, insert-vs-update `savePreset`, delete
+  reassignment), `useServerConfigStore.test.ts` (13 — stale/missing-activeId
+  fallback, insert-vs-update, delete reassignment), and
+  `frontend/src/tiles/scheduler/useScheduler.test.ts` (4, via `renderHook` +
+  `vi.useFakeTimers` — mount fetch, save/run refresh, the 30s next-run poll and
+  its unmount cleanup), closing the second (frontend hook) half of the
+  scheduler test-coverage backlog alongside the earlier `graphMapping.ts` pass.
+  Frontend test count: 88 → 131.
+  - **One real bug found and fixed, not just documented**: `useLayoutStore.ts`'s
+    `deletePreset` computed the reassigned `activePresetName` from
+    `s.presets[0]` — the *pre-filter* array — so deleting the active preset
+    reassigned back to that same now-deleted name whenever it happened to be
+    first in the list (the common case, since "Default" is always seeded
+    first). `LayoutPresets.tsx` highlights the active preset by exact name
+    match, so this silently left **no** preset shown as active after such a
+    delete, and its save-fallback (`newName.trim() || activePresetName`) would
+    have resurrected the deleted preset's name on the next save. Fixed by
+    reading the *filtered* list's first entry instead — same
+    write-test-first/find-real-bug technique as the earlier `RenameWorld` and
+    zip-slip fixes. Verified the fix by first watching the un-fixed test fail,
+    then confirming green after the source fix (plus a second, unrelated
+    fault-injection check: temporarily dropped `useTileStore.addTile`'s dedup
+    guard and confirmed its test fails, then restored it).
+  - Still untested: the two custom hooks (`useWailsCall`, `usePopover`), and
+    the binding-backed tile hooks (`useMods`, `useBackups`, `useWorlds`,
+    `usePerformanceHistory`) — the harness above is now a documented,
+    copy-pasteable pattern for covering them.
 - Deferred follow-up — **Modrinth HTTP-path coverage**: `ModrinthClient`
   hardcodes `modrinthBase = "https://api.modrinth.com/v2"` with no injectable
   base URL, so the 429/`Retry-After` retry logic and search-hit dedup can't be
@@ -524,12 +553,25 @@ todo list, not a target.
     next-run poll in `useScheduler.ts` should be a Wails event instead
     (CLAUDE.md's no-`useEffect`-polling rule), and `useScheduler` swallows
     IPC failures silently (no offline/error state surfaced to the UI).
+- ✅ **`graphMapping.ts` frontend test coverage added**: 26 tests in the new
+  `frontend/src/tiles/scheduler/editor/graphMapping.test.ts` covering
+  `graphToFlow`/`flowToGraph` (including a dedicated round-trip test),
+  `isValidConnection`, `detectControlCycles`, `randId`, and `defaultConfig` —
+  all pure logic, no Wails binding mocks needed, following the same
+  `as unknown as models.X` stub convention as the sibling `portTypes.test.ts`.
+  Verified the round-trip and cycle-detection tests actually fail when their
+  underlying guards are disabled (the `data:`-prefix kind inference in
+  `flowToGraph`, and the `reachableFrom` reachability check in
+  `detectControlCycles`), then restored both — same technique as the backend
+  zip-slip/data-type-validation tests. `pnpm test` (88 tests), `pnpm typecheck`,
+  and `pnpm lint` all green.
 - **Remaining scheduler backlog** (deferred, not fixed this session):
-  frontend tests for `graphMapping.ts` (`detectControlCycles`,
-  `flowToGraph`/`graphToFlow` round-trip) and the `useScheduler` hook; the
-  `localStorage` → Go-file-I/O migration; the `useSchedulerStore` Zustand
-  migration; the scheduler's inline-style Milestone-2 slice; the next-run
-  poll → event switch; offline-error surfacing in `useScheduler`.
+  frontend tests for the `useScheduler` hook (needs
+  `vi.mock('../../wailsjs/...')`, a pattern not yet used anywhere in the
+  codebase); the `localStorage` → Go-file-I/O migration; the
+  `useSchedulerStore` Zustand migration; the scheduler's inline-style
+  Milestone-2 slice; the next-run poll → event switch; offline-error surfacing
+  in `useScheduler`.
 
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart

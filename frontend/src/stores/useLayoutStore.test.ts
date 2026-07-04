@@ -1,0 +1,175 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type { LayoutItem } from 'react-grid-layout'
+import * as App from '../../wailsjs/go/main/App'
+import { useLayoutStore } from './useLayoutStore'
+import { DEFAULT_LAYOUT_PRESETS } from '../lib/constants'
+
+vi.mock('../../wailsjs/go/main/App')
+
+function layoutStr(id: string): string {
+  return JSON.stringify([{ i: id, x: 0, y: 0, w: 1, h: 1 }])
+}
+
+describe('useLayoutStore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(App.GetActiveLayout).mockResolvedValue('')
+    vi.mocked(App.GetLayoutPresets).mockResolvedValue([])
+    vi.mocked(App.SaveActiveLayout).mockResolvedValue(undefined)
+    vi.mocked(App.SaveLayoutPreset).mockResolvedValue(undefined)
+    vi.mocked(App.DeleteLayoutPreset).mockResolvedValue(undefined)
+    useLayoutStore.setState({ presets: [], activePresetName: 'Default', currentLayout: [] })
+  })
+
+  describe('loadPresets', () => {
+    it('uses remote presets when present', async () => {
+      const remote = [{ name: 'Mine', layout: layoutStr('console') }]
+      vi.mocked(App.GetLayoutPresets).mockResolvedValue(remote)
+      await useLayoutStore.getState().loadPresets()
+      const { presets, activePresetName } = useLayoutStore.getState()
+      expect(presets).toEqual(remote)
+      expect(activePresetName).toBe('Mine')
+      expect(App.SaveLayoutPreset).not.toHaveBeenCalled()
+    })
+
+    it('seeds the default presets when the remote list is empty', async () => {
+      vi.mocked(App.GetLayoutPresets).mockResolvedValue([])
+      await useLayoutStore.getState().loadPresets()
+      expect(useLayoutStore.getState().presets).toEqual(DEFAULT_LAYOUT_PRESETS)
+      expect(App.SaveLayoutPreset).toHaveBeenCalledTimes(DEFAULT_LAYOUT_PRESETS.length)
+      for (const p of DEFAULT_LAYOUT_PRESETS) {
+        expect(App.SaveLayoutPreset).toHaveBeenCalledWith(p.name, p.layout)
+      }
+    })
+
+    it('overrides the starting layout with a saved active layout', async () => {
+      const remote = [{ name: 'Mine', layout: layoutStr('console') }]
+      vi.mocked(App.GetLayoutPresets).mockResolvedValue(remote)
+      vi.mocked(App.GetActiveLayout).mockResolvedValue(layoutStr('worlds'))
+      await useLayoutStore.getState().loadPresets()
+      expect(useLayoutStore.getState().currentLayout).toEqual([
+        { i: 'worlds', x: 0, y: 0, w: 1, h: 1 },
+      ])
+    })
+
+    it('falls back to the first preset layout when no active layout was saved', async () => {
+      const remote = [{ name: 'Mine', layout: layoutStr('console') }]
+      vi.mocked(App.GetLayoutPresets).mockResolvedValue(remote)
+      vi.mocked(App.GetActiveLayout).mockResolvedValue('')
+      await useLayoutStore.getState().loadPresets()
+      expect(useLayoutStore.getState().currentLayout).toEqual([
+        { i: 'console', x: 0, y: 0, w: 1, h: 1 },
+      ])
+    })
+
+    it('degrades cleanly when GetLayoutPresets and GetActiveLayout both reject', async () => {
+      vi.mocked(App.GetLayoutPresets).mockRejectedValue(new Error('no bridge'))
+      vi.mocked(App.GetActiveLayout).mockRejectedValue(new Error('no bridge'))
+      await useLayoutStore.getState().loadPresets()
+      expect(useLayoutStore.getState().presets).toEqual(DEFAULT_LAYOUT_PRESETS)
+      expect(useLayoutStore.getState().activePresetName).toBe('Default')
+    })
+  })
+
+  describe('savePreset', () => {
+    it('inserts a new preset when the name does not already exist', async () => {
+      useLayoutStore.setState({
+        presets: [{ name: 'A', layout: layoutStr('a') }],
+        currentLayout: [{ i: 'b', x: 0, y: 0, w: 1, h: 1 } as LayoutItem],
+      })
+      await useLayoutStore.getState().savePreset('B')
+      const { presets, activePresetName } = useLayoutStore.getState()
+      expect(presets.map((p) => p.name)).toEqual(['A', 'B'])
+      expect(activePresetName).toBe('B')
+      expect(App.SaveLayoutPreset).toHaveBeenCalledWith('B', layoutStr('b'))
+    })
+
+    it('updates an existing preset in place when the name matches', async () => {
+      useLayoutStore.setState({
+        presets: [
+          { name: 'A', layout: layoutStr('a') },
+          { name: 'B', layout: layoutStr('b') },
+        ],
+        currentLayout: [{ i: 'z', x: 0, y: 0, w: 1, h: 1 } as LayoutItem],
+      })
+      await useLayoutStore.getState().savePreset('A')
+      const { presets } = useLayoutStore.getState()
+      expect(presets).toEqual([
+        { name: 'A', layout: layoutStr('z') },
+        { name: 'B', layout: layoutStr('b') },
+      ])
+    })
+  })
+
+  describe('loadPreset', () => {
+    it('is a no-op for an unknown preset name', () => {
+      useLayoutStore.setState({
+        presets: [{ name: 'A', layout: layoutStr('a') }],
+        activePresetName: 'A',
+        currentLayout: [],
+      })
+      useLayoutStore.getState().loadPreset('Missing')
+      expect(useLayoutStore.getState().activePresetName).toBe('A')
+      expect(App.SaveActiveLayout).not.toHaveBeenCalled()
+    })
+
+    it('parses the preset layout, sets it active, and persists it', () => {
+      useLayoutStore.setState({
+        presets: [{ name: 'A', layout: layoutStr('a') }],
+        activePresetName: 'Default',
+        currentLayout: [],
+      })
+      useLayoutStore.getState().loadPreset('A')
+      expect(useLayoutStore.getState().activePresetName).toBe('A')
+      expect(useLayoutStore.getState().currentLayout).toEqual([{ i: 'a', x: 0, y: 0, w: 1, h: 1 }])
+      expect(App.SaveActiveLayout).toHaveBeenCalledWith(layoutStr('a'))
+    })
+  })
+
+  describe('deletePreset', () => {
+    it('removes the preset by name and persists the deletion', async () => {
+      useLayoutStore.setState({
+        presets: [
+          { name: 'A', layout: layoutStr('a') },
+          { name: 'B', layout: layoutStr('b') },
+        ],
+        activePresetName: 'B',
+      })
+      await useLayoutStore.getState().deletePreset('A')
+      expect(useLayoutStore.getState().presets.map((p) => p.name)).toEqual(['B'])
+      expect(App.DeleteLayoutPreset).toHaveBeenCalledWith('A')
+      // deleting a non-active preset leaves activePresetName untouched
+      expect(useLayoutStore.getState().activePresetName).toBe('B')
+    })
+
+    it('reassigns activePresetName to the first remaining preset when the active one is deleted', async () => {
+      useLayoutStore.setState({
+        presets: [
+          { name: 'A', layout: layoutStr('a') },
+          { name: 'B', layout: layoutStr('b') },
+        ],
+        activePresetName: 'A',
+      })
+      await useLayoutStore.getState().deletePreset('A')
+      expect(useLayoutStore.getState().activePresetName).toBe('B')
+    })
+
+    it('reassigns activePresetName to empty when the last preset is deleted', async () => {
+      useLayoutStore.setState({
+        presets: [{ name: 'A', layout: layoutStr('a') }],
+        activePresetName: 'A',
+      })
+      await useLayoutStore.getState().deletePreset('A')
+      expect(useLayoutStore.getState().activePresetName).toBe('')
+    })
+  })
+
+  describe('updateLayout', () => {
+    it('sets currentLayout and persists it', () => {
+      const layout = [{ i: 'x', x: 0, y: 0, w: 1, h: 1 } as LayoutItem]
+      useLayoutStore.getState().updateLayout(layout)
+      expect(useLayoutStore.getState().currentLayout).toEqual(layout)
+      expect(App.SaveActiveLayout).toHaveBeenCalledWith(JSON.stringify(layout))
+    })
+  })
+})
