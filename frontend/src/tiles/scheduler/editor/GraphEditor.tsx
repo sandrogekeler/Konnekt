@@ -435,13 +435,14 @@ function GraphEditorInner({
   // ── Delete selected nodes + their edges ───────────────────────────────────
   const handleDeleteSelected = useCallback(() => {
     const selectedIds = new Set(nodes.filter((n) => n.selected).map((n) => n.id))
-    if (selectedIds.size === 0) return
+    const hasSelectedEdges = edges.some((e) => e.selected)
+    if (selectedIds.size === 0 && !hasSelectedEdges) return
     setNodes((ns) => ns.filter((n) => !n.selected))
     setEdges((es) =>
       es.filter((e) => !e.selected && !selectedIds.has(e.source) && !selectedIds.has(e.target)),
     )
     setSelectedNodeId(null)
-  }, [nodes, setNodes, setEdges])
+  }, [nodes, edges, setNodes, setEdges])
 
   // ── Toggle enabled ────────────────────────────────────────────────────────
   const handleToggleEnabled = useCallback(async () => {
@@ -618,7 +619,8 @@ function GraphEditorInner({
           )}
 
           {(() => {
-            const selCount = nodes.filter((n) => n.selected).length
+            const selCount =
+              nodes.filter((n) => n.selected).length + edges.filter((e) => e.selected).length
             return selCount > 0 ? (
               <button style={btn(false, true)} onClick={handleDeleteSelected}>
                 del {selCount}

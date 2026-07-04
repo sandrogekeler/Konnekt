@@ -5,7 +5,7 @@ import { SchedulerCtx } from './schedulerContext'
 export function AnimatedEdge({
   id, sourceX, sourceY, targetX, targetY,
   sourcePosition, targetPosition,
-  style, markerEnd, data,
+  style, markerEnd, data, selected,
 }: EdgeProps) {
   const { firedEdges, cycleEdges } = useContext(SchedulerCtx)
   const [animDone, setAnimDone] = useState(false)
@@ -22,36 +22,62 @@ export function AnimatedEdge({
   const inCycle = cycleEdges.has(id)
 
   // Live/static highlight overrides the resting stroke. Fired (a control branch
-  // that actually executed) wins over a static cycle warning.
+  // that actually executed) wins over user selection, which wins over a static
+  // cycle warning. Applied after `...style` so it wins even on data edges,
+  // whose inline `style.stroke` would otherwise beat the CSS `.selected` rule.
   let highlight: CSSProperties = {}
   if (fired) {
     highlight = { stroke: 'var(--accent)', strokeWidth: 2.5, filter: 'drop-shadow(0 0 3px var(--accent))' }
+  } else if (selected) {
+    highlight = { stroke: 'var(--accent)', strokeWidth: 2.5 }
   } else if (inCycle) {
     highlight = { stroke: '#f59e0b', strokeWidth: 2 }
   }
 
+  // Wide, transparent hit target. The visible `.react-flow__edge-path` is
+  // `pointer-events: none` in xyflow; a bare hand-rolled <path> (unlike
+  // <BaseEdge>) never gets the wide `.react-flow__edge-interaction` path that
+  // normally provides the clickable area, so clicks only land on the thin
+  // visible stroke, making the edge nearly unselectable.
+  const interaction = (
+    <path
+      className="react-flow__edge-interaction"
+      d={d}
+      fill="none"
+      stroke="transparent"
+      strokeWidth={20}
+      style={{ pointerEvents: 'stroke' }}
+    />
+  )
+
   // Entrance phase: normalize pathLength to 1 and animate stroke-dashoffset.
   if (!animDone) {
     return (
-      <path
-        id={id}
-        className="react-flow__edge-path edge-draw-in"
-        d={d}
-        pathLength={1}
-        onAnimationEnd={() => setAnimDone(true)}
-        style={{ ...style, strokeDasharray: 1, animationDelay: `${delay}ms`, ...highlight }}
-        markerEnd={markerEnd}
-      />
+      <>
+        {interaction}
+        <path
+          id={id}
+          className="react-flow__edge-path edge-draw-in"
+          d={d}
+          pathLength={1}
+          onAnimationEnd={() => setAnimDone(true)}
+          style={{ ...style, strokeDasharray: 1, animationDelay: `${delay}ms`, ...highlight }}
+          markerEnd={markerEnd}
+        />
+      </>
     )
   }
 
   return (
-    <path
-      id={id}
-      className="react-flow__edge-path"
-      d={d}
-      style={{ ...style, strokeDasharray: baseDash, ...highlight }}
-      markerEnd={markerEnd}
-    />
+    <>
+      {interaction}
+      <path
+        id={id}
+        className="react-flow__edge-path"
+        d={d}
+        style={{ ...style, strokeDasharray: baseDash, ...highlight }}
+        markerEnd={markerEnd}
+      />
+    </>
   )
 }
