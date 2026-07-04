@@ -79,7 +79,7 @@ An in-app notification feed plus native OS desktop notifications for crashes, jo
 
 ## Compatibility
 
-Konnekt integrates with popular server mods and plugins to extend its core features. Some integrations only cover part of a mod's functionality so far — those features are marked `[NA]` (not yet implemented). Click a mod to see feature-level detail.
+Konnekt integrates with popular server mods and plugins to extend its core features. Click a mod to see feature-level detail.
 
 ### Compatible
 
@@ -87,24 +87,30 @@ Konnekt integrates with popular server mods and plugins to extend its core featu
 <summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>Multiverse</strong></summary>
 
 - Multi-World & Dimension management
-- Visual world connections `[NA]`
-- In-world portal & sign management `[NA]`
 
 </details>
 
 ### Planned
 
 <details>
+<summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>Multiverse</strong></summary>
+
+- Visual world connections
+- In-world portal & sign management
+
+</details>
+
+<details>
 <summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>BlueMap</strong></summary>
 
-- Map viewer integration `[NA]`
+- Map viewer integration
 
 </details>
 
 <details>
 <summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>WorldGuard</strong></summary>
 
-- Region protection integration `[NA]`
+- Region protection integration
 
 </details>
 
