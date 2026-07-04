@@ -22,6 +22,16 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-sun: var(--sun);
+
+  /* Shared motion vocabulary — reuse these instead of inventing new
+     magic-number durations/easing per tile (HEALTH_CHECKLIST.md, Clean
+     pillar). --duration-fast matches the existing hover-transition timing
+     (e.g. border-color/transform on hover); --duration-panel/--ease-standard
+     match the mods tile's panel-slide (--ease-standard is Tailwind's
+     ease-in-out bezier, spelled out so non-Tailwind CSS can reuse it too). */
+  --duration-fast: 150ms;
+  --duration-panel: 280ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @font-face {
