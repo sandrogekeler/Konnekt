@@ -77,6 +77,37 @@ An in-app notification feed plus native OS desktop notifications for crashes, jo
 
 ![Notifications placeholder](docs/images/notifications.png)
 
+## Compatibility
+
+Konnekt integrates with popular server mods and plugins to extend its core features. Some integrations only cover part of a mod's functionality so far — those features are marked `[NA]` (not yet implemented). Click a mod to see feature-level detail.
+
+### Compatible
+
+<details>
+<summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>Multiverse</strong></summary>
+
+- Multi-World & Dimension management
+- Visual world connections `[NA]`
+- In-world portal & sign management `[NA]`
+
+</details>
+
+### Planned
+
+<details>
+<summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>BlueMap</strong></summary>
+
+- Map viewer integration `[NA]`
+
+</details>
+
+<details>
+<summary><img src="docs/images/mod-icon-placeholder.svg" width="20" height="20" align="absmiddle"> <strong>WorldGuard</strong></summary>
+
+- Region protection integration `[NA]`
+
+</details>
+
 ## Why Konnekt
 
 - **Local-first.** All app state is stored locally on disk — no account, no cloud dependency, no telemetry required to run your server.
