@@ -7,25 +7,54 @@ import type { FieldType } from './form/inferType'
 // Flat list of keys in relevance order — identity first, power-user settings last
 const ORDERED_KEYS: string[] = [
   // Server identity
-  'motd', 'server-port', 'max-players',
+  'motd',
+  'server-port',
+  'max-players',
   // Access
-  'online-mode', 'white-list', 'enforce-whitelist', 'pvp',
+  'online-mode',
+  'white-list',
+  'enforce-whitelist',
+  'pvp',
   // Gameplay
-  'gamemode', 'difficulty', 'hardcore', 'allow-flight', 'allow-nether',
-  'enable-command-block', 'spawn-animals', 'spawn-monsters', 'spawn-npcs', 'spawn-protection',
+  'gamemode',
+  'difficulty',
+  'hardcore',
+  'allow-flight',
+  'allow-nether',
+  'enable-command-block',
+  'spawn-animals',
+  'spawn-monsters',
+  'spawn-npcs',
+  'spawn-protection',
   // World
-  'level-name', 'view-distance', 'simulation-distance', 'level-type',
-  'level-seed', 'max-world-size',
+  'level-name',
+  'view-distance',
+  'simulation-distance',
+  'level-type',
+  'level-seed',
+  'max-world-size',
   // Performance
-  'max-tick-time', 'network-compression-threshold', 'rate-limit', 'pause-when-empty-seconds',
+  'max-tick-time',
+  'network-compression-threshold',
+  'rate-limit',
+  'pause-when-empty-seconds',
   // Network & security
-  'player-idle-timeout', 'prevent-proxy-connections',
-  'enforce-secure-profile', 'hide-online-players', 'log-ips',
+  'player-idle-timeout',
+  'prevent-proxy-connections',
+  'enforce-secure-profile',
+  'hide-online-players',
+  'log-ips',
   // RCON & Query
-  'enable-rcon', 'rcon.port', 'rcon.password', 'broadcast-rcon-to-ops',
-  'enable-query', 'query.port',
+  'enable-rcon',
+  'rcon.port',
+  'rcon.password',
+  'broadcast-rcon-to-ops',
+  'enable-query',
+  'query.port',
   // Resource pack
-  'resource-pack', 'require-resource-pack', 'resource-pack-prompt',
+  'resource-pack',
+  'require-resource-pack',
+  'resource-pack-prompt',
 ]
 
 interface Props {
@@ -45,7 +74,10 @@ function parseRawProps(raw: string): Record<string, string> {
 }
 
 function stripCodes(raw: string): string {
-  return raw.split('\\n')[0].replace(/§[0-9a-fklmnor]/gi, '').trim()
+  return raw
+    .split('\\n')[0]
+    .replace(/§[0-9a-fklmnor]/gi, '')
+    .trim()
 }
 
 function displayValue(key: string, rawVal: string, type: FieldType): string {
@@ -54,9 +86,9 @@ function displayValue(key: string, rawVal: string, type: FieldType): string {
   return rawVal
 }
 
-function valueColor(type: FieldType, rawVal: string): string {
-  if (type === 'boolean') return rawVal === 'true' ? 'var(--accent)' : 'var(--text-muted)'
-  return 'var(--text-primary)'
+function valueColorClass(type: FieldType, rawVal: string): string {
+  if (type === 'boolean') return rawVal === 'true' ? 'text-accent' : 'text-text-muted'
+  return 'text-text-primary'
 }
 
 interface RowProps {
@@ -77,10 +109,20 @@ interface RowProps {
 }
 
 function PropRow({
-  propKey, label, type, rawVal, options,
-  editing, editValue, saving,
-  onStartEdit, onEditChange, onEditCommit, onEditCancel,
-  onToggle, onCycle,
+  propKey,
+  label,
+  type,
+  rawVal,
+  options,
+  editing,
+  editValue,
+  saving,
+  onStartEdit,
+  onEditChange,
+  onEditCommit,
+  onEditCancel,
+  onToggle,
+  onCycle,
 }: RowProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   // prevent blur from committing when pressing Escape
@@ -96,18 +138,11 @@ function PropRow({
 
   const isInteractive = type === 'boolean' || (type === 'enum' && options && options.length > 0)
   const disp = displayValue(propKey, rawVal, type)
-  const color = valueColor(type, rawVal)
+  const colorClass = valueColorClass(type, rawVal)
 
   return (
-    <div
-      className="flex items-center gap-2 py-1"
-      style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-    >
-      <span
-        className="text-xs flex-1 min-w-0 truncate"
-        style={{ color: 'var(--text-muted)' }}
-        title={label}
-      >
+    <div className="border-border-subtle flex items-center gap-2 border-b-[0.5px] py-1">
+      <span className="text-text-muted min-w-0 flex-1 truncate text-xs" title={label}>
         {label}
       </span>
 
@@ -117,35 +152,31 @@ function PropRow({
           value={editValue}
           onChange={(e) => onEditChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') { onEditCommit() }
-            if (e.key === 'Escape') { cancelledRef.current = true; onEditCancel() }
+            if (e.key === 'Enter') {
+              onEditCommit()
+            }
+            if (e.key === 'Escape') {
+              cancelledRef.current = true
+              onEditCancel()
+            }
           }}
-          onBlur={() => { if (!cancelledRef.current) onEditCommit() }}
-          className="text-xs font-mono text-right rounded px-1 outline-none min-w-0 w-28 flex-shrink-0"
-          style={{
-            background: 'var(--bg-base)',
-            border: '1px solid var(--accent)',
-            color: 'var(--text-primary)',
+          onBlur={() => {
+            if (!cancelledRef.current) onEditCommit()
           }}
+          className="bg-canvas border-accent text-text-primary w-28 min-w-0 shrink-0 rounded border px-1 text-right font-mono text-xs outline-none"
         />
       ) : (
         <span
-          className={`text-xs font-mono font-medium flex-shrink-0 max-w-[55%] truncate text-right transition-opacity ${
+          className={`max-w-[55%] shrink-0 truncate text-right font-mono text-xs font-medium transition-opacity ${colorClass} ${
             saving ? 'opacity-40' : 'opacity-100'
-          }`}
-          style={{
-            color,
-            cursor: isInteractive ? 'pointer' : 'default',
-          }}
+          } ${isInteractive ? 'cursor-pointer' : 'cursor-default'}`}
           title={isInteractive ? undefined : 'Double-click to edit'}
           onClick={
-            type === 'boolean' ? onToggle
-            : (type === 'enum' && options?.length) ? onCycle
-            : undefined
+            type === 'boolean' ? onToggle : type === 'enum' && options?.length ? onCycle : undefined
           }
           onDoubleClick={!isInteractive ? onStartEdit : undefined}
         >
-          {disp || <span style={{ color: 'var(--text-faint)' }}>—</span>}
+          {disp || <span className="text-text-faint">—</span>}
         </span>
       )}
     </div>
@@ -169,7 +200,9 @@ export function ConfigSummary({ serverId }: Props) {
     }
   }, [serverId])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [load])
 
   async function commit(key: string, rawStringValue: string) {
     if (!rawContent) return
@@ -188,14 +221,13 @@ export function ConfigSummary({ serverId }: Props) {
 
   if (error) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2 px-4">
-        <span className="text-xs font-mono text-center" style={{ color: 'var(--text-faint)' }}>
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-4">
+        <span className="text-text-faint text-center font-mono text-xs">
           Could not read server.properties
         </span>
         <button
           onClick={load}
-          className="text-[10px] font-mono px-2 py-0.5 rounded"
-          style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+          className="border-border-subtle text-text-muted rounded border px-2 py-0.5 font-mono text-[10px]"
         >
           Retry
         </button>
@@ -205,8 +237,8 @@ export function ConfigSummary({ serverId }: Props) {
 
   if (!rawContent) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>Loading…</span>
+      <div className="flex h-full items-center justify-center">
+        <span className="text-text-faint font-mono text-xs">Loading…</span>
       </div>
     )
   }
@@ -217,8 +249,8 @@ export function ConfigSummary({ serverId }: Props) {
   const rows = ORDERED_KEYS.filter((k) => k in props)
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto pl-3 pr-5 py-1.5">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto py-1.5 pr-5 pl-3">
         {rows.map((key) => {
           const schema = PROPERTIES_SCHEMA[key]
           const type: FieldType = schema?.type === 'motd' ? 'string' : (schema?.type ?? 'string')
@@ -237,9 +269,15 @@ export function ConfigSummary({ serverId }: Props) {
               editing={editingKey === key}
               editValue={editValue}
               saving={saving}
-              onStartEdit={() => { setEditingKey(key); setEditValue(rawVal) }}
+              onStartEdit={() => {
+                setEditingKey(key)
+                setEditValue(rawVal)
+              }}
               onEditChange={setEditValue}
-              onEditCommit={() => { commit(key, editValue); setEditingKey(null) }}
+              onEditCommit={() => {
+                commit(key, editValue)
+                setEditingKey(null)
+              }}
               onEditCancel={() => setEditingKey(null)}
               onToggle={() => commit(key, rawVal === 'true' ? 'false' : 'true')}
               onCycle={() => {
@@ -252,16 +290,16 @@ export function ConfigSummary({ serverId }: Props) {
         })}
       </div>
 
-      <div
-        className="flex items-center justify-start px-3 py-1 flex-shrink-0"
-        style={{ borderTop: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-border-subtle flex shrink-0 items-center justify-start border-t-[0.5px] px-3 py-1">
         <button
           onClick={load}
-          className="text-[10px] font-mono transition-colors"
-          style={{ color: 'var(--text-faint)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+          className="text-text-faint font-mono text-[10px] transition-colors"
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'
+          }}
           title="Reload from disk"
         >
           ↻

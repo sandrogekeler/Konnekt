@@ -64,6 +64,7 @@ export default tseslint.config(
       'src/tiles/mods/**/*.tsx',
       'src/tiles/backups/**/*.tsx',
       'src/tiles/scheduler/**/*.tsx',
+      'src/tiles/config/**/*.tsx',
     ],
     rules: {
       'no-restricted-syntax': [

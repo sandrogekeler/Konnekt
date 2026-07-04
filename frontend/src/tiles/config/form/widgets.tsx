@@ -1,27 +1,33 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ConfigField } from './inferType'
 
+// Shared chrome for text-style inputs (TextInput, TextArea, Select's trigger,
+// ChipList's chips) — file-local since nothing outside form/ consumes it.
+const FIELD_INPUT_CLASS = 'bg-hover-surface text-text-primary border border-border-subtle'
+
 /* ── Shared row wrapper ───────────────────────────────────── */
 function FieldRow({ field, children }: { field: ConfigField; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+    <div className="border-border-subtle flex flex-col gap-1 border-b py-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
-          {field.label}
-        </span>
+        <span className="text-text-primary min-w-0 flex-1 text-sm font-medium">{field.label}</span>
         <div className="flex-shrink-0">{children}</div>
       </div>
       {field.description && (
-        <p className="text-xs leading-relaxed pr-1" style={{ color: 'var(--text-faint)' }}>
-          {field.description}
-        </p>
+        <p className="text-text-faint pr-1 text-xs leading-relaxed">{field.description}</p>
       )}
     </div>
   )
 }
 
 /* ── Toggle ───────────────────────────────────────────────── */
-export function Toggle({ field, onChange }: { field: ConfigField; onChange: (v: boolean) => void }) {
+export function Toggle({
+  field,
+  onChange,
+}: {
+  field: ConfigField
+  onChange: (v: boolean) => void
+}) {
   const on = field.value === true || field.value === 'true'
   return (
     <FieldRow field={field}>
@@ -29,16 +35,15 @@ export function Toggle({ field, onChange }: { field: ConfigField; onChange: (v: 
         onClick={() => onChange(!on)}
         role="switch"
         aria-checked={on}
-        className="relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 focus:outline-none"
-        style={{ background: on ? 'var(--accent)' : 'var(--hover-surface)' }}
+        className={`relative h-5 w-10 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+          on ? 'bg-accent' : 'bg-hover-surface'
+        }`}
       >
         {/* Pin dot to left-0.5 (2px) so translateX is relative to that anchor */}
         <span
-          className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform duration-200"
-          style={{
-            background: on ? '#000' : 'var(--text-muted)',
-            transform: on ? 'translateX(20px)' : 'translateX(0)',
-          }}
+          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full transition-transform duration-200 ${
+            on ? 'translate-x-5 bg-black' : 'bg-text-muted translate-x-0'
+          }`}
         />
       </button>
     </FieldRow>
@@ -46,15 +51,24 @@ export function Toggle({ field, onChange }: { field: ConfigField; onChange: (v: 
 }
 
 /* ── NumberInput ──────────────────────────────────────────── */
-export function NumberInput({ field, onChange }: { field: ConfigField; onChange: (v: number) => void }) {
+export function NumberInput({
+  field,
+  onChange,
+}: {
+  field: ConfigField
+  onChange: (v: number) => void
+}) {
   const [draft, setDraft] = useState(String(field.value ?? ''))
 
   function commit(raw: string) {
     const n = Number(raw)
     if (!Number.isNaN(n)) {
-      const clamped = field.min !== undefined && n < field.min ? field.min
-        : field.max !== undefined && n > field.max ? field.max
-        : n
+      const clamped =
+        field.min !== undefined && n < field.min
+          ? field.min
+          : field.max !== undefined && n > field.max
+            ? field.max
+            : n
       onChange(clamped)
       setDraft(String(clamped))
     } else {
@@ -68,48 +82,32 @@ export function NumberInput({ field, onChange }: { field: ConfigField; onChange:
     commit(String(next))
   }
 
-  const btnStyle: React.CSSProperties = {
-    color: 'var(--text-muted)',
-    background: 'transparent',
-    lineHeight: 1,
-  }
+  const spinnerBtnClass = 'text-text-muted bg-transparent leading-none'
 
   return (
     <FieldRow field={field}>
-      <div
-        className="flex items-center rounded overflow-hidden"
-        style={{ border: '1px solid var(--border-subtle)', background: 'var(--hover-surface)' }}
-      >
-        {/* Suppress native spinners via inline style — Tailwind can't target ::-webkit-inner-spin-button */}
+      <div className="border-border-subtle bg-hover-surface flex items-center overflow-hidden rounded border">
         <input
           type="number"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={(e) => commit(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && commit((e.target as HTMLInputElement).value)}
-          className="w-20 px-2 py-1 text-sm font-mono text-right outline-none bg-transparent"
-          style={{
-            color: 'var(--text-primary)',
-            MozAppearance: 'textfield',
-            WebkitAppearance: 'none',
-          }}
+          className="text-text-primary w-20 bg-transparent px-2 py-1 text-right font-mono text-sm outline-none"
+          // eslint-disable-next-line no-restricted-syntax -- suppresses native number spinners; no Tailwind utility targets -moz-appearance/-webkit-appearance
+          style={{ MozAppearance: 'textfield', WebkitAppearance: 'none' }}
         />
-        <div
-          className="flex flex-col flex-shrink-0 ml-1"
-          style={{ borderLeft: '1px solid var(--border-subtle)' }}
-        >
+        <div className="border-border-subtle ml-1 flex flex-shrink-0 flex-col border-l">
           <button
             onClick={() => step(1)}
-            className="px-1.5 py-0.5 text-[10px] leading-none transition-colors hover:text-accent"
-            style={btnStyle}
+            className={`hover:text-accent px-1.5 py-0.5 text-[10px] transition-colors ${spinnerBtnClass}`}
             tabIndex={-1}
           >
             ▲
           </button>
           <button
             onClick={() => step(-1)}
-            className="px-1.5 py-0.5 text-[10px] leading-none transition-colors hover:text-accent"
-            style={{ ...btnStyle, borderTop: '1px solid var(--border-subtle)' }}
+            className={`border-border-subtle hover:text-accent border-t px-1.5 py-0.5 text-[10px] transition-colors ${spinnerBtnClass}`}
             tabIndex={-1}
           >
             ▼
@@ -121,7 +119,13 @@ export function NumberInput({ field, onChange }: { field: ConfigField; onChange:
 }
 
 /* ── TextInput ────────────────────────────────────────────── */
-export function TextInput({ field, onChange }: { field: ConfigField; onChange: (v: string) => void }) {
+export function TextInput({
+  field,
+  onChange,
+}: {
+  field: ConfigField
+  onChange: (v: string) => void
+}) {
   return (
     <FieldRow field={field}>
       <input
@@ -129,35 +133,29 @@ export function TextInput({ field, onChange }: { field: ConfigField; onChange: (
         defaultValue={String(field.value ?? '')}
         onBlur={(e) => onChange(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && onChange((e.target as HTMLInputElement).value)}
-        className="w-48 px-2 py-1 text-sm font-mono rounded outline-none"
-        style={{
-          background: 'var(--hover-surface)',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--border-subtle)',
-        }}
+        className={`w-48 rounded px-2 py-1 font-mono text-sm outline-none ${FIELD_INPUT_CLASS}`}
       />
     </FieldRow>
   )
 }
 
 /* ── TextArea ─────────────────────────────────────────────── */
-export function TextArea({ field, onChange }: { field: ConfigField; onChange: (v: string) => void }) {
+export function TextArea({
+  field,
+  onChange,
+}: {
+  field: ConfigField
+  onChange: (v: string) => void
+}) {
   return (
-    <div className="flex flex-col gap-2 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{field.label}</span>
-      {field.description && (
-        <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{field.description}</p>
-      )}
+    <div className="border-border-subtle flex flex-col gap-2 border-b py-3">
+      <span className="text-text-primary text-sm font-medium">{field.label}</span>
+      {field.description && <p className="text-text-faint text-xs">{field.description}</p>}
       <textarea
         defaultValue={String(field.value ?? '')}
         onBlur={(e) => onChange(e.target.value)}
         rows={3}
-        className="w-full px-2 py-1.5 text-sm font-mono rounded outline-none resize-y"
-        style={{
-          background: 'var(--hover-surface)',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--border-subtle)',
-        }}
+        className={`w-full resize-y rounded px-2 py-1.5 font-mono text-sm outline-none ${FIELD_INPUT_CLASS}`}
       />
     </div>
   )
@@ -179,51 +177,37 @@ export function Select({ field, onChange }: { field: ConfigField; onChange: (v: 
 
   return (
     <FieldRow field={field}>
-      <div
-        ref={ref}
-        className="relative"
-        style={{ minWidth: '8rem' }}
-      >
+      <div ref={ref} className="relative min-w-32">
         {/* Trigger */}
         <button
           onClick={() => setOpen((o) => !o)}
-          className="w-full flex items-center justify-between gap-2 px-2 py-1 text-sm font-mono rounded"
-          style={{
-            background: 'var(--hover-surface)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border-subtle)',
-          }}
+          className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1 font-mono text-sm ${FIELD_INPUT_CLASS}`}
         >
           <span>{current}</span>
           <span className="text-[10px] opacity-50">{open ? '▲' : '▼'}</span>
         </button>
 
-        {/* Dropdown panel */}
+        {/* Dropdown panel. `--panel-bg` is never defined anywhere in the repo
+            (dead variable) — bg-[#0e1117] preserves its always-used fallback. */}
         {open && (
-          <div
-            className="absolute right-0 z-50 rounded overflow-hidden"
-            style={{
-              top: 'calc(100% + 4px)',
-              background: 'var(--panel-bg, #0e1117)',
-              border: '1px solid var(--border-subtle)',
-              minWidth: '100%',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-            }}
-          >
+          <div className="border-border-subtle absolute top-[calc(100%+4px)] right-0 z-50 min-w-full overflow-hidden rounded border bg-[#0e1117] shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
             {field.options?.map((opt) => (
               <button
                 key={opt}
-                onClick={() => { onChange(opt); setOpen(false) }}
-                className="w-full px-3 py-1.5 text-left text-sm font-mono transition-colors"
-                style={{
-                  background: opt === current ? 'var(--accent)' : 'transparent',
-                  color: opt === current ? '#000' : 'var(--text-primary)',
+                onClick={() => {
+                  onChange(opt)
+                  setOpen(false)
                 }}
+                className={`w-full px-3 py-1.5 text-left font-mono text-sm transition-colors ${
+                  opt === current ? 'bg-accent text-black' : 'text-text-primary bg-transparent'
+                }`}
                 onMouseEnter={(e) => {
-                  if (opt !== current) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'
+                  if (opt !== current)
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'
                 }}
                 onMouseLeave={(e) => {
-                  if (opt !== current) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  if (opt !== current)
+                    (e.currentTarget as HTMLElement).style.background = 'transparent'
                 }}
               >
                 {opt}
@@ -237,7 +221,13 @@ export function Select({ field, onChange }: { field: ConfigField; onChange: (v: 
 }
 
 /* ── ChipList ─────────────────────────────────────────────── */
-export function ChipList({ field, onChange }: { field: ConfigField; onChange: (v: string[]) => void }) {
+export function ChipList({
+  field,
+  onChange,
+}: {
+  field: ConfigField
+  onChange: (v: string[]) => void
+}) {
   const items = Array.isArray(field.value) ? (field.value as string[]) : []
   const [draft, setDraft] = useState('')
 
@@ -249,23 +239,19 @@ export function ChipList({ field, onChange }: { field: ConfigField; onChange: (v
   }
 
   return (
-    <div className="flex flex-col gap-2 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{field.label}</span>
-      {field.description && (
-        <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{field.description}</p>
-      )}
+    <div className="border-border-subtle flex flex-col gap-2 border-b py-3">
+      <span className="text-text-primary text-sm font-medium">{field.label}</span>
+      {field.description && <p className="text-text-faint text-xs">{field.description}</p>}
       <div className="flex flex-wrap gap-1.5">
         {items.map((item, idx) => (
           <span
             key={idx}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono"
-            style={{ background: 'var(--hover-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
+            className={`flex items-center gap-1 rounded px-2 py-0.5 font-mono text-xs ${FIELD_INPUT_CLASS}`}
           >
             {String(item)}
             <button
               onClick={() => onChange(items.filter((_, i) => i !== idx))}
-              className="opacity-50 hover:opacity-100 transition-opacity"
-              style={{ color: 'var(--text-muted)' }}
+              className="text-text-muted opacity-50 transition-opacity hover:opacity-100"
             >
               ×
             </button>
@@ -276,13 +262,7 @@ export function ChipList({ field, onChange }: { field: ConfigField; onChange: (v
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
           placeholder="Add…"
-          className="px-2 py-0.5 rounded text-xs font-mono outline-none"
-          style={{
-            background: 'var(--hover-surface)',
-            color: 'var(--text-primary)',
-            border: '1px dashed var(--border-subtle)',
-            minWidth: '4rem',
-          }}
+          className="bg-hover-surface text-text-primary border-border-subtle min-w-16 rounded border border-dashed px-2 py-0.5 font-mono text-xs outline-none"
         />
       </div>
     </div>
@@ -314,11 +294,11 @@ const COLOR_MAP: Record<string, string> = Object.fromEntries(
   MC_COLORS.map(({ code, hex }) => [code, hex]),
 )
 
-const FORMAT_BUTTONS: Array<{ code: string; label: string; title: string; style?: React.CSSProperties }> = [
-  { code: '§l', label: 'B', title: 'Bold',          style: { fontWeight: 'bold' } },
-  { code: '§o', label: 'I', title: 'Italic',         style: { fontStyle: 'italic' } },
-  { code: '§n', label: 'U', title: 'Underline',      style: { textDecoration: 'underline' } },
-  { code: '§m', label: 'S', title: 'Strikethrough',  style: { textDecoration: 'line-through' } },
+const FORMAT_BUTTONS: Array<{ code: string; label: string; title: string; className?: string }> = [
+  { code: '§l', label: 'B', title: 'Bold', className: 'font-bold' },
+  { code: '§o', label: 'I', title: 'Italic', className: 'italic' },
+  { code: '§n', label: 'U', title: 'Underline', className: 'underline' },
+  { code: '§m', label: 'S', title: 'Strikethrough', className: 'line-through' },
   { code: '§k', label: '✦', title: 'Obfuscated' },
 ]
 
@@ -336,21 +316,49 @@ function parseMotdLine(raw: string): MotdSegment[] {
   // Normalise § unicode escapes to § before parsing
   const input = raw.replace(/\\u00a7/gi, '§')
   const segments: MotdSegment[] = []
-  let cur: MotdSegment = { text: '', color: null, bold: false, italic: false, underline: false, strike: false, obfuscated: false }
+  let cur: MotdSegment = {
+    text: '',
+    color: null,
+    bold: false,
+    italic: false,
+    underline: false,
+    strike: false,
+    obfuscated: false,
+  }
 
   let i = 0
   while (i < input.length) {
     if (input[i] === '§' && i + 1 < input.length) {
-      if (cur.text) { segments.push({ ...cur }); cur = { ...cur, text: '' } }
+      if (cur.text) {
+        segments.push({ ...cur })
+        cur = { ...cur, text: '' }
+      }
       const c = input[i + 1].toLowerCase()
       if (COLOR_MAP[c] !== undefined) {
-        cur = { text: '', color: COLOR_MAP[c], bold: false, italic: false, underline: false, strike: false, obfuscated: false }
-      } else if (c === 'l') cur = { ...cur, bold: true,        text: '' }
-      else if   (c === 'o') cur = { ...cur, italic: true,      text: '' }
-      else if   (c === 'n') cur = { ...cur, underline: true,   text: '' }
-      else if   (c === 'm') cur = { ...cur, strike: true,      text: '' }
-      else if   (c === 'k') cur = { ...cur, obfuscated: true,  text: '' }
-      else if   (c === 'r') cur = { text: '', color: null, bold: false, italic: false, underline: false, strike: false, obfuscated: false }
+        cur = {
+          text: '',
+          color: COLOR_MAP[c],
+          bold: false,
+          italic: false,
+          underline: false,
+          strike: false,
+          obfuscated: false,
+        }
+      } else if (c === 'l') cur = { ...cur, bold: true, text: '' }
+      else if (c === 'o') cur = { ...cur, italic: true, text: '' }
+      else if (c === 'n') cur = { ...cur, underline: true, text: '' }
+      else if (c === 'm') cur = { ...cur, strike: true, text: '' }
+      else if (c === 'k') cur = { ...cur, obfuscated: true, text: '' }
+      else if (c === 'r')
+        cur = {
+          text: '',
+          color: null,
+          bold: false,
+          italic: false,
+          underline: false,
+          strike: false,
+          obfuscated: false,
+        }
       i += 2
     } else {
       cur.text += input[i]
@@ -364,22 +372,25 @@ function parseMotdLine(raw: string): MotdSegment[] {
 function MotdPreviewLine({ raw, placeholder }: { raw: string; placeholder?: string }) {
   const segments = parseMotdLine(raw)
   if (!segments.length) {
-    return <span style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>{placeholder ?? ' '}</span>
+    return <span className="text-text-faint italic">{placeholder ?? ' '}</span>
   }
   return (
     <>
       {segments.map((seg, i) => {
-        const decoration = [seg.underline && 'underline', seg.strike && 'line-through'].filter(Boolean).join(' ')
+        const decoration = [seg.underline && 'underline', seg.strike && 'line-through']
+          .filter(Boolean)
+          .join(' ')
         return (
           <span
             key={i}
+            // eslint-disable-next-line no-restricted-syntax -- per-segment styling parsed from Minecraft MOTD formatting codes, continuously variable
             style={{
               color: seg.color ?? 'var(--text-primary)',
-              fontWeight:     seg.bold      ? 'bold'   : undefined,
-              fontStyle:      seg.italic    ? 'italic' : undefined,
-              textDecoration: decoration    || undefined,
-              opacity:        seg.obfuscated ? 0.6      : undefined,
-              letterSpacing:  seg.obfuscated ? '0.05em' : undefined,
+              fontWeight: seg.bold ? 'bold' : undefined,
+              fontStyle: seg.italic ? 'italic' : undefined,
+              textDecoration: decoration || undefined,
+              opacity: seg.obfuscated ? 0.6 : undefined,
+              letterSpacing: seg.obfuscated ? '0.05em' : undefined,
             }}
           >
             {seg.obfuscated ? seg.text.replace(/\S/g, '?') : seg.text}
@@ -396,7 +407,13 @@ function splitMotd(raw: string): [string, string] {
   return [raw.slice(0, idx), raw.slice(idx + 2)]
 }
 
-export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: (v: string) => void }) {
+export function MotdWidget({
+  field,
+  onChange,
+}: {
+  field: ConfigField
+  onChange: (v: string) => void
+}) {
   const rawValue = String(field.value ?? '')
   const [expanded, setExpanded] = useState(false)
 
@@ -413,20 +430,23 @@ export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: 
     setL2(b)
   }, [field.value])
 
-  const emit = useCallback((a: string, b: string) => {
-    onChange(b ? a + '\\n' + b : a)
-  }, [onChange])
+  const emit = useCallback(
+    (a: string, b: string) => {
+      onChange(b ? a + '\\n' + b : a)
+    },
+    [onChange],
+  )
 
   function insertCode(code: string) {
     const isL1 = focusedLine.current === 1
-    const ref  = isL1 ? l1Ref : l2Ref
-    const val  = isL1 ? l1    : l2
-    const set  = isL1 ? setL1 : setL2
+    const ref = isL1 ? l1Ref : l2Ref
+    const val = isL1 ? l1 : l2
+    const set = isL1 ? setL1 : setL2
 
     const input = ref.current
     const start = input?.selectionStart ?? val.length
-    const end   = input?.selectionEnd   ?? start
-    const next  = val.slice(0, start) + code + val.slice(end)
+    const end = input?.selectionEnd ?? start
+    const next = val.slice(0, start) + code + val.slice(end)
     set(next)
     emit(isL1 ? next : l1, isL1 ? l2 : next)
 
@@ -440,55 +460,46 @@ export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: 
   }
 
   const inputClass = 'flex-1 px-2 py-1 text-sm font-mono rounded outline-none'
-  const inputStyle: React.CSSProperties = {
-    background: 'var(--hover-surface)',
-    color: 'var(--text-primary)',
-    border: '1px solid var(--border-subtle)',
-  }
 
   return (
-    <div style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+    <div className="border-border-subtle border-b">
       {/* Always-visible collapsed row */}
       <div className="flex items-center gap-3 py-3">
-        <span className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
-          {field.label}
-        </span>
+        <span className="text-text-primary flex-shrink-0 text-sm font-medium">{field.label}</span>
         <div
-          className="flex-1 min-w-0 font-mono text-sm px-2 py-1 rounded truncate cursor-pointer"
-          style={{ background: 'var(--hover-surface)' }}
+          className="bg-hover-surface min-w-0 flex-1 cursor-pointer truncate rounded px-2 py-1 font-mono text-sm"
           onClick={() => setExpanded(true)}
         >
           <MotdPreviewLine raw={l1} placeholder="A Minecraft Server" />
         </div>
         <button
-          onClick={() => setExpanded(o => !o)}
-          className="text-[10px] font-mono px-2 py-1 rounded flex-shrink-0 transition-colors"
-          style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+          onClick={() => setExpanded((o) => !o)}
+          className="border-border-subtle text-text-muted flex-shrink-0 rounded border px-2 py-1 font-mono text-[10px] transition-colors"
         >
           {expanded ? '▲ Done' : '▼ Edit'}
         </button>
       </div>
 
       {field.description && !expanded && (
-        <p className="text-xs pb-2" style={{ color: 'var(--text-faint)' }}>{field.description}</p>
+        <p className="text-text-faint pb-2 text-xs">{field.description}</p>
       )}
 
       {/* Expanded editor */}
       {expanded && (
-        <div className="pb-4 flex flex-col gap-3">
-
+        <div className="flex flex-col gap-3 pb-4">
           {/* Preview */}
-          <div
-            className="rounded px-3 py-2 font-mono text-sm flex flex-col gap-0.5"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
-          >
-            <div><MotdPreviewLine raw={l1} placeholder="Line 1…" /></div>
-            <div><MotdPreviewLine raw={l2} placeholder={l2 ? undefined : ' '} /></div>
+          <div className="bg-surface border-border-subtle flex flex-col gap-0.5 rounded border px-3 py-2 font-mono text-sm">
+            <div>
+              <MotdPreviewLine raw={l1} placeholder="Line 1…" />
+            </div>
+            <div>
+              <MotdPreviewLine raw={l2} placeholder={l2 ? undefined : ' '} />
+            </div>
           </div>
 
           {/* Color palette */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+            <span className="text-text-faint text-[10px] font-semibold tracking-widest uppercase">
               Color
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -497,10 +508,12 @@ export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: 
                   key={code}
                   title={`${label}  §${code}`}
                   onClick={() => insertCode(`§${code}`)}
-                  className="w-5 h-5 rounded-full transition-transform hover:scale-110 flex-shrink-0 focus:outline-none"
+                  className="h-5 w-5 flex-shrink-0 rounded-full transition-transform hover:scale-110 focus:outline-none"
+                  // eslint-disable-next-line no-restricted-syntax -- per-swatch color from the MC_COLORS data table; can't be static Tailwind classes
                   style={{
                     background: hex,
-                    boxShadow: hex === '#000000' ? 'inset 0 0 0 1px rgba(255,255,255,0.2)' : undefined,
+                    boxShadow:
+                      hex === '#000000' ? 'inset 0 0 0 1px rgba(255,255,255,0.2)' : undefined,
                   }}
                 />
               ))}
@@ -509,32 +522,25 @@ export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: 
 
           {/* Style buttons */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+            <span className="text-text-faint text-[10px] font-semibold tracking-widest uppercase">
               Style
             </span>
             <div className="flex items-center gap-1.5">
-              {FORMAT_BUTTONS.map(({ code, label, title, style }) => (
+              {FORMAT_BUTTONS.map(({ code, label, title, className }) => (
                 <button
                   key={code}
                   title={`${title}  ${code}`}
                   onClick={() => insertCode(code)}
-                  className="w-8 h-7 rounded text-xs font-mono transition-colors hover:text-accent focus:outline-none"
-                  style={{
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-muted)',
-                    background: 'transparent',
-                    ...style,
-                  }}
+                  className={`border-border-subtle text-text-muted hover:text-accent h-7 w-8 rounded border bg-transparent font-mono text-xs transition-colors focus:outline-none ${className ?? ''}`}
                 >
                   {label}
                 </button>
               ))}
-              <div className="w-px h-5 mx-0.5" style={{ background: 'var(--border-subtle)' }} />
+              <div className="bg-border-subtle mx-0.5 h-5 w-px" />
               <button
                 title="Reset  §r"
                 onClick={() => insertCode('§r')}
-                className="px-2 h-7 rounded text-xs font-mono transition-colors hover:text-accent focus:outline-none"
-                style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-faint)', background: 'transparent' }}
+                className="border-border-subtle text-text-faint hover:text-accent h-7 rounded border bg-transparent px-2 font-mono text-xs transition-colors focus:outline-none"
               >
                 ↺ Reset
               </button>
@@ -543,12 +549,28 @@ export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: 
 
           {/* Line inputs */}
           <div className="flex flex-col gap-2">
-            {([
-              { label: 'Line 1', val: l1, ref: l1Ref, set: setL1, line: 1 as const, placeholder: 'A Minecraft Server' },
-              { label: 'Line 2', val: l2, ref: l2Ref, set: setL2, line: 2 as const, placeholder: 'Optional second line…' },
-            ] as const).map(({ label, val, ref, set, line, placeholder }) => (
+            {(
+              [
+                {
+                  label: 'Line 1',
+                  val: l1,
+                  ref: l1Ref,
+                  set: setL1,
+                  line: 1 as const,
+                  placeholder: 'A Minecraft Server',
+                },
+                {
+                  label: 'Line 2',
+                  val: l2,
+                  ref: l2Ref,
+                  set: setL2,
+                  line: 2 as const,
+                  placeholder: 'Optional second line…',
+                },
+              ] as const
+            ).map(({ label, val, ref, set, line, placeholder }) => (
               <div key={label} className="flex items-center gap-2">
-                <span className="text-xs font-mono w-12 flex-shrink-0 text-right" style={{ color: 'var(--text-faint)' }}>
+                <span className="text-text-faint w-12 flex-shrink-0 text-right font-mono text-xs">
                   {label}
                 </span>
                 <input
@@ -560,14 +582,14 @@ export function MotdWidget({ field, onChange }: { field: ConfigField; onChange: 
                     set(e.target.value)
                     emit(line === 1 ? e.target.value : l1, line === 2 ? e.target.value : l2)
                   }}
-                  onFocus={() => { focusedLine.current = line }}
-                  className={inputClass}
-                  style={inputStyle}
+                  onFocus={() => {
+                    focusedLine.current = line
+                  }}
+                  className={`${inputClass} ${FIELD_INPUT_CLASS}`}
                 />
               </div>
             ))}
           </div>
-
         </div>
       )}
     </div>

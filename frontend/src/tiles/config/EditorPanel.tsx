@@ -54,8 +54,12 @@ function formSupported(format: string, content: string): boolean {
   if (format === 'properties') return true
   if (format === 'yaml') return yamlIsFormSafe(content)
   if (format === 'json') {
-    try { const v = JSON.parse(content); return v !== null && typeof v === 'object' && !Array.isArray(v) }
-    catch { return false }
+    try {
+      const v = JSON.parse(content)
+      return v !== null && typeof v === 'object' && !Array.isArray(v)
+    } catch {
+      return false
+    }
   }
   if (format === 'toml') return tomlIsFormSafe(content)
   return false
@@ -71,8 +75,7 @@ function ViewToggle({ mode, supported, onChange }: ViewToggleProps) {
   if (!supported) {
     return (
       <span
-        className="text-[10px] font-mono flex-shrink-0"
-        style={{ color: 'var(--text-faint)' }}
+        className="text-text-faint shrink-0 font-mono text-[10px]"
         title="Form view unavailable — file format not supported or contains constructs that can't be safely round-tripped"
       >
         Raw only
@@ -80,19 +83,14 @@ function ViewToggle({ mode, supported, onChange }: ViewToggleProps) {
     )
   }
   return (
-    <div
-      className="flex items-center rounded overflow-hidden flex-shrink-0"
-      style={{ border: '1px solid var(--border-subtle)' }}
-    >
+    <div className="border-border-subtle flex shrink-0 items-center overflow-hidden rounded border">
       {(['form', 'raw'] as const).map((m) => (
         <button
           key={m}
           onClick={() => onChange(m)}
-          className="text-[10px] font-mono px-2 py-0.5 transition-colors capitalize"
-          style={{
-            background: mode === m ? 'var(--accent)' : 'transparent',
-            color: mode === m ? '#000' : 'var(--text-faint)',
-          }}
+          className={`px-2 py-0.5 font-mono text-[10px] capitalize transition-colors ${
+            mode === m ? 'bg-accent text-black' : 'text-text-faint bg-transparent'
+          }`}
         >
           {m}
         </button>
@@ -139,50 +137,41 @@ export function EditorPanel({
 
   if (!file) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
-          Select a file to edit
-        </span>
+      <div className="flex flex-1 items-center justify-center">
+        <span className="text-text-faint font-mono text-xs">Select a file to edit</span>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div
-        className="flex items-center gap-2 px-3 py-1.5 flex-shrink-0 flex-wrap"
-        style={{ borderBottom: '1px solid var(--border-subtle)' }}
-      >
+      <div className="border-border-subtle flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5">
         <span
-          className="text-xs font-mono truncate flex-1 min-w-0"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-text-muted min-w-0 flex-1 truncate font-mono text-xs"
           title={file.relPath}
         >
           {file.relPath}
         </span>
 
-        <span className={`text-[10px] font-mono flex-shrink-0 ${FORMAT_COLORS[file.format] ?? 'text-zinc-400'}`}>
+        <span
+          className={`shrink-0 font-mono text-[10px] ${FORMAT_COLORS[file.format] ?? 'text-zinc-400'}`}
+        >
           {FORMAT_LABELS[file.format] ?? file.format}
         </span>
 
         <ViewToggle mode={viewMode} supported={canForm} onChange={setViewMode} />
 
-        {isDirty && (
-          <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-faint)' }}>
-            ●
-          </span>
-        )}
+        {isDirty && <span className="text-text-faint shrink-0 text-[10px]">●</span>}
 
         {isRunning && isDirty && (
-          <span className="text-[10px] text-yellow-500 flex-shrink-0">applies after restart</span>
+          <span className="flex-shrink-0 text-[10px] text-yellow-500">applies after restart</span>
         )}
 
         {isDirty && (
           <button
             onClick={onRevert}
-            className="text-[10px] font-mono flex-shrink-0 transition-colors hover:text-red-400"
-            style={{ color: 'var(--text-faint)' }}
+            className="text-text-faint shrink-0 font-mono text-[10px] transition-colors hover:text-red-400"
           >
             Revert
           </button>
@@ -191,11 +180,9 @@ export function EditorPanel({
         <button
           onClick={onSave}
           disabled={!isDirty || saving}
-          className="text-[10px] font-mono flex-shrink-0 px-2 py-0.5 rounded transition-colors disabled:opacity-30"
-          style={{
-            background: isDirty && !saving ? 'var(--accent)' : undefined,
-            color: isDirty && !saving ? '#000' : 'var(--text-faint)',
-          }}
+          className={`shrink-0 rounded px-2 py-0.5 font-mono text-[10px] transition-colors disabled:opacity-30 ${
+            isDirty && !saving ? 'bg-accent text-black' : 'text-text-faint'
+          }`}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
@@ -203,8 +190,7 @@ export function EditorPanel({
         {isRunning && isDirty && (
           <button
             onClick={onRestart}
-            className="text-[10px] font-mono flex-shrink-0 px-2 py-0.5 rounded transition-colors"
-            style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+            className="border-border-subtle text-text-muted shrink-0 rounded border px-2 py-0.5 font-mono text-[10px] transition-colors"
           >
             Restart
           </button>
@@ -213,19 +199,16 @@ export function EditorPanel({
 
       {/* Error bar */}
       {saveError && (
-        <div
-          className="px-3 py-1.5 text-xs text-red-400 font-mono flex-shrink-0"
-          style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(239,68,68,0.08)' }}
-        >
+        <div className="border-border-subtle shrink-0 border-b bg-[rgba(239,68,68,0.08)] px-3 py-1.5 font-mono text-xs text-red-400">
           {saveError}
         </div>
       )}
 
       {/* Body */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="relative flex-1 overflow-hidden">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>Loading…</span>
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <span className="text-text-faint font-mono text-xs">Loading…</span>
           </div>
         )}
 
@@ -240,6 +223,7 @@ export function EditorPanel({
             extensions={[...langExtension(file.format), appTheme]}
             theme="dark"
             height="100%"
+            // eslint-disable-next-line no-restricted-syntax -- @uiw/react-codemirror's own style prop, not a plain DOM element
             style={{ height: '100%' }}
             basicSetup={{
               lineNumbers: true,

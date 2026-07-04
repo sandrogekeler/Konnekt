@@ -21,7 +21,9 @@ const FORMAT_LABELS: Record<string, string> = {
 
 function FormatChip({ format }: { format: ConfigFile['format'] }) {
   return (
-    <span className={`text-[9px] font-mono uppercase tracking-wide flex-shrink-0 ${FORMAT_COLORS[format] ?? 'text-zinc-500'}`}>
+    <span
+      className={`flex-shrink-0 font-mono text-[9px] tracking-wide uppercase ${FORMAT_COLORS[format] ?? 'text-zinc-500'}`}
+    >
       {FORMAT_LABELS[format] ?? format}
     </span>
   )
@@ -41,19 +43,16 @@ function FileRow({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-3 py-2 text-left rounded-md transition-colors ${
+      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors ${
         selected ? 'bg-accent/15' : 'hover:bg-white/5'
       }`}
     >
       <span
-        className={`flex-1 truncate text-xs font-mono ${selected ? 'text-accent' : ''}`}
-        style={selected ? undefined : { color: 'var(--text-primary)' }}
+        className={`flex-1 truncate font-mono text-xs ${selected ? 'text-accent' : 'text-text-primary'}`}
       >
         {file.name}
       </span>
-      {dirty && (
-        <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-      )}
+      {dirty && <span className="bg-accent h-1.5 w-1.5 flex-shrink-0 rounded-full" />}
       <FormatChip format={file.format} />
     </button>
   )
@@ -62,18 +61,10 @@ function FileRow({
 function GroupHeader({ label, count }: { label: string; count: number }) {
   return (
     <div className="flex items-center gap-2 px-3 pt-4 pb-1.5">
-      <span
-        className="text-[10px] font-bold uppercase tracking-widest"
-        style={{ color: 'var(--text-muted)' }}
-      >
+      <span className="text-text-muted text-[10px] font-bold tracking-widest uppercase">
         {label}
       </span>
-      <span
-        className="text-[10px] font-mono"
-        style={{ color: 'var(--text-faint)' }}
-      >
-        {count}
-      </span>
+      <span className="text-text-faint font-mono text-[10px]">{count}</span>
     </div>
   )
 }
@@ -98,20 +89,15 @@ function PluginGroup({
     <div className="mb-0.5">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-left transition-colors hover:bg-white/3 rounded"
+        className="flex w-full items-center gap-1.5 rounded px-3 py-1.5 text-left transition-colors hover:bg-white/3"
       >
         <span
-          className="text-[9px] transition-transform"
-          style={{ color: 'var(--text-faint)', transform: open ? 'rotate(90deg)' : undefined }}
+          className={`text-text-faint text-[9px] transition-transform ${open ? 'rotate-90' : 'rotate-0'}`}
         >
           ▶
         </span>
-        <span className="text-xs font-medium flex-1 truncate" style={{ color: 'var(--text-muted)' }}>
-          {source}
-        </span>
-        <span className="text-[9px] font-mono" style={{ color: 'var(--text-faint)' }}>
-          {files.length}
-        </span>
+        <span className="text-text-muted flex-1 truncate text-xs font-medium">{source}</span>
+        <span className="text-text-faint font-mono text-[9px]">{files.length}</span>
       </button>
 
       {open && (
@@ -178,37 +164,29 @@ export function FileList({
 
   useEffect(() => {
     onRefresh()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
-    <div className="flex flex-col h-full" style={{ borderRight: '1px solid var(--border-subtle)' }}>
+    <div className="border-border-subtle flex h-full flex-col border-r">
       {/* Search */}
-      <div
-        className="px-3 py-2.5 flex items-center gap-2 flex-shrink-0"
-        style={{ borderBottom: '1px solid var(--border-subtle)' }}
-      >
-        <span className="text-xs" style={{ color: 'var(--text-faint)' }}>⌕</span>
+      <div className="border-border-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
+        <span className="text-text-faint text-xs">⌕</span>
         <input
           type="text"
           placeholder="Search…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          className="flex-1 bg-transparent text-xs font-mono outline-none placeholder:text-zinc-700"
-          style={{ color: 'var(--text-primary)' }}
+          className="text-text-primary flex-1 bg-transparent font-mono text-xs outline-none placeholder:text-zinc-700"
         />
       </div>
 
       {/* Tree */}
       <div className="flex-1 overflow-y-auto py-1">
-        {loading && (
-          <p className="px-4 py-3 text-xs" style={{ color: 'var(--text-faint)' }}>Scanning…</p>
-        )}
-        {error && (
-          <p className="px-4 py-3 text-xs text-red-400 break-all">{error}</p>
-        )}
+        {loading && <p className="text-text-faint px-4 py-3 text-xs">Scanning…</p>}
+        {error && <p className="px-4 py-3 text-xs break-all text-red-400">{error}</p>}
         {!loading && !error && files.length === 0 && (
-          <p className="px-4 py-3 text-xs" style={{ color: 'var(--text-faint)' }}>No config files found.</p>
+          <p className="text-text-faint px-4 py-3 text-xs">No config files found.</p>
         )}
 
         {/* Server */}
@@ -287,11 +265,10 @@ export function FileList({
       </div>
 
       {/* Refresh */}
-      <div className="flex-shrink-0 px-3 py-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+      <div className="border-border-subtle shrink-0 border-t px-3 py-2">
         <button
           onClick={onRefresh}
-          className="text-[10px] font-mono transition-colors hover:text-accent"
-          style={{ color: 'var(--text-faint)' }}
+          className="text-text-faint hover:text-accent font-mono text-[10px] transition-colors"
         >
           ↻ Refresh
         </button>

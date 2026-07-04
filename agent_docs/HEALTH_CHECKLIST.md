@@ -492,9 +492,77 @@ todo list, not a target.
     but the node editor, drag/connect interactions, and run-state glow
     colors need `wails dev` with a real server to see rendered, same
     limitation as backups/mods/worlds/performance previously.
-- ~280 `style={{}}` usages remain across the rest of the codebase (~23
-  files). Continue tile-by-tile — the remaining hotspots: config (80), the
-  rest of `components/` (~64), worlds (45), players (32). These will need
+- ✅ **Seventh slice done: the config tile** (`frontend/src/tiles/config/**`,
+  the server.properties/config-file editor built on CodeMirror + a
+  generated form UI) — the next-largest remaining cluster. Confirmed count:
+  80 occurrences across 6 files. This tile converted more cleanly than
+  scheduler — **4 of 6 files reach zero remaining inline styles**
+  (`ConfigSummary.tsx`, `FileList.tsx`, `form/ConfigForm.tsx`, plus
+  `index.tsx`'s resize handle, leaving only its drag-computed sidebar
+  width). `EditorPanel.tsx` keeps 1 (CodeMirror's own `style` prop —
+  library-API requirement, same treatment as xyflow's `Handle`/`MiniMap` in
+  the scheduler slice). `form/widgets.tsx` (39 → 3) keeps the fewest
+  exceptions of any large file yet: vendor-prefix spinner suppression
+  (`MozAppearance`/`WebkitAppearance`, no Tailwind utility target), the
+  `MC_COLORS` swatch buttons' per-swatch `background`/conditional
+  `boxShadow` (16 literal colors from a data table), and
+  `MotdPreviewLine`'s per-segment rich-text styling (parsed from Minecraft
+  MOTD formatting codes, continuously variable). Added
+  `src/tiles/config/**/*.tsx` to the ratcheted-`error` `files` glob in
+  `frontend/eslint.config.js`; `pnpm lint` passes with 0 errors, global
+  warning count 277 → 194.
+  - **`#000`/`#000000` confirmed to match Tailwind's `black` keyword class
+    exactly** — unlike the mid-tone swatches that broke hex assumptions in
+    the scheduler slice (OKLCH-interpolated), `black` is a fixed CSS
+    keyword, not part of that interpolated scale. Used throughout
+    (`EditorPanel.tsx`'s view-toggle/save-button active text, `widgets.tsx`'s
+    `Toggle` on-state knob, `Select`'s active-option text).
+  - **Found and flagged a dead CSS variable**: `widgets.tsx`'s `Select`
+    dropdown used `background: 'var(--panel-bg, #0e1117)'` — `--panel-bg` is
+    never defined anywhere else in the repo (confirmed via a repo-wide
+    grep), so it always fell through to the literal `#0e1117` fallback,
+    which doesn't match `--bg-base` or `--bg-elevated` or any other token.
+    Converted to `bg-[#0e1117]` (preserving the actual rendered color
+    exactly, not "fixing" the dead variable — that's a separate cleanup,
+    tracked below) rather than inventing a replacement token.
+  - **De-duplication beyond the mechanical conversion**: `form/widgets.tsx`
+    had the `background: 'var(--hover-surface)', color: 'var(--text-primary)',
+    border: '1px solid var(--border-subtle)'` triple repeated near-verbatim
+    across `TextInput`, `TextArea`, `Select`'s trigger, and `ChipList`'s
+    chips/input — introduced a file-local `FIELD_INPUT_CLASS` constant
+    (mirroring how `FORMAT_COLORS` is already file-local rather than
+    centralized) reused across all four. `NumberInput`'s `btnStyle` object
+    became a similar local `spinnerBtnClass` string. `FORMAT_BUTTONS`' small
+    closed lookup table had its optional `style?` field converted to
+    `className?` (`'font-bold'`/`'italic'`/`'underline'`/`'line-through'`),
+    the same "N-way lookup → className field" pattern used for
+    `CATEGORY_TEXT_CLASS` in the scheduler slice.
+  - `calc(100% + 4px)` (the `Select` dropdown's position) is a **static**
+    literal expression, not runtime-computed — converted to
+    `top-[calc(100%+4px)]` rather than staying inline, same precedent as
+    the mods slice's `calc(100vw-48px)`.
+  - A `style={{}}` ternary of the odd form
+    `style={selected ? undefined : { color: ... }}` (`FileList.tsx`'s
+    `FileRow`) folded into the existing conditional-className template
+    literal rather than needing special-case handling.
+  - Verified: `pnpm typecheck` (0 errors), `pnpm lint` (0 errors, 277 → 194
+    warnings), `pnpm test` (131/131 unchanged — no existing tests target
+    `tiles/config/**`), `pnpm build` (entry chunk ~479 KB gzip, flat vs. the
+    prior slice), `pnpm check-bundle` (479.0 KB, well under the 550 KB
+    budget).
+  - Not independently verified: live rendering of the file browser/editor
+    with real data. Both `ConfigSummary.tsx` (non-maximized view) and
+    `FileList.tsx`/`EditorPanel.tsx` (maximized, via `useConfigEditor`) call
+    real Wails bindings unconditionally on mount, so neither renders past
+    that point without a configured server — confirmed live via a running
+    dev server: clicking the sidebar's Config tile produced no *new*
+    console errors beyond the pre-existing `quick-commands` one. A full
+    visual pass (editing a real `server.properties`, the MOTD builder, the
+    toggle/select/chip widgets with live data) needs `wails dev` with a
+    configured server, same limitation as every prior slice.
+- ~204 `style={{}}` usages remain across the rest of the codebase (~21
+  files). Continue tile-by-tile — the remaining hotspots: the rest of
+  `components/` (~64), worlds (45), players (32). These will need
   more deliberate scoping (likely per-tile, not batched) and, for several,
   live `wails dev` + a configured server to fully verify beyond what this
   sandbox's headless preview can reach.
@@ -706,6 +774,15 @@ todo list, not a target.
   and out of date (e.g. still listed "Split the JS bundle" as planned
   Infrastructure work, done in the code-split pass above). Root now has no
   `.md` files besides `README.md`.
+- Found during the config-tile Milestone 2 pass, not yet fixed:
+  `frontend/src/tiles/config/form/widgets.tsx`'s `Select` component
+  references `var(--panel-bg, #0e1117)` — `--panel-bg` is never defined
+  anywhere else in the codebase, so it always falls through to the literal
+  `#0e1117` fallback (which matches neither `--bg-base` nor `--bg-elevated`
+  nor any other token). Either register a real `--panel-bg` token in
+  `style.css` or replace the reference with an existing token
+  (`--bg-elevated` looks like the closest semantic match) — deferred as out
+  of scope for a pure style-migration pass.
 
 **P1 — Scheduler node-system deep analysis**
 - ✅ **Architecture confirmed sound.** Three parallel Explore agents mapped the

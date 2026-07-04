@@ -19,28 +19,31 @@ export function ConfigTile({ serverId, maximized }: TileProps) {
   const startX = useRef(0)
   const startWidth = useRef(0)
 
-  const onHandleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    dragging.current = true
-    startX.current = e.clientX
-    startWidth.current = sidebarWidth
+  const onHandleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      dragging.current = true
+      startX.current = e.clientX
+      startWidth.current = sidebarWidth
 
-    function onMouseMove(ev: MouseEvent) {
-      if (!dragging.current) return
-      const delta = ev.clientX - startX.current
-      const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth.current + delta))
-      setSidebarWidth(next)
-    }
+      function onMouseMove(ev: MouseEvent) {
+        if (!dragging.current) return
+        const delta = ev.clientX - startX.current
+        const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth.current + delta))
+        setSidebarWidth(next)
+      }
 
-    function onMouseUp() {
-      dragging.current = false
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
+      function onMouseUp() {
+        dragging.current = false
+        window.removeEventListener('mousemove', onMouseMove)
+        window.removeEventListener('mouseup', onMouseUp)
+      }
 
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-  }, [sidebarWidth])
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
+    },
+    [sidebarWidth],
+  )
 
   const {
     files,
@@ -86,7 +89,8 @@ export function ConfigTile({ serverId, maximized }: TileProps) {
     <div className="flex h-full overflow-hidden">
       {/* File list panel */}
       <div
-        className="flex-shrink-0 flex flex-col overflow-hidden"
+        className="flex shrink-0 flex-col overflow-hidden"
+        // eslint-disable-next-line no-restricted-syntax -- sidebarWidth is a live drag-computed value
         style={{ width: sidebarWidth }}
       >
         <FileList
@@ -105,10 +109,13 @@ export function ConfigTile({ serverId, maximized }: TileProps) {
       {/* Resize handle */}
       <div
         onMouseDown={onHandleMouseDown}
-        className="flex-shrink-0 w-1 cursor-col-resize transition-colors"
-        style={{ background: 'var(--border-subtle)' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'var(--accent)' }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'var(--border-subtle)' }}
+        className="bg-border-subtle w-1 shrink-0 cursor-col-resize transition-colors"
+        onMouseEnter={(e) => {
+          ;(e.currentTarget as HTMLDivElement).style.background = 'var(--accent)'
+        }}
+        onMouseLeave={(e) => {
+          ;(e.currentTarget as HTMLDivElement).style.background = 'var(--border-subtle)'
+        }}
       />
 
       {/* Editor panel */}

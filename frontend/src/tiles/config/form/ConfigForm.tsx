@@ -26,18 +26,14 @@ function Field({
       <div className="mb-1">
         <button
           onClick={() => setOpen((o) => !o)}
-          className="w-full flex items-center gap-2 py-2 text-left"
+          className="flex w-full items-center gap-2 py-2 text-left"
         >
           <span
-            className="text-[10px] transition-transform"
-            style={{ color: 'var(--text-muted)', transform: open ? 'rotate(90deg)' : undefined }}
+            className={`text-text-muted text-[10px] transition-transform ${open ? 'rotate-90' : 'rotate-0'}`}
           >
             ▶
           </span>
-          <span
-            className="text-xs font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="text-text-muted text-xs font-semibold tracking-widest uppercase">
             {field.label}
           </span>
         </button>
@@ -101,10 +97,8 @@ export function ConfigForm({ format, content, onChange }: Props) {
 
   if (fields.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
-          No fields detected
-        </span>
+      <div className="flex h-full items-center justify-center">
+        <span className="text-text-faint font-mono text-xs">No fields detected</span>
       </div>
     )
   }
