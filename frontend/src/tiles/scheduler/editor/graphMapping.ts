@@ -1,5 +1,6 @@
 import type { Node as FlowNode, Edge as FlowEdge, Connection } from '@xyflow/react'
 import type { models } from '../../../../wailsjs/go/models'
+import { resolveDataPortType, portTypesCompatible } from './portTypes'
 
 export interface NodeData extends Record<string, unknown> {
   blockType: string
@@ -14,7 +15,7 @@ export function graphToFlow(
   graph: models.Graph,
   defMap: Map<string, models.BlockDef>,
 ): { nodes: BlockFlowNode[]; edges: FlowEdge[] } {
-  const nodes: BlockFlowNode[] = (graph.nodes ?? []).map(n => ({
+  const nodes: BlockFlowNode[] = (graph.nodes ?? []).map((n) => ({
     id: n.id,
     type: 'block' as const,
     position: { x: n.position?.x ?? 0, y: n.position?.y ?? 0 },
@@ -25,7 +26,7 @@ export function graphToFlow(
     },
   }))
 
-  const edges: FlowEdge[] = (graph.edges ?? []).map(e => {
+  const edges: FlowEdge[] = (graph.edges ?? []).map((e) => {
     const isData = e.kind === 'data'
     return {
       id: e.id,
@@ -55,13 +56,13 @@ export function flowToGraph(
     enabled: meta.enabled,
     createdAt: meta.createdAt,
     updatedAt: Date.now(),
-    nodes: nodes.map(n => ({
+    nodes: nodes.map((n) => ({
       id: n.id,
       type: (n.data as NodeData).blockType,
       config: (n.data as NodeData).config,
       position: { x: n.position.x, y: n.position.y },
     })) as unknown as models.Node[],
-    edges: edges.map(e => {
+    edges: edges.map((e) => {
       const srcH = e.sourceHandle ?? ''
       const tgtH = e.targetHandle ?? ''
       const kind = srcH.startsWith('data:') ? 'data' : 'control'
@@ -77,13 +78,40 @@ export function flowToGraph(
   } as unknown as models.Graph
 }
 
-// Reject cross-kind wiring and self-loops.
+// Reject cross-kind wiring, self-loops, and (for data edges) incompatible port
+// types — e.g. a "string" output can't wire into a "number" input, since that
+// would silently coerce to the input's default at run time.
 // ReactFlow v12 passes Edge | Connection to isValidConnection.
-export function isValidConnection(edge: FlowEdge | Connection): boolean {
+export function isValidConnection(
+  edge: FlowEdge | Connection,
+  nodes: FlowNode[],
+  defMap: Map<string, models.BlockDef>,
+): boolean {
   if (edge.source === edge.target) return false
-  const srcKind = (edge.sourceHandle ?? '').startsWith('data:') ? 'data' : 'ctrl'
-  const tgtKind = (edge.targetHandle ?? '').startsWith('data:') ? 'data' : 'ctrl'
-  return srcKind === tgtKind
+  const srcHandle = edge.sourceHandle ?? ''
+  const tgtHandle = edge.targetHandle ?? ''
+  const isData = srcHandle.startsWith('data:')
+  if (isData !== tgtHandle.startsWith('data:')) return false
+  if (!isData) return true
+
+  const srcNode = nodes.find((n) => n.id === edge.source)
+  const tgtNode = nodes.find((n) => n.id === edge.target)
+  const srcData = srcNode?.data as NodeData | undefined
+  const tgtData = tgtNode?.data as NodeData | undefined
+
+  const srcType = resolveDataPortType(
+    srcData && defMap.get(srcData.blockType),
+    srcHandle.replace(/^data:/, ''),
+    'output',
+    srcData?.config,
+  )
+  const tgtType = resolveDataPortType(
+    tgtData && defMap.get(tgtData.blockType),
+    tgtHandle.replace(/^data:/, ''),
+    'input',
+    tgtData?.config,
+  )
+  return portTypesCompatible(srcType, tgtType)
 }
 
 export function randId(): string {
@@ -101,8 +129,9 @@ export function detectControlCycles(
   const cycleEdges = new Set<string>()
 
   const controlEdges = edges.filter(
-    e => (e.data as { kind?: string } | undefined)?.kind !== 'data'
-      && !(e.sourceHandle ?? '').startsWith('data:'),
+    (e) =>
+      (e.data as { kind?: string } | undefined)?.kind !== 'data' &&
+      !(e.sourceHandle ?? '').startsWith('data:'),
   )
   if (controlEdges.length === 0) return { cycleNodes, cycleEdges }
 

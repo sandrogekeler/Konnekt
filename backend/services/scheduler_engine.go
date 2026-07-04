@@ -51,6 +51,20 @@ func (s *SchedulerService) runGraph(
 		s.runningMu.Unlock()
 	}()
 
+	// Authoritative type check: the editor's isValidConnection already blocks
+	// authoring an incompatible data wire, but hand-edited or
+	// ImportScheduleGraphJSON graphs bypass that. Fail loudly here rather than
+	// silently coercing to a default value at the executor (e.g. GetFloat).
+	if issues := validateGraphDataTypes(g, s.registry); len(issues) > 0 {
+		now := time.Now().UnixMilli()
+		return models.RunRecord{
+			ID: newID(), GraphID: g.ID, GraphName: g.Name,
+			Trigger: triggerLabel, StartedAt: now, FinishedAt: now,
+			Status: "failed",
+			Error:  "data type validation failed: " + strings.Join(issues, "; "),
+		}
+	}
+
 	runID := newID()
 	now := time.Now()
 	rec := models.RunRecord{

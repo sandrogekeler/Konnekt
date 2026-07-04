@@ -1,0 +1,124 @@
+package services
+
+import (
+	"fmt"
+
+	"konnekt/backend/models"
+)
+
+type resolvedDataType string
+
+const (
+	dataTypeString     resolvedDataType = "string"
+	dataTypeNumber     resolvedDataType = "number"
+	dataTypeBool       resolvedDataType = "bool"
+	dataTypeUnresolved resolvedDataType = "unresolved"
+)
+
+// Two config.type vocabularies exist across blocks (Read-Attribute uses
+// lowercase data-port names, Constant uses capitalized display names) — both
+// normalize here. Mirrors frontend/src/tiles/scheduler/editor/portTypes.ts.
+var dataTypeAliases = map[string]resolvedDataType{
+	"string":  dataTypeString,
+	"String":  dataTypeString,
+	"number":  dataTypeNumber,
+	"Float":   dataTypeNumber,
+	"Integer": dataTypeNumber,
+	"bool":    dataTypeBool,
+	"Boolean": dataTypeBool,
+}
+
+func normalizeDataType(raw string) resolvedDataType {
+	if t, ok := dataTypeAliases[raw]; ok {
+		return t
+	}
+	return dataTypeUnresolved
+}
+
+// resolveDataPortType resolves a block's declared data-port type to a
+// concrete type, following the port's "auto" indirection (Read-Attribute,
+// Constant) through the node's own config["type"] field.
+func resolveDataPortType(def models.BlockDef, portID string, isOutput bool, config map[string]interface{}) resolvedDataType {
+	ports := def.DataInputs
+	if isOutput {
+		ports = def.DataOutputs
+	}
+	for _, p := range ports {
+		if p.ID != portID {
+			continue
+		}
+		if p.Type == "auto" {
+			cfgType, _ := config["type"].(string)
+			return normalizeDataType(cfgType)
+		}
+		return normalizeDataType(p.Type)
+	}
+	return dataTypeUnresolved
+}
+
+// dataTypesCompatible mirrors portTypesCompatible on the frontend. Unresolved
+// on either side can't be proven incompatible, so it's allowed — this only
+// blocks connections positively known to coerce/fail at run time.
+func dataTypesCompatible(src, tgt resolvedDataType) bool {
+	if src == dataTypeUnresolved || tgt == dataTypeUnresolved {
+		return true
+	}
+	if src == tgt {
+		return true
+	}
+	if tgt == dataTypeString {
+		return true
+	}
+	if src == dataTypeBool && tgt == dataTypeNumber {
+		return true
+	}
+	return false
+}
+
+// validateGraphDataTypes checks every data edge in g for a type-incompatible
+// wiring (e.g. a "string" output feeding a "number" input), which would
+// otherwise silently coerce to the input's zero value at run time
+// (ExecContext.GetFloat and friends). Returns one descriptive issue per bad
+// edge; nil means the graph is clean. Pure and side-effect free — the
+// frontend's isValidConnection already prevents authoring these, but this is
+// the authoritative check for hand-edited or imported graphs
+// (ImportScheduleGraphJSON).
+func validateGraphDataTypes(g models.Graph, reg *BlockRegistry) []string {
+	nodeByID := make(map[string]models.Node, len(g.Nodes))
+	for _, n := range g.Nodes {
+		nodeByID[n.ID] = n
+	}
+
+	var issues []string
+	for _, e := range g.Edges {
+		if e.Kind != "data" {
+			continue
+		}
+		srcNode, ok := nodeByID[e.Source]
+		if !ok {
+			continue
+		}
+		tgtNode, ok := nodeByID[e.Target]
+		if !ok {
+			continue
+		}
+		srcEntry, ok := reg.Get(srcNode.Type)
+		if !ok {
+			continue
+		}
+		tgtEntry, ok := reg.Get(tgtNode.Type)
+		if !ok {
+			continue
+		}
+
+		srcType := resolveDataPortType(srcEntry.def, e.SourcePort, true, srcNode.Config)
+		tgtType := resolveDataPortType(tgtEntry.def, e.TargetPort, false, tgtNode.Config)
+		if !dataTypesCompatible(srcType, tgtType) {
+			issues = append(issues, fmt.Sprintf(
+				"data edge %s: %s output -> %s input (node %s.%s -> %s.%s)",
+				e.ID, srcType, tgtType, srcNode.ID, e.SourcePort, tgtNode.ID, e.TargetPort,
+			))
+		}
+	}
+	return issues
+}

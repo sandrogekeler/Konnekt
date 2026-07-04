@@ -572,7 +572,7 @@ func registerDataBuiltins(r *BlockRegistry) {
 	must(r.RegisterBlock(models.BlockDef{
 		ID: "data.constant", Category: "data", Label: "Constant",
 		Description: "Outputs a fixed typed value.",
-		DataOutputs: []models.DataPort{{ID: "value", Label: "Value", Type: "string"}},
+		DataOutputs: []models.DataPort{{ID: "value", Label: "Value", Type: "auto"}},
 		ConfigSchema: []models.ConfigField{
 			{Key: "type", Label: "Type", Type: "select", Default: "String",
 				Options: []models.FieldOption{
