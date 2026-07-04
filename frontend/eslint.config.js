@@ -62,6 +62,7 @@ export default tseslint.config(
       'src/tiles/performance/**/*.tsx',
       'src/tiles/console/**/*.tsx',
       'src/tiles/mods/**/*.tsx',
+      'src/tiles/backups/**/*.tsx',
     ],
     rules: {
       'no-restricted-syntax': [

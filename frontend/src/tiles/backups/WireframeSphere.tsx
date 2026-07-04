@@ -8,7 +8,11 @@ interface WireframeSphereProps {
   spinDuration?: number
 }
 
-export function WireframeSphere({ size = 80, color = 'var(--sun)', spinDuration = 8 }: WireframeSphereProps) {
+export function WireframeSphere({
+  size = 80,
+  color = 'var(--sun)',
+  spinDuration = 8,
+}: WireframeSphereProps) {
   const uid = useId().replace(/[^a-z0-9]/gi, '') || 'sphere'
   const clipId = `sc-${uid}`
   const glowId = `sg-${uid}`
@@ -21,7 +25,7 @@ export function WireframeSphere({ size = 80, color = 'var(--sun)', spinDuration 
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      style={{ display: 'block', overflow: 'visible' }}
+      className="block overflow-visible"
       aria-hidden="true"
     >
       <defs>
@@ -29,7 +33,7 @@ export function WireframeSphere({ size = 80, color = 'var(--sun)', spinDuration 
           <circle cx={cx} cy={cy} r={r - 0.5} />
         </clipPath>
         <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
-          <stop offset="0%"   stopColor={color} stopOpacity="0.18" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </radialGradient>
       </defs>
@@ -44,7 +48,7 @@ export function WireframeSphere({ size = 80, color = 'var(--sun)', spinDuration 
         {/* Latitude lines */}
         {[-0.55, 0, 0.55].map((frac, i) => {
           const latY = cy + frac * r
-          const latRX = Math.sqrt(Math.max(0, r * r - (frac * r) * (frac * r)))
+          const latRX = Math.sqrt(Math.max(0, r * r - frac * r * (frac * r)))
           return (
             <ellipse
               key={`lat-${i}`}
@@ -68,6 +72,7 @@ export function WireframeSphere({ size = 80, color = 'var(--sun)', spinDuration 
               cy={cy}
               rx={r - 0.5}
               ry={r - 0.5}
+              // eslint-disable-next-line no-restricted-syntax -- per-meridian spin animation computed from size/spinDuration props
               style={{
                 transformOrigin: `${cx}px ${cy}px`,
                 animation: `backup-sphere-spin ${spinDuration}s ${delay}s linear infinite`,

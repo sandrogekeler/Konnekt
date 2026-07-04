@@ -3,14 +3,7 @@ import { fmtBytes, fmtDate, extractID } from './format'
 
 function TagPillReadOnly({ tag }: { tag: string }) {
   return (
-    <span
-      className="inline-flex items-center px-1.5 py-px text-xs font-mono rounded"
-      style={{
-        background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-        color: 'var(--accent)',
-        border: '0.5px solid color-mix(in srgb, var(--accent) 30%, transparent)',
-      }}
-    >
+    <span className="text-accent inline-flex items-center rounded border-[0.5px] border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-1.5 py-px font-mono text-xs">
       #{tag}
     </span>
   )
@@ -25,33 +18,32 @@ interface BackupCardProps {
   onRequestDelete: () => void
 }
 
-export function BackupCard({ backup, focused, inProgress, serverRunning, onRequestRestore, onRequestDelete }: BackupCardProps) {
+export function BackupCard({
+  backup,
+  focused,
+  inProgress,
+  serverRunning,
+  onRequestRestore,
+  onRequestDelete,
+}: BackupCardProps) {
   const displayLabel = backup.displayName || extractID(backup.filename)
 
   return (
     <div
-      className="flex flex-col gap-2 px-5 py-3 rounded-[10px]"
+      className={`flex flex-col gap-2 rounded-[10px] px-5 py-3 select-none ${
+        focused
+          ? 'min-h-[140px] w-[360px] border-[0.5px] border-[color-mix(in_srgb,var(--accent)_45%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,var(--bg-surface))]'
+          : 'border-border-subtle bg-surface min-h-[96px] w-[260px] border-[0.5px]'
+      }`}
+      // eslint-disable-next-line no-restricted-syntax -- mixed per-property durations/easings (width/min-height at 260ms bezier, padding/border-color/background at 200ms ease) can't be expressed as one Tailwind transition utility
       style={{
-        width: focused ? 360 : 260,
-        minHeight: focused ? 140 : 96,
-        border: focused
-          ? '0.5px solid color-mix(in srgb, var(--accent) 45%, transparent)'
-          : '0.5px solid var(--border-subtle)',
-        background: focused
-          ? 'color-mix(in srgb, var(--accent) 6%, var(--bg-surface))'
-          : 'var(--bg-surface)',
-        transition: 'width 260ms cubic-bezier(0.34,1.15,0.64,1), min-height 260ms cubic-bezier(0.34,1.15,0.64,1), padding 200ms ease, border-color 200ms ease, background 200ms ease',
-        userSelect: 'none',
+        transition:
+          'width 260ms cubic-bezier(0.34,1.15,0.64,1), min-height 260ms cubic-bezier(0.34,1.15,0.64,1), padding 200ms ease, border-color 200ms ease, background 200ms ease',
       }}
     >
       <div className="flex flex-col gap-1.5">
         <div
-          className="font-mono truncate"
-          style={{
-            color: 'var(--text-primary)',
-            fontSize: focused ? '0.9rem' : '0.75rem',
-            transition: 'font-size 200ms ease',
-          }}
+          className={`text-text-primary truncate font-mono transition-[font-size] duration-200 ease-[ease] ${focused ? 'text-[0.9rem]' : 'text-xs'}`}
         >
           {displayLabel}
         </div>
@@ -65,11 +57,11 @@ export function BackupCard({ backup, focused, inProgress, serverRunning, onReque
       </div>
 
       {inProgress ? (
-        <div className="flex flex-col gap-0.5 text-xs font-mono animate-pulse" style={{ color: 'var(--accent)' }}>
+        <div className="text-accent flex animate-pulse flex-col gap-0.5 font-mono text-xs">
           <div>backing up…</div>
         </div>
       ) : (
-        <div className="flex flex-col gap-0.5 text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+        <div className="text-text-faint flex flex-col gap-0.5 font-mono text-xs">
           <div>{fmtDate(backup.createdAt)}</div>
           <div>{fmtBytes(backup.sizeBytes)}</div>
         </div>
@@ -78,31 +70,34 @@ export function BackupCard({ backup, focused, inProgress, serverRunning, onReque
       {focused && !inProgress && (
         <div className="flex gap-2 pt-1">
           <button
-            onClick={(e) => { e.stopPropagation(); onRequestRestore() }}
-            disabled={serverRunning}
-            className="flex-1 text-xs font-mono rounded-md py-1.5 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
-              border: '0.5px solid color-mix(in srgb, var(--accent) 35%, transparent)',
-              color: 'var(--accent)',
+            onClick={(e) => {
+              e.stopPropagation()
+              onRequestRestore()
             }}
+            disabled={serverRunning}
+            className="text-accent flex-1 cursor-pointer rounded-md border-[0.5px] border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] py-1.5 font-mono text-xs disabled:cursor-not-allowed disabled:opacity-30"
             title={serverRunning ? 'Stop the server before restoring' : 'Restore this backup'}
-            onMouseEnter={(e) => { if (!serverRunning) (e.currentTarget as HTMLButtonElement).style.opacity = '0.75' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+            onMouseEnter={(e) => {
+              if (!serverRunning) (e.currentTarget as HTMLButtonElement).style.opacity = '0.75'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+            }}
           >
             restore
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onRequestDelete() }}
-            className="flex-1 text-xs font-mono rounded-md py-1.5 cursor-pointer"
-            style={{
-              background: 'color-mix(in srgb, #f87171 8%, transparent)',
-              border: '0.5px solid color-mix(in srgb, #f87171 28%, transparent)',
-              color: '#f87171',
-              opacity: 0.75,
+            onClick={(e) => {
+              e.stopPropagation()
+              onRequestDelete()
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.75' }}
+            className="text-danger flex-1 cursor-pointer rounded-md border-[0.5px] border-[color-mix(in_srgb,var(--danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] py-1.5 font-mono text-xs opacity-75"
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.75'
+            }}
           >
             delete
           </button>

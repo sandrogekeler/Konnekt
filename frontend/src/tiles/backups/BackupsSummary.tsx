@@ -43,14 +43,16 @@ export function BackupsSummary({ serverId }: Props) {
     setStopping(true)
     try {
       await StopServer(serverId)
-    } catch { /* server may already be stopped */ }
+    } catch {
+      /* server may already be stopped */
+    }
     setStopping(false)
     await create()
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+      <div className="text-text-faint flex h-full items-center justify-center font-mono text-xs">
         Loading…
       </div>
     )
@@ -58,7 +60,7 @@ export function BackupsSummary({ serverId }: Props) {
 
   if (listError) {
     return (
-      <div className="flex items-center justify-center h-full text-xs font-mono px-3 text-center" style={{ color: 'var(--danger)' }}>
+      <div className="text-danger flex h-full items-center justify-center px-3 text-center font-mono text-xs">
         {listError}
       </div>
     )
@@ -68,45 +70,44 @@ export function BackupsSummary({ serverId }: Props) {
   const latest = serverBackups[0]
 
   return (
-    <div className="relative flex flex-col h-full px-3 py-2 gap-2">
-      <div className="flex-1 min-h-0 flex flex-col justify-center gap-1">
+    <div className="relative flex h-full flex-col gap-2 px-3 py-2">
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-1">
         {latest ? (
           <>
-            <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>Last full backup</div>
-            <div className="text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-text-faint font-mono text-xs">Last full backup</div>
+            <div className="text-text-secondary font-mono text-sm">
               {fmtRelTime(latest.createdAt)}
             </div>
-            <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>
+            <div className="text-text-faint font-mono text-xs">
               {fmtBytes(latest.sizeBytes)} · {serverBackups.length} total
             </div>
           </>
         ) : (
-          <div className="text-xs font-mono" style={{ color: 'var(--text-faint)' }}>No full-server backups yet</div>
+          <div className="text-text-faint font-mono text-xs">No full-server backups yet</div>
         )}
       </div>
       <button
         onClick={handleCreateClick}
         disabled={creating || stopping}
-        className="w-full py-1 text-xs font-mono rounded border transition-colors disabled:opacity-40"
-        style={{
-          borderColor: 'var(--accent)',
-          color: 'var(--accent)',
-          background: 'transparent',
-        }}
+        className="border-accent text-accent w-full rounded border bg-transparent py-1 font-mono text-xs transition-colors disabled:opacity-40"
         onMouseEnter={(e) => {
           if (!creating && !stopping) {
-            (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--accent) 10%, transparent)'
+            ;(e.currentTarget as HTMLButtonElement).style.background =
+              'color-mix(in srgb, var(--accent) 10%, transparent)'
           }
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+          ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
         }}
       >
         {stopping ? 'Stopping server…' : creating ? 'Backing up…' : 'Back up now'}
       </button>
       {showRunningDialog && (
         <BackupRunningDialog
-          onBackUpNow={() => { setShowRunningDialog(false); create() }}
+          onBackUpNow={() => {
+            setShowRunningDialog(false)
+            create()
+          }}
           onStopAndBackUp={stopAndBackUp}
           onCancel={() => setShowRunningDialog(false)}
         />

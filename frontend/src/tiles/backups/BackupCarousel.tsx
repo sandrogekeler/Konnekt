@@ -6,8 +6,8 @@ const VISIBLE_RADIUS = 3
 const SCALE_FALLOFF = 0.12
 const OPACITY_FALLOFF = 0.25
 const WHEEL_THRESHOLD = 40
-const GAP_PX = 26      // equal gap between every adjacent card pair
-const FOCUSED_W = 360  // must match BackupCard focused width
+const GAP_PX = 26 // equal gap between every adjacent card pair
+const FOCUSED_W = 360 // must match BackupCard focused width
 const UNFOCUSED_W = 260 // must match BackupCard unfocused width
 
 // Visual half-width of a card at a given absolute offset, accounting for scale.
@@ -44,8 +44,17 @@ interface BackupCarouselProps {
 }
 
 export function BackupCarousel({
-  backups, focusedIndex, onFocusChange, panelOpen, onOpenPanel, onClosePanel,
-  serverRunning, creatingFilename, onRequestRestore, onRequestDelete, wheelTargetRef,
+  backups,
+  focusedIndex,
+  onFocusChange,
+  panelOpen,
+  onOpenPanel,
+  onClosePanel,
+  serverRunning,
+  creatingFilename,
+  onRequestRestore,
+  onRequestDelete,
+  wheelTargetRef,
 }: BackupCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const wheelAccum = useRef(0)
@@ -75,12 +84,17 @@ export function BackupCarousel({
       if (Math.abs(wheelAccum.current) >= WHEEL_THRESHOLD) {
         const direction = Math.sign(wheelAccum.current)
         wheelAccum.current = 0
-        const next = Math.max(0, Math.min(backupsLengthRef.current - 1, focusedIndexRef.current + direction))
+        const next = Math.max(
+          0,
+          Math.min(backupsLengthRef.current - 1, focusedIndexRef.current + direction),
+        )
         if (next !== focusedIndexRef.current) onFocusChangeRef.current(next)
       }
 
       if (wheelTimerRef.current) clearTimeout(wheelTimerRef.current)
-      wheelTimerRef.current = setTimeout(() => { wheelAccum.current = 0 }, 200)
+      wheelTimerRef.current = setTimeout(() => {
+        wheelAccum.current = 0
+      }, 200)
     }
 
     el.addEventListener('wheel', handleWheel, { passive: false })
@@ -114,25 +128,18 @@ export function BackupCarousel({
   const atEnd = focusedIndex === backups.length - 1
 
   return (
-    <div ref={containerRef} className="relative w-full h-full" style={{ clipPath: 'inset(-300px 0 0 0)' }}>
+    <div ref={containerRef} className="relative h-full w-full [clip-path:inset(-300px_0_0_0)]">
       {/* Left arrow */}
       <button
-        className="absolute left-4 z-[150] flex items-center justify-center transition-all"
-        style={{
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 32,
-          height: 32,
-          fontSize: '1.25rem',
-          color: atStart ? 'var(--text-faint)' : 'var(--text-secondary)',
-          opacity: atStart ? 0.25 : 0.6,
-          cursor: atStart ? 'default' : 'pointer',
-          background: 'transparent',
-        }}
+        className={`absolute top-1/2 left-4 z-[150] flex h-8 w-8 -translate-y-1/2 items-center justify-center bg-transparent text-xl transition-all ${atStart ? 'text-text-faint cursor-default opacity-25' : 'text-text-secondary cursor-pointer opacity-60'}`}
         disabled={atStart}
         onClick={() => onFocusChange(Math.max(0, focusedIndex - 1))}
-        onMouseEnter={(e) => { if (!atStart) (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-        onMouseLeave={(e) => { if (!atStart) (e.currentTarget as HTMLButtonElement).style.opacity = '0.6' }}
+        onMouseEnter={(e) => {
+          if (!atStart) (e.currentTarget as HTMLButtonElement).style.opacity = '1'
+        }}
+        onMouseLeave={(e) => {
+          if (!atStart) (e.currentTarget as HTMLButtonElement).style.opacity = '0.6'
+        }}
         title="Previous backup (←)"
       >
         ‹
@@ -140,28 +147,21 @@ export function BackupCarousel({
 
       {/* Right arrow */}
       <button
-        className="absolute right-4 z-[150] flex items-center justify-center transition-all"
-        style={{
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 32,
-          height: 32,
-          fontSize: '1.25rem',
-          color: atEnd ? 'var(--text-faint)' : 'var(--text-secondary)',
-          opacity: atEnd ? 0.25 : 0.6,
-          cursor: atEnd ? 'default' : 'pointer',
-          background: 'transparent',
-        }}
+        className={`absolute top-1/2 right-4 z-[150] flex h-8 w-8 -translate-y-1/2 items-center justify-center bg-transparent text-xl transition-all ${atEnd ? 'text-text-faint cursor-default opacity-25' : 'text-text-secondary cursor-pointer opacity-60'}`}
         disabled={atEnd}
         onClick={() => onFocusChange(Math.min(backups.length - 1, focusedIndex + 1))}
-        onMouseEnter={(e) => { if (!atEnd) (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-        onMouseLeave={(e) => { if (!atEnd) (e.currentTarget as HTMLButtonElement).style.opacity = '0.6' }}
+        onMouseEnter={(e) => {
+          if (!atEnd) (e.currentTarget as HTMLButtonElement).style.opacity = '1'
+        }}
+        onMouseLeave={(e) => {
+          if (!atEnd) (e.currentTarget as HTMLButtonElement).style.opacity = '0.6'
+        }}
         title="Next backup (→)"
       >
         ›
       </button>
 
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         {backups.map((backup, i) => {
           const offset = i - focusedIndex
           if (Math.abs(offset) > VISIBLE_RADIUS) return null
@@ -173,16 +173,17 @@ export function BackupCarousel({
           return (
             <div
               key={backup.filename}
-              className="absolute"
+              className={`pointer-events-auto absolute ${offset !== 0 ? 'cursor-pointer' : 'cursor-default'}`}
+              // eslint-disable-next-line no-restricted-syntax -- transform/opacity/zIndex are continuous values computed from carousel offset, invisible to Tailwind's static scanner
               style={{
                 transform: `translateX(${tx}px) scale(${scale})`,
                 opacity,
                 zIndex: 100 - absOffset * 10,
                 transition: 'transform 260ms cubic-bezier(0.34,1.15,0.64,1), opacity 200ms ease',
-                pointerEvents: 'auto',
-                cursor: offset !== 0 ? 'pointer' : 'default',
               }}
-              onClick={() => { if (offset !== 0) onFocusChange(i) }}
+              onClick={() => {
+                if (offset !== 0) onFocusChange(i)
+              }}
             >
               <BackupCard
                 backup={backup}

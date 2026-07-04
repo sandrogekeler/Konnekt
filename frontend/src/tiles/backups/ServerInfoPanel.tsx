@@ -52,26 +52,17 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
 
   return (
     <div
-      className="absolute top-0 right-0 bottom-0 flex flex-col overflow-y-auto"
+      className="border-l-border-subtle absolute top-0 right-0 bottom-0 z-20 flex w-[42%] min-w-[230px] flex-col overflow-y-auto border-l-[0.5px] bg-[color-mix(in_srgb,var(--bg-base)_97%,white)]"
+      // eslint-disable-next-line no-restricted-syntax -- slide-in animation driven by `visible` mount state
       style={{
-        width: '42%',
-        minWidth: 230,
-        zIndex: 20,
-        background: 'color-mix(in srgb, var(--bg-base) 97%, white)',
-        borderLeft: '0.5px solid var(--border-subtle)',
         transform: visible ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 320ms cubic-bezier(0.34,1.15,0.64,1)',
       }}
     >
       {/* Header */}
-      <div
-        className="flex shrink-0 items-start justify-between gap-2 px-4 pt-5 pb-4"
-        style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-b-border-subtle flex shrink-0 items-start justify-between gap-2 border-b-[0.5px] px-4 pt-5 pb-4">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="truncate font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
-            {displayLabel}
-          </span>
+          <span className="text-text-primary truncate font-mono text-sm">{displayLabel}</span>
           {backup.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {backup.tags.map((tag) => (
@@ -82,8 +73,7 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
         </div>
         <button
           onClick={onClose}
-          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded font-mono text-xs"
-          style={{ color: 'var(--text-faint)' }}
+          className="text-text-faint mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded font-mono text-xs"
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
           }}
@@ -96,10 +86,7 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
       </div>
 
       {/* Meta */}
-      <div
-        className="flex shrink-0 flex-col px-4 py-3"
-        style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-b-border-subtle flex shrink-0 flex-col border-b-[0.5px] px-4 py-3">
         <Row label="created" value={fmtDate(backup.createdAt)} />
         <Row label="size" value={fmtBytes(backup.sizeBytes)} />
         <Row label="file" value={backup.filename} mono />
@@ -108,8 +95,7 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
       {/* Worlds section */}
       <div className="flex flex-col">
         <button
-          className="flex w-full shrink-0 items-center justify-between px-4 py-3 text-left"
-          style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
+          className="border-b-border-subtle flex w-full shrink-0 items-center justify-between border-b-[0.5px] px-4 py-3 text-left"
           onClick={() => setWorldsOpen((o) => !o)}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.025)'
@@ -118,33 +104,28 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
             ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
           }}
         >
-          <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
+          <span className="text-text-faint font-mono text-xs">
             worlds{worlds.length > 0 ? ` (${worlds.length})` : ''}
           </span>
           <span
-            className="font-mono text-xs"
-            style={{
-              color: 'var(--text-faint)',
-              display: 'inline-block',
-              transform: worldsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 200ms ease',
-            }}
+            className={`text-text-faint inline-block font-mono text-xs transition-transform duration-200 ${worldsOpen ? 'rotate-180' : 'rotate-0'}`}
           >
             ▾
           </span>
         </button>
 
         <div
+          className="overflow-hidden"
+          // eslint-disable-next-line no-restricted-syntax -- grid-rows collapse-height animation driven by `worldsOpen`
           style={{
             display: 'grid',
             gridTemplateRows: worldsOpen ? '1fr' : '0fr',
             transition: 'grid-template-rows 200ms ease',
-            overflow: 'hidden',
           }}
         >
-          <div style={{ minHeight: 0, overflow: 'hidden' }} className="flex flex-col">
+          <div className="flex min-h-0 flex-col overflow-hidden">
             {worlds.length === 0 ? (
-              <div className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
+              <div className="text-text-faint px-4 py-3 font-mono text-xs">
                 No world data found in this backup.
               </div>
             ) : (
@@ -176,7 +157,7 @@ function WorldRow({
   const displayName = world.meta?.found && world.meta.levelName ? world.meta.levelName : world.name
 
   return (
-    <div style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+    <div className="border-b-border-subtle border-b-[0.5px]">
       <button
         className="flex w-full items-center justify-between px-4 py-2 text-left"
         onClick={onToggle}
@@ -188,27 +169,13 @@ function WorldRow({
         }}
       >
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {displayName}
-          </span>
-          {world.active && (
-            <span className="font-mono text-xs" style={{ color: '#22c55e' }}>
-              active
-            </span>
-          )}
+          <span className="text-text-secondary truncate font-mono text-xs">{displayName}</span>
+          {world.active && <span className="font-mono text-xs text-green-500">active</span>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
-            {fmtBytes(world.totalSize)}
-          </span>
+          <span className="text-text-faint font-mono text-xs">{fmtBytes(world.totalSize)}</span>
           <span
-            className="font-mono text-xs"
-            style={{
-              color: 'var(--text-faint)',
-              display: 'inline-block',
-              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 200ms ease',
-            }}
+            className={`text-text-faint inline-block font-mono text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : 'rotate-0'}`}
           >
             ▾
           </span>
@@ -216,23 +183,19 @@ function WorldRow({
       </button>
 
       <div
+        className="overflow-hidden"
+        // eslint-disable-next-line no-restricted-syntax -- grid-rows collapse-height animation driven by `expanded`
         style={{
           display: 'grid',
           gridTemplateRows: expanded ? '1fr' : '0fr',
           transition: 'grid-template-rows 200ms ease',
-          overflow: 'hidden',
         }}
       >
-        <div
-          style={{ minHeight: 0, overflow: 'hidden' }}
-          className="flex flex-col gap-1.5 px-5 pt-2 pb-3"
-        >
+        <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden px-5 pt-2 pb-3">
           {world.dimensions && world.dimensions.length > 0 ? (
             world.dimensions.map((dim) => <DimRow key={dim.kind} kind={dim.kind} size={dim.size} />)
           ) : (
-            <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
-              No dimension data.
-            </span>
+            <span className="text-text-faint font-mono text-xs">No dimension data.</span>
           )}
         </div>
       </div>
@@ -243,13 +206,8 @@ function WorldRow({
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-0.5">
-      <span className="shrink-0 font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
-        {label}
-      </span>
-      <span
-        className="truncate text-right text-xs"
-        style={{ color: 'var(--text-secondary)', fontFamily: mono ? 'monospace' : undefined }}
-      >
+      <span className="text-text-faint shrink-0 font-mono text-xs">{label}</span>
+      <span className={`truncate text-right text-xs text-text-secondary${mono ? 'font-mono' : ''}`}>
         {value}
       </span>
     </div>
@@ -260,29 +218,19 @@ function DimRow({ kind, size }: { kind: string; size: number }) {
   const color = KIND_COLOR[kind] ?? '#60a5fa'
   return (
     <div className="flex items-center gap-2">
-      <div className="shrink-0 rounded-full" style={{ width: 6, height: 6, background: color }} />
-      <span className="flex-1 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+      {/* eslint-disable-next-line no-restricted-syntax -- color keyed by a runtime dimension-kind string, invisible to the Tailwind JIT scanner */}
+      <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
+      <span className="text-text-secondary flex-1 font-mono text-xs">
         {KIND_LABEL[kind] ?? kind}
       </span>
-      {size > 0 && (
-        <span className="font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
-          {fmtBytes(size)}
-        </span>
-      )}
+      {size > 0 && <span className="text-text-faint font-mono text-xs">{fmtBytes(size)}</span>}
     </div>
   )
 }
 
 function TagPill({ tag }: { tag: string }) {
   return (
-    <span
-      className="inline-flex items-center rounded px-1.5 py-px font-mono text-xs"
-      style={{
-        background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-        color: 'var(--accent)',
-        border: '0.5px solid color-mix(in srgb, var(--accent) 30%, transparent)',
-      }}
-    >
+    <span className="text-accent inline-flex items-center rounded border-[0.5px] border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-1.5 py-px font-mono text-xs">
       #{tag}
     </span>
   )

@@ -346,12 +346,80 @@ todo list, not a target.
     server, not a full component mount) — a full visual pass needs `wails dev`
     with a configured server, same limitation noted for backups/performance in
     prior sessions.
-- ~490 `style={{}}` usages remain across the rest of the codebase (~48
-  files). Continue tile-by-tile — the remaining hotspots: backups (116),
-  scheduler (88), config (80), the rest of `components/` (68), worlds (45),
-  players (32). These will need more deliberate scoping (likely per-tile, not
-  batched) and, for several, live `wails dev` + a configured server to fully
-  verify beyond what this sandbox's headless preview can reach.
+- ✅ **Fifth slice done: the backups tile** — the largest remaining cluster at
+  the time (116 → 19, all 7 files: `index.tsx`, `SolarSystem.tsx`,
+  `BackupCard.tsx`, `BackupCarousel.tsx`, `ServerInfoPanel.tsx`,
+  `WorldInfoPanel.tsx`, `WireframeSphere.tsx`; `BackupsSummary.tsx` and
+  `BackupRunningDialog.tsx` reach **zero** remaining inline styles). Every
+  survivor carries a documented `eslint-disable-next-line` exception. Global
+  frontend-wide count: 451 → 354. Added `src/tiles/backups/**/*.tsx` to the
+  ratcheted-`error` `files` glob in `frontend/eslint.config.js`; `pnpm lint`
+  passes with 0 errors.
+  - Same "static ternary between two fixed values → conditional `className`"
+    rule applied throughout (e.g. `BackupCard`'s `focused`-driven width/height/
+    border/background, the dim-overlay's opacity/pointer-events/cursor triad).
+    One refinement discovered this pass: a **CSS `rotate()`/grid-template-rows
+    two-value ternary is also "two fixed values"**, not just color/border
+    ternaries — `ServerInfoPanel.tsx`'s collapse-chevron `rotate(180deg)`/
+    `rotate(0deg)` converted cleanly to Tailwind's native `rotate-180`/
+    `rotate-0` utilities (the original plan for this file assumed these had to
+    stay inline; they didn't).
+  - **Multi-property/multi-easing `transition` strings don't fit one Tailwind
+    utility** and were kept inline as a distinct, deliberate exception
+    category (not "computed", just not expressible in one class): `BackupCard`
+    mixes a 260ms custom-bezier (width/min-height) with a 200ms ease
+    (padding/border-color/background) in one declaration; `SolarSystem.tsx`'s
+    shared `FOCUS_TRANSITION` constant (imported from `focusLayout.ts`) mixes
+    left/top at 380ms bezier with opacity at 250ms ease. Where a transition
+    targets only *one* property at *one* duration/easing (e.g. the scaled-
+    sphere's `transform 350ms cubic-bezier(...)`), it converts cleanly to
+    `transition-transform duration-[350ms] ease-[cubic-bezier(...)]` — Tailwind
+    arbitrary values pass the raw CSS timing-function through unchanged,
+    including the literal `ease` keyword (`ease-[ease]`), which is **not**
+    the same curve as Tailwind's own `ease-in-out` alias.
+  - `SolarSystem.tsx` had more static wins than the original per-file plan
+    assumed: `focusLayout.ts` was checked directly, confirming `FOCUS.left`/
+    `FOCUS.top` are compile-time constants — so `SunNode`'s position ternary
+    (`isFocused ? FOCUS.left : '50%'`) is between two *fixed* values (unlike
+    `WorldNode`'s analogous ternary, which mixes that same constant with a
+    genuinely per-world computed `${cfg.x}%`, and correctly stays inline).
+    `SunNode`'s wrapper reduced to a single inline `style` holding only the
+    shared `FOCUS_TRANSITION` constant.
+  - `#f87171` confirmed to equal the `--danger` token exactly
+    (`rgb(248 113 113)` in `style.css`'s `@theme inline` block) — converted
+    every occurrence to `text-danger`/`border-danger`/`bg-[color-mix(in_srgb,var(--danger)_·%,transparent)]`
+    instead of the literal hex, so these follow the theme (unlike the
+    already-`red-400`-converted quick-commands case, `--danger` isn't
+    Tailwind's stock `red-400` value, so the token, not a stock color name,
+    is the correct target here). `#22c55e` (Tailwind's exact `green-500`)
+    converted to the named class per the established quick-commands
+    precedent.
+  - Verified: `pnpm typecheck` (0 errors), `pnpm lint` (0 errors — one
+    genuine bug caught and fixed by the lint gate itself: converting
+    `SolarSystem.tsx`'s opacity ternaries to `opacity-35`/`opacity-100`
+    classes left the `FOCUS_FADED_OPACITY` import unused, which
+    `@typescript-eslint/no-unused-vars` flagged as an error and was removed),
+    `pnpm test` (131/131, unchanged), `pnpm build` (entry chunk 490.77 KB →
+    479.3 KB gzip — a net *decrease*, consistent with removing inline style
+    objects rather than adding code), `pnpm check-bundle` (479.3 KB, well
+    under the 550 KB budget).
+  - Not independently verified: live rendering of the tile itself. Same
+    environment limitation noted for every prior tile pass — `useBackups`/
+    `useBackupWorlds` call the Wails bridge on mount, and this sandbox has no
+    configured Minecraft server, so the sidebar's tile-activation guard
+    no-ops for server-scoped tiles before the component even mounts (couldn't
+    get as far as the mods/worlds passes, which at least reached
+    Wails-bridge-crash on mount). The app shell and every already-mounted
+    tile (Console, Stats, Commands, Players) rendered correctly throughout
+    with no new console errors beyond the pre-existing `quick-commands`
+    `window.go`-unavailable one. A full visual pass needs `wails dev` with a
+    configured server, same as backups/worlds/performance previously.
+- ~317 `style={{}}` usages remain across the rest of the codebase (~31
+  files). Continue tile-by-tile — the remaining hotspots: scheduler (90),
+  config (80), the rest of `components/` (70), worlds (45), players (32).
+  These will need more deliberate scoping (likely per-tile, not batched) and,
+  for several, live `wails dev` + a configured server to fully verify beyond
+  what this sandbox's headless preview can reach.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/

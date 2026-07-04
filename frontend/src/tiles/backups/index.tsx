@@ -36,28 +36,17 @@ function ConfirmDialog({
 }: ConfirmState & { onCancel: () => void }) {
   return (
     <div
-      className="absolute inset-0 z-10 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className="absolute inset-0 z-10 flex items-center justify-center bg-black/55"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
     >
-      <div
-        className="mx-4 flex w-full max-w-xs flex-col gap-3 rounded-lg px-4 py-4"
-        style={{ background: 'var(--bg-surface)', border: '0.5px solid var(--border-subtle)' }}
-      >
-        <p className="font-mono text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          {message}
-        </p>
+      <div className="bg-surface border-border-subtle mx-4 flex w-full max-w-xs flex-col gap-3 rounded-lg border-[0.5px] px-4 py-4">
+        <p className="text-text-secondary font-mono text-xs leading-relaxed">{message}</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="rounded border px-3 py-1 font-mono text-xs transition-colors"
-            style={{
-              borderColor: 'var(--border-subtle)',
-              color: 'var(--text-muted)',
-              background: 'transparent',
-            }}
+            className="border-border-subtle text-text-muted rounded border bg-transparent px-3 py-1 font-mono text-xs transition-colors"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-hover)'
             }}
@@ -72,12 +61,7 @@ function ConfirmDialog({
               onConfirm()
               onCancel()
             }}
-            className="rounded border px-3 py-1 font-mono text-xs transition-colors"
-            style={{
-              borderColor: danger ? '#f87171' : 'var(--accent)',
-              color: danger ? '#f87171' : 'var(--accent)',
-              background: 'transparent',
-            }}
+            className={`rounded border bg-transparent px-3 py-1 font-mono text-xs transition-colors ${danger ? 'border-danger text-danger' : 'border-accent text-accent'}`}
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.background = danger
                 ? 'rgba(248,113,113,0.12)'
@@ -99,22 +83,14 @@ function ConfirmDialog({
 
 function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
   return (
-    <span
-      className="inline-flex items-center gap-0.5 rounded px-1.5 py-px font-mono text-xs"
-      style={{
-        background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-        color: 'var(--accent)',
-        border: '0.5px solid color-mix(in srgb, var(--accent) 30%, transparent)',
-      }}
-    >
+    <span className="text-accent inline-flex items-center gap-0.5 rounded border-[0.5px] border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-1.5 py-px font-mono text-xs">
       #{tag}
       <button
         onClick={(e) => {
           e.stopPropagation()
           onRemove()
         }}
-        className="ml-0.5 leading-none opacity-60 transition-opacity hover:opacity-100"
-        style={{ color: 'var(--accent)' }}
+        className="text-accent ml-0.5 leading-none opacity-60 transition-opacity hover:opacity-100"
       >
         ×
       </button>
@@ -188,10 +164,7 @@ function BackupRow({
   const displayLabel = backup.displayName || extractID(backup.filename)
 
   return (
-    <div
-      className="flex flex-col gap-1 px-3 py-2"
-      style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-    >
+    <div className="border-b-border-subtle flex flex-col gap-1 border-b-[0.5px] px-3 py-2">
       {/* Name + tags row */}
       <div className="flex flex-wrap items-center gap-1.5">
         {editingName ? (
@@ -207,8 +180,7 @@ function BackupRow({
               }
               if (e.key === 'Escape') setEditingName(false)
             }}
-            className="border-b bg-transparent font-mono text-xs outline-none"
-            style={{ color: 'var(--text-secondary)', borderColor: 'var(--accent)', minWidth: 80 }}
+            className="text-text-secondary border-accent min-w-[80px] border-b bg-transparent font-mono text-xs outline-none"
           />
         ) : (
           <button
@@ -216,8 +188,7 @@ function BackupRow({
               e.stopPropagation()
               startEditName()
             }}
-            className="text-left font-mono text-xs transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
+            className="text-text-secondary text-left font-mono text-xs transition-colors"
             title="Click to rename"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
@@ -249,8 +220,7 @@ function BackupRow({
               }
             }}
             placeholder="#tag"
-            className="w-16 border-b bg-transparent font-mono text-xs outline-none"
-            style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}
+            className="text-accent border-accent w-16 border-b bg-transparent font-mono text-xs outline-none"
           />
         ) : (
           <button
@@ -258,8 +228,7 @@ function BackupRow({
               e.stopPropagation()
               setAddingTag(true)
             }}
-            className="font-mono text-xs transition-colors"
-            style={{ color: 'var(--text-faint)' }}
+            className="text-text-faint font-mono text-xs transition-colors"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'
             }}
@@ -275,11 +244,9 @@ function BackupRow({
       {/* Meta + actions row */}
       <div className="flex items-center justify-between gap-2">
         {inProgress ? (
-          <span className="animate-pulse font-mono text-xs" style={{ color: 'var(--accent)' }}>
-            backing up…
-          </span>
+          <span className="text-accent animate-pulse font-mono text-xs">backing up…</span>
         ) : (
-          <span className="truncate font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
+          <span className="text-text-faint truncate font-mono text-xs">
             {backup.filename} · {fmtDate(backup.createdAt)} · {fmtBytes(backup.sizeBytes)}
           </span>
         )}
@@ -291,8 +258,7 @@ function BackupRow({
                 onRequestRestore(backup)
               }}
               disabled={serverRunning}
-              className="transition-colors disabled:cursor-not-allowed disabled:opacity-30"
-              style={{ color: 'var(--accent)' }}
+              className="text-accent transition-colors disabled:cursor-not-allowed disabled:opacity-30"
               title={serverRunning ? 'Stop the server before restoring' : 'Restore this backup'}
               onMouseEnter={(e) => {
                 if (!serverRunning) (e.currentTarget as HTMLButtonElement).style.opacity = '0.7'
@@ -308,8 +274,7 @@ function BackupRow({
                 e.stopPropagation()
                 onRequestDelete(backup)
               }}
-              className="transition-colors"
-              style={{ color: 'var(--text-faint)' }}
+              className="text-text-faint transition-colors"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = '#f87171'
               }}
@@ -466,10 +431,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
   return (
     <div className="relative flex h-full flex-col">
       {/* Header row */}
-      <div
-        className="flex shrink-0 items-center gap-2 px-3 py-2"
-        style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-      >
+      <div className="border-b-border-subtle flex shrink-0 items-center gap-2 border-b-[0.5px] px-3 py-2">
         <Segmented
           options={[
             { value: 'server', label: 'Server' },
@@ -483,7 +445,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
 
         {view === 'server' && (
           <>
-            <span className="flex-1 font-mono text-xs" style={{ color: 'var(--text-faint)' }}>
+            <span className="text-text-faint flex-1 font-mono text-xs">
               {filtered.length}
               {filtered.length !== serverBackups.length ? `/${serverBackups.length}` : ''} backup
               {serverBackups.length !== 1 ? 's' : ''}
@@ -491,8 +453,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
 
             <button
               onClick={openDir}
-              className="shrink-0 font-mono text-xs transition-colors"
-              style={{ color: 'var(--text-faint)' }}
+              className="text-text-faint shrink-0 font-mono text-xs transition-colors"
               title="Open backup folder"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
@@ -506,12 +467,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
 
             <button
               onClick={openScheduler}
-              className="shrink-0 rounded border px-2 py-0.5 font-mono text-xs transition-colors"
-              style={{
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-muted)',
-                background: 'transparent',
-              }}
+              className="border-border-subtle text-text-muted shrink-0 rounded border bg-transparent px-2 py-0.5 font-mono text-xs transition-colors"
               title="Set up scheduled backups in the Scheduler tile"
               onMouseEnter={(e) => {
                 const b = e.currentTarget as HTMLButtonElement
@@ -530,12 +486,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
             <button
               onClick={handleCreateClick}
               disabled={creating || stopping}
-              className="shrink-0 rounded border px-2 py-0.5 font-mono text-xs transition-colors disabled:opacity-40"
-              style={{
-                borderColor: 'var(--accent)',
-                color: 'var(--accent)',
-                background: 'transparent',
-              }}
+              className="border-accent text-accent shrink-0 rounded border bg-transparent px-2 py-0.5 font-mono text-xs transition-colors disabled:opacity-40"
               onMouseEnter={(e) => {
                 if (!creating && !stopping)
                   (e.currentTarget as HTMLButtonElement).style.background =
@@ -554,10 +505,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
       </div>
 
       {view === 'world' ? (
-        <div
-          className="flex flex-1 items-center justify-center px-6 text-center font-mono text-xs"
-          style={{ color: 'var(--text-faint)' }}
-        >
+        <div className="text-text-faint flex flex-1 items-center justify-center px-6 text-center font-mono text-xs">
           World-specific backups are managed in the Worlds tile. Dedicated management here is coming
           soon.
         </div>
@@ -565,25 +513,19 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
         <>
           {/* Progress bar */}
           {activeProcess?.status === 'running' && (
-            <div
-              className="w-full shrink-0"
-              style={{ height: 2, background: 'var(--border-subtle)' }}
-            >
+            <div className="bg-border-subtle h-0.5 w-full shrink-0">
               <div
-                className="h-full transition-all duration-300"
-                style={{ width: `${activeProcess.percent}%`, background: 'var(--accent)' }}
+                className="bg-accent h-full transition-all duration-300"
+                // eslint-disable-next-line no-restricted-syntax -- width is a computed percentage, not visible to Tailwind's static scanner
+                style={{ width: `${activeProcess.percent}%` }}
               />
             </div>
           )}
 
           {/* Search row */}
-          <div
-            className="shrink-0 px-3 py-2"
-            style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-          >
+          <div className="border-b-border-subtle shrink-0 border-b-[0.5px] px-3 py-2">
             <div
-              className="flex items-center gap-2 rounded px-2 py-1"
-              style={{ border: '0.5px solid var(--border-subtle)', background: 'var(--bg-base)' }}
+              className="border-border-subtle bg-canvas flex items-center gap-2 rounded border-[0.5px] px-2 py-1"
               onFocusCapture={(e) => {
                 ;(e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent)'
               }}
@@ -591,21 +533,17 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
                 ;(e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)'
               }}
             >
-              <span className="shrink-0 text-xs select-none" style={{ color: 'var(--text-faint)' }}>
-                ⌕
-              </span>
+              <span className="text-text-faint shrink-0 text-xs select-none">⌕</span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by #tag, date, or ID"
-                className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none"
-                style={{ color: 'var(--text-secondary)', caretColor: 'var(--accent)' }}
+                className="text-text-secondary caret-accent min-w-0 flex-1 bg-transparent font-mono text-xs outline-none"
               />
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  className="shrink-0 text-xs leading-none transition-colors"
-                  style={{ color: 'var(--text-faint)' }}
+                  className="text-text-faint shrink-0 text-xs leading-none transition-colors"
                   onMouseEnter={(e) => {
                     ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
                   }}
@@ -621,10 +559,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
 
           {/* Error banner */}
           {actionError && (
-            <div
-              className="shrink-0 px-3 py-1 font-mono text-xs"
-              style={{ color: '#f87171', borderBottom: '0.5px solid var(--border-subtle)' }}
-            >
+            <div className="text-danger border-b-border-subtle shrink-0 border-b-[0.5px] px-3 py-1 font-mono text-xs">
               {actionError}
             </div>
           )}
@@ -634,15 +569,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
             {/* Dim overlay — fades in behind planets and panel when a panel is focused.
                 Made clickable when active so clicking outside the HUD closes it. */}
             <div
-              className="absolute inset-0"
-              style={{
-                background: 'rgba(0,0,0,0.55)',
-                zIndex: 2,
-                opacity: anyFocus ? 1 : 0,
-                transition: 'opacity 300ms ease',
-                pointerEvents: anyFocus ? 'auto' : 'none',
-                cursor: anyFocus ? 'pointer' : 'default',
-              }}
+              className={`absolute inset-0 z-[2] bg-black/55 transition-opacity duration-300 ease-[ease] ${anyFocus ? 'pointer-events-auto cursor-pointer opacity-100' : 'pointer-events-none cursor-default opacity-0'}`}
               onClick={() => setFocus(null)}
             />
 
@@ -650,15 +577,7 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
                 Scales down from top-center when the list panel opens so the sky
                 tucks above the rising carousel. */}
             <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 3,
-                transformOrigin: 'top center',
-                transform: panelOpen ? 'scale(0.36)' : 'scale(1)',
-                transition: 'transform 220ms ease',
-                pointerEvents: 'none',
-              }}
+              className={`pointer-events-none absolute inset-0 z-[3] origin-top transition-transform duration-[220ms] ease-[ease] ${panelOpen ? 'scale-[0.36]' : 'scale-100'}`}
             >
               <SolarSystem
                 key={focusedFilename}
@@ -688,81 +607,41 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
                 onMouseLeave on the stage only fires when leaving the window entirely
                 because the stage fills almost the whole maximized tile. */}
             <div
-              className="absolute top-0 right-0 left-0 z-[9]"
-              style={{
-                bottom: '42%',
-                pointerEvents: panelOpen ? 'auto' : 'none',
-              }}
+              className={`absolute top-0 right-0 bottom-[42%] left-0 z-[9] ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
               onMouseMove={() => setPanelOpen(false)}
             />
 
             {/* Hover-zone hint — opens explorer only when cursor enters this strip */}
             <div
-              className="absolute right-0 bottom-0 left-0 flex items-center justify-center"
-              style={{
-                height: 56,
-                background: 'rgba(255,255,255,0.025)',
-                borderTop: '0.5px solid var(--border-subtle)',
-                zIndex: 5,
-                opacity: panelOpen || anyFocus ? 0 : 1,
-                transition: 'opacity 180ms ease',
-                cursor: 'pointer',
-                pointerEvents: !panelOpen && !anyFocus ? 'auto' : 'none',
-              }}
+              className={`border-t-border-subtle absolute right-0 bottom-0 left-0 z-[5] flex h-14 cursor-pointer items-center justify-center border-t-[0.5px] bg-white/[2.5%] transition-opacity duration-[180ms] ease-[ease] ${panelOpen || anyFocus ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'}`}
               onMouseEnter={() => setPanelOpen(true)}
             >
-              <div
-                style={{
-                  width: 32,
-                  height: 3,
-                  borderRadius: 2,
-                  background: 'var(--text-faint)',
-                  opacity: 0.4,
-                }}
-              />
+              <div className="bg-text-faint h-[3px] w-8 rounded-[2px] opacity-40" />
             </div>
 
             {/* Carousel zone — rides up when the list panel opens.
                 z-4 when browsing so cards render above planet previews.
                 z-1 when a planet is focused so the dim overlay covers it. */}
             <div
-              className="absolute right-0 left-0"
-              style={{
-                height: '36%',
-                bottom: panelOpen ? '42%' : '7%',
-                transition: 'bottom 220ms ease',
-                zIndex: anyFocus ? 1 : 4,
-              }}
+              className={`absolute right-0 left-0 h-[36%] transition-[bottom] duration-[220ms] ease-[ease] ${panelOpen ? 'bottom-[42%]' : 'bottom-[7%]'} ${anyFocus ? 'z-[1]' : 'z-[4]'}`}
             >
               {loading && (
-                <div
-                  className="flex h-full items-center justify-center font-mono text-xs"
-                  style={{ color: 'var(--text-faint)' }}
-                >
+                <div className="text-text-faint flex h-full items-center justify-center font-mono text-xs">
                   Loading…
                 </div>
               )}
               {!loading && listError && (
-                <div
-                  className="flex h-full items-center justify-center px-4 text-center font-mono text-xs"
-                  style={{ color: '#f87171' }}
-                >
+                <div className="text-danger flex h-full items-center justify-center px-4 text-center font-mono text-xs">
                   {listError}
                 </div>
               )}
               {!loading && !listError && serverBackups.length === 0 && (
-                <div
-                  className="flex h-full items-center justify-center font-mono text-xs"
-                  style={{ color: 'var(--text-faint)' }}
-                >
+                <div className="text-text-faint flex h-full items-center justify-center font-mono text-xs">
                   No full-server backups yet — click "Back up now" to create one
                 </div>
               )}
               {!loading && !listError && serverBackups.length > 0 && filtered.length === 0 && (
-                <div
-                  className="flex h-full items-center justify-center font-mono text-xs"
-                  style={{ color: 'var(--text-faint)' }}
-                >
+                <div className="text-text-faint flex h-full items-center justify-center font-mono text-xs">
                   No backups match "{search}"
                 </div>
               )}
@@ -786,32 +665,20 @@ function BackupsTileExpanded({ serverId }: { serverId: string }) {
             {/* List panel — overlays bottom of carousel, GPU-accelerated slide only */}
             <div
               ref={listPanelRef}
-              className="absolute right-0 bottom-0 left-0 overflow-y-auto"
-              style={{
-                height: '42%',
-                zIndex: 10,
-                transform: panelOpen ? 'translateY(0)' : 'translateY(100%)',
-                transition: 'transform 220ms ease',
-                borderTop: '0.5px solid var(--border-subtle)',
-                background: 'var(--bg-base)',
-              }}
+              className={`border-t-border-subtle bg-canvas absolute right-0 bottom-0 left-0 z-10 h-[42%] overflow-y-auto border-t-[0.5px] transition-transform duration-[220ms] ease-[ease] ${panelOpen ? 'translate-y-0' : 'translate-y-full'}`}
             >
               {filtered.map((b, idx) => (
                 <div
                   key={b.filename}
                   data-row-idx={idx}
-                  className="relative"
+                  className="relative cursor-default"
                   onClick={(e) => {
                     const t = e.target as Element
                     if (!t.closest('button') && !t.closest('input')) setFocusedIndex(idx)
                   }}
-                  style={{ cursor: 'default' }}
                 >
                   {idx === clampedFocused && (
-                    <div
-                      className="absolute top-0 bottom-0 left-0"
-                      style={{ width: 2, background: 'var(--accent)', zIndex: 1 }}
-                    />
+                    <div className="bg-accent absolute top-0 bottom-0 left-0 z-[1] w-0.5" />
                   )}
                   <BackupRow
                     backup={b}
