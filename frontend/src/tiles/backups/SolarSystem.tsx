@@ -60,12 +60,11 @@ interface WorldConfig {
   floatIdx: number // which float animation (0-2)
   floatDelay: number // seconds offset so worlds bob out of phase
   dimDots: DimDot[]
-  enterDelay: number
   spinDuration: number
 }
 
 function buildConfigs(worlds: WorldSystem[]): WorldConfig[] {
-  return worlds.map((world, idx) => {
+  return worlds.map((world) => {
     const h = djb2(world.name)
     const h2 = djb2(world.name + '_x')
 
@@ -89,7 +88,6 @@ function buildConfigs(worlds: WorldSystem[]): WorldConfig[] {
       floatIdx: h % 3,
       floatDelay: -((h >> 4) % 5),
       dimDots: buildDimDots(world, renderSize),
-      enterDelay: idx * 60,
       spinDuration: 14 + (h % 10),
     }
   })
@@ -101,16 +99,19 @@ function WorldNode({
   cfg,
   isFocused,
   isFaded,
-  risen,
   onClick,
 }: {
   cfg: WorldConfig
   isFocused: boolean
   isFaded: boolean
-  risen: boolean
   onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [entered, setEntered] = useState(false)
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   const scaleBase = cfg.displaySize / cfg.renderSize
   const scaleFocused = FOCUS.size / cfg.renderSize
@@ -129,11 +130,11 @@ function WorldNode({
     >
       {/* Entrance rise */}
       <div
-        className={risen ? 'translate-y-0 opacity-100' : 'translate-y-[28px] opacity-0'}
-        // eslint-disable-next-line no-restricted-syntax -- transition delay is computed per-world (cfg.enterDelay)
+        className={entered ? 'translate-y-0 opacity-100' : 'translate-y-[28px] opacity-0'}
+        // eslint-disable-next-line no-restricted-syntax -- transition mixes multiple property/duration/easing pairs, not expressible as one Tailwind utility
         style={{
-          transition: risen
-            ? `transform 420ms ${cfg.enterDelay}ms cubic-bezier(0.34,1.56,0.64,1), opacity 320ms ${cfg.enterDelay}ms ease`
+          transition: entered
+            ? 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), opacity 320ms ease'
             : 'none',
         }}
       >
@@ -192,15 +193,18 @@ function WorldNode({
 function SunNode({
   isFocused,
   isAnyFocused,
-  risen,
   onClick,
 }: {
   isFocused: boolean
   isAnyFocused: boolean
-  risen: boolean
   onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [entered, setEntered] = useState(false)
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
   const renderSize = Math.round(FOCUS.size * RENDER_SCALE)
   const scaleBase = SUN_SIZE / renderSize
   const scaleFocus = FOCUS.size / renderSize
@@ -218,10 +222,10 @@ function SunNode({
     >
       {/* Entrance rise */}
       <div
-        className={risen ? 'translate-y-0 opacity-100' : 'translate-y-[28px] opacity-0'}
+        className={entered ? 'translate-y-0 opacity-100' : 'translate-y-[28px] opacity-0'}
         // eslint-disable-next-line no-restricted-syntax -- transition mixes multiple property/duration/easing pairs, not expressible as one Tailwind utility
         style={{
-          transition: risen
+          transition: entered
             ? 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), opacity 320ms ease'
             : 'none',
         }}
@@ -258,23 +262,12 @@ export interface SolarSystemProps {
 export function SolarSystem({ worlds, focus, onWorldClick, onServerClick }: SolarSystemProps) {
   const configs = buildConfigs(worlds)
 
-  const [risen, setRisen] = useState(false)
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setRisen(true))
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
   const isServerFocused = focus?.kind === 'server'
   const isAnyFocused = focus !== null
 
   return (
     <div className="pointer-events-none absolute inset-0">
-      <SunNode
-        isFocused={isServerFocused}
-        isAnyFocused={isAnyFocused}
-        risen={risen}
-        onClick={onServerClick}
-      />
+      <SunNode isFocused={isServerFocused} isAnyFocused={isAnyFocused} onClick={onServerClick} />
       {configs.map((cfg) => {
         const isFocused = focus?.kind === 'world' && focus.world.name === cfg.world.name
         const isFaded = isAnyFocused && !isFocused
@@ -284,7 +277,6 @@ export function SolarSystem({ worlds, focus, onWorldClick, onServerClick }: Sola
             cfg={cfg}
             isFocused={isFocused}
             isFaded={isFaded}
-            risen={risen}
             onClick={() => onWorldClick(cfg.world)}
           />
         )
