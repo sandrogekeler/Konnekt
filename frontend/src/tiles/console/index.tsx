@@ -86,11 +86,9 @@ export function ConsoleTile({ serverId }: TileProps) {
       <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-1">
         <button
           onClick={() => setFilterOpen((v) => !v)}
-          className={`flex shrink-0 items-center gap-1 text-xs transition-colors ${
+          className={`flex shrink-0 items-center gap-1 font-mono text-xs transition-colors ${
             filterOpen ? 'text-text-secondary' : 'text-text-faint'
           }`}
-          // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
           }}
@@ -111,8 +109,6 @@ export function ConsoleTile({ serverId }: TileProps) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="search…"
               className="bg-hover border-border-subtle text-text-primary flex-1 rounded border-[0.5px] px-2 py-0.5 font-mono text-xs outline-none"
-              // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
               onFocus={(e) => {
                 ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)'
               }}
@@ -137,8 +133,6 @@ export function ConsoleTile({ serverId }: TileProps) {
         ref={scrollRef}
         onScroll={handleScroll}
         className="min-h-0 flex-1 overflow-y-auto px-3 py-2 font-mono text-xs leading-5 select-text"
-        // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
       >
         {filtered.length === 0 && lines.length > 0 ? (
           <div className="text-text-faint py-2 font-mono text-xs">No matching lines</div>
@@ -172,8 +166,6 @@ export function ConsoleTile({ serverId }: TileProps) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter command..."
           className="bg-hover border-border-subtle text-text-primary flex-1 rounded border-[0.5px] px-2 py-1 font-mono text-sm transition-colors outline-none"
-          // eslint-disable-next-line no-restricted-syntax -- no --font-mono theme token registered yet; see agent_docs/HEALTH_CHECKLIST.md
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
           onFocus={(e) => {
             ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)'
           }}

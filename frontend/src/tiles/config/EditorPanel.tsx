@@ -23,7 +23,7 @@ function langExtension(format: ConfigFile['format']): Extension[] {
 
 const appTheme = EditorView.theme({
   '&': { background: 'transparent', height: '100%' },
-  '.cm-scroller': { fontFamily: 'JetBrains Mono, monospace', fontSize: '12px', overflow: 'auto' },
+  '.cm-scroller': { fontFamily: 'var(--font-mono)', fontSize: '12px', overflow: 'auto' },
   '.cm-content': { padding: '8px 0' },
   '.cm-gutters': { background: 'transparent', border: 'none', color: 'var(--text-faint)' },
   '.cm-activeLineGutter': { background: 'transparent' },

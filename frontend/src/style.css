@@ -32,14 +32,37 @@
   --duration-fast: 150ms;
   --duration-panel: 280ms;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --font-sans:
+    'Ranade', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-title: 'Excon', var(--font-sans);
+  --font-mono:
+    ui-monospace, 'Cascadia Code', 'SF Mono', 'Segoe UI Mono', Consolas, 'Liberation Mono',
+    monospace;
 }
 
 @font-face {
   font-family: 'Satoshi';
   font-style: normal;
   font-weight: 900;
-  font-display: block;
+  font-display: swap;
   src: url('./assets/fonts/Satoshi-Black.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Excon';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/Excon-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Ranade';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/Ranade-Regular.woff2') format('woff2');
 }
 
 :root,
@@ -111,12 +134,7 @@ body {
   background-color: var(--bg-base);
   background-image: var(--bg-gradient-overlay);
   color: var(--text-primary);
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-sans);
   height: 100%;
 }
 
@@ -354,7 +372,7 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .splash-word {
-  font-family: 'Satoshi', 'Inter', sans-serif;
+  font-family: 'Satoshi', var(--font-sans);
   font-weight: 900;
   font-size: clamp(48px, 9vw, 112px);
   letter-spacing: -0.02em;
@@ -462,7 +480,7 @@ input[type='number']::-webkit-outer-spin-button {
   margin: 0.5em 0;
 }
 .mod-body code {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   background: var(--hover-surface);
   border-radius: 3px;

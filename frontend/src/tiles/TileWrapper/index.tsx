@@ -52,7 +52,7 @@ export function TileWrapper({
         >
           <div className="flex items-center gap-2">
             <span className="text-sm leading-none">{icon}</span>
-            <span className="text-text-secondary text-xs font-medium">{label}</span>
+            <span className="text-text-secondary font-title text-xs font-medium">{label}</span>
           </div>
           <div className="flex items-center gap-1">
             {maximizable && (

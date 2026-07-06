@@ -327,7 +327,14 @@ function App() {
           className="flex shrink-0 items-center justify-between px-3 py-3"
           style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
         >
-          <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--accent)' }}>
+          <span
+            className="text-sm tracking-tight"
+            style={{
+              color: 'var(--accent)',
+              fontFamily: "'Satoshi', var(--font-sans)",
+              fontWeight: 900,
+            }}
+          >
             Konnekt
           </span>
           <button
