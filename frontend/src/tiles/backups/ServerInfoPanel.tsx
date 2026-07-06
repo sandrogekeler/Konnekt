@@ -116,11 +116,12 @@ export function ServerInfoPanel({ backup, worlds, onClose }: ServerInfoPanelProp
 
         <div
           className="overflow-hidden"
-          // eslint-disable-next-line no-restricted-syntax -- grid-rows collapse-height animation driven by `worldsOpen`
+          // Max-height (not grid-template-rows: 0fr) collapse: some WebKit WebViews (Wails on Linux/macOS)
+          // leave a residual sliver visible when a `0fr` grid track collapses instead of reaching true 0.
+          // eslint-disable-next-line no-restricted-syntax -- dynamic collapse height driven by `worldsOpen`
           style={{
-            display: 'grid',
-            gridTemplateRows: worldsOpen ? '1fr' : '0fr',
-            transition: 'grid-template-rows 200ms ease',
+            maxHeight: worldsOpen ? '2000px' : '0px',
+            transition: 'max-height 200ms ease',
           }}
         >
           <div className="flex min-h-0 flex-col overflow-hidden">
@@ -184,11 +185,12 @@ function WorldRow({
 
       <div
         className="overflow-hidden"
-        // eslint-disable-next-line no-restricted-syntax -- grid-rows collapse-height animation driven by `expanded`
+        // Max-height (not grid-template-rows: 0fr) collapse: some WebKit WebViews (Wails on Linux/macOS)
+        // leave a residual sliver visible when a `0fr` grid track collapses instead of reaching true 0.
+        // eslint-disable-next-line no-restricted-syntax -- dynamic collapse height driven by `expanded`
         style={{
-          display: 'grid',
-          gridTemplateRows: expanded ? '1fr' : '0fr',
-          transition: 'grid-template-rows 200ms ease',
+          maxHeight: expanded ? '600px' : '0px',
+          transition: 'max-height 200ms ease',
         }}
       >
         <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden px-5 pt-2 pb-3">
