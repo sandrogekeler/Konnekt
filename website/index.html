@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Konnekt — A Minecraft server dashboard that feels like mission control</title>
+    <meta
+      name="description"
+      content="Konnekt is a modular, tile-based desktop dashboard for running your Minecraft server: live console, visual scheduler, world management, backups and more — all local-first."
+    />
+    <meta property="og:title" content="Konnekt" />
+    <meta
+      property="og:description"
+      content="A modular desktop dashboard for running your Minecraft server."
+    />
+    <meta property="og:image" content="./assets/img/tile-dashboard.png" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#05060a" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      document.documentElement.className = document.documentElement.className.replace(
+        'no-js',
+        ''
+      )
+    </script>
+  </head>
+  <body class="no-js">
+    <nav class="nav" id="nav">
+      <div class="nav-inner">
+        <a href="#top" class="wordmark">Konnekt</a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#scheduler">Scheduler</a></li>
+          <li><a href="#notify">Get notified</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a
+            class="btn btn-secondary btn-sm"
+            href="https://github.com/sandrogekeler/Konnekt"
+            target="_blank"
+            rel="noopener"
+            >View on GitHub</a
+          >
+          <a class="btn btn-primary btn-sm" href="#notify">Notify me</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="solar" aria-hidden="true">
+        <div class="solar-orbit solar-orbit-1"><div class="solar-planet"></div></div>
+        <div class="solar-orbit solar-orbit-2"><div class="solar-planet"></div></div>
+        <div class="solar-orbit solar-orbit-3"><div class="solar-planet"></div></div>
+        <div class="solar-sun"></div>
+      </div>
+      <div class="hero-inner">
+        <span class="hero-tag">## alpha — actively in development</span>
+        <h1>Run your server like <span class="accent">mission control.</span></h1>
+        <p>
+          Konnekt is a modular tile dashboard for your Minecraft server — live console,
+          visual scheduling, world management and backups, all in one local-first app.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#notify">Notify me at launch</a>
+          <a
+            class="btn btn-secondary"
+            href="https://github.com/sandrogekeler/Konnekt"
+            target="_blank"
+            rel="noopener"
+            >View on GitHub</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <section id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">&gt;_ features</span>
+          <h2>Every tool a server admin actually reaches for</h2>
+          <p>
+            Arrange, resize, and crate any tile. Konnekt adapts to how you work, not the
+            other way around.
+          </p>
+        </div>
+        <div class="grid">
+          <article class="tile-card reveal" style="--reveal-delay: 0ms">
+            <div class="tile-card-media">
+              <img
+                src="./assets/img/tile-dashboard.png"
+                alt="Konnekt tile dashboard with console, commands, players and performance tiles"
+                width="1715"
+                height="1123"
+                loading="lazy"
+              />
+            </div>
+            <div class="tile-card-body">
+              <h3>Tile dashboard</h3>
+              <p>
+                Drag, resize, and snap tiles into the layout that fits your server. Save
+                and restore presets whenever you need them.
+              </p>
+            </div>
+          </article>
+
+          <article class="tile-card reveal" style="--reveal-delay: 60ms">
+            <div class="tile-card-media">
+              <img
+                src="./assets/img/live-console.png"
+                alt="Live server console output in Konnekt"
+                width="1617"
+                height="1034"
+                loading="lazy"
+              />
+            </div>
+            <div class="tile-card-body">
+              <h3>Live console</h3>
+              <p>
+                Stream server logs in real time and send commands straight from the
+                dashboard — no separate terminal window required.
+              </p>
+            </div>
+          </article>
+
+          <article class="tile-card reveal" style="--reveal-delay: 120ms">
+            <div class="tile-card-media">
+              <img
+                src="./assets/img/world-management-1.png"
+                alt="World management view showing a solar-system layout of server worlds"
+                width="1618"
+                height="1036"
+                loading="lazy"
+              />
+            </div>
+            <div class="tile-card-body">
+              <h3>World management</h3>
+              <p>
+                See every world at a glance, jump between dimensions, and manage them
+                without digging through folders.
+              </p>
+            </div>
+          </article>
+
+          <article class="tile-card reveal" style="--reveal-delay: 180ms">
+            <div class="tile-card-media">
+              <img
+                src="./assets/img/backups.png"
+                alt="Backups tile with a carousel of server backups"
+                width="1619"
+                height="1034"
+                loading="lazy"
+              />
+            </div>
+            <div class="tile-card-body">
+              <h3>Backups</h3>
+              <p>
+                Manual and scheduled backups with a visual carousel — restore a world in
+                a couple of clicks.
+              </p>
+            </div>
+          </article>
+
+          <article class="tile-card reveal" style="--reveal-delay: 240ms">
+            <div class="tile-card-media">
+              <img
+                src="./assets/img/server-config.png"
+                alt="Server configuration editor for server.properties"
+                width="1614"
+                height="1036"
+                loading="lazy"
+              />
+            </div>
+            <div class="tile-card-body">
+              <h3>Config editor</h3>
+              <p>
+                Edit <code>server.properties</code> and other config files with a proper
+                form UI, or drop into raw text when you need to.
+              </p>
+            </div>
+          </article>
+
+          <article class="tile-card reveal" style="--reveal-delay: 300ms">
+            <div class="tile-card-media">
+              <img
+                src="./assets/img/mods-plugins.png"
+                alt="Mods and plugins browser and installer"
+                width="1436"
+                height="1038"
+                loading="lazy"
+              />
+            </div>
+            <div class="tile-card-body">
+              <h3>Mods &amp; plugins</h3>
+              <p>
+                Browse, install, and manage mods and plugins from Modrinth without
+                leaving the dashboard.
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="scheduler">
+      <div class="container">
+        <div class="spotlight">
+          <div class="spotlight-media reveal">
+            <img
+              src="./assets/img/visual-scheduler.png"
+              alt="Visual node-based scheduler graph in Konnekt"
+              width="1619"
+              height="1038"
+              loading="lazy"
+            />
+          </div>
+          <div class="spotlight-copy reveal" style="--reveal-delay: 80ms">
+            <span class="eyebrow">() scheduler</span>
+            <h2>Automate your server with a graph, not a config file</h2>
+            <p>
+              Wire up triggers, delays, conditions, and commands on a visual node
+              canvas. Restart on a cooldown, notify on completion, or chain
+              multi-step routines — no cron syntax required.
+            </p>
+            <ul class="spotlight-list">
+              <li>Trigger on schedule, cron, or server events</li>
+              <li>Branch on success/failure with onComplete / onFailed</li>
+              <li>Read live attributes and feed them into math and conditions</li>
+              <li>Run instantly, or save and let it work in the background</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta" id="notify">
+      <div class="container">
+        <div class="cta-panel reveal">
+          <span class="eyebrow">[!] notifications</span>
+          <h2>Be first to know when Konnekt ships</h2>
+          <p>Konnekt is in active alpha development. Leave your email and we'll let you know the moment it's ready.</p>
+          <form class="notify-form" id="notify-form" novalidate>
+            <label for="notify-email" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Email address</label>
+            <input
+              class="notify-input"
+              type="email"
+              id="notify-email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+            <button class="btn btn-primary" type="submit">Notify me</button>
+          </form>
+          <p class="notify-error" id="notify-error" role="alert"></p>
+          <p class="notify-success" id="notify-success" role="status">
+            <span>&#10003;</span> You're on the list — we'll be in touch.
+          </p>
+          <p class="notify-note">No spam. One email, when it's ready.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <span class="wordmark" style="font-size: 15px">Konnekt</span>
+          <span class="footer-tag">ALPHA</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/sandrogekeler/Konnekt" target="_blank" rel="noopener"
+            >GitHub</a
+          >
+          <a href="#features">Features</a>
+          <a href="#notify">Get notified</a>
+        </div>
+        <span class="footer-copy">&copy; 2026 Konnekt</span>
+      </div>
+    </footer>
+
+    <script src="./main.js"></script>
+  </body>
+</html>
