@@ -279,7 +279,13 @@ a {
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 .hero {
   position: relative;
-  padding: 168px 24px 260px;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 96px 24px;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
@@ -338,7 +344,7 @@ a {
 .solar {
   position: absolute;
   left: 50%;
-  bottom: 20px;
+  bottom: 46px;
   width: 0;
   height: 0;
   pointer-events: none;
@@ -354,31 +360,31 @@ a {
 }
 
 .solar-orbit-1 {
-  width: 360px;
-  height: 360px;
-  margin: -180px 0 0 -180px;
+  width: 104px;
+  height: 104px;
+  margin: -52px 0 0 -52px;
 }
 .solar-orbit-2 {
-  width: 720px;
-  height: 720px;
-  margin: -360px 0 0 -360px;
+  width: 160px;
+  height: 160px;
+  margin: -80px 0 0 -80px;
 }
 .solar-orbit-3 {
-  width: 980px;
-  height: 980px;
-  margin: -490px 0 0 -490px;
+  width: 210px;
+  height: 210px;
+  margin: -105px 0 0 -105px;
 }
 
 .solar-sun {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 64px;
-  height: 64px;
-  margin: -32px 0 0 -32px;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, var(--sun), rgb(var(--sun-rgb) / 0.35));
-  box-shadow: 0 0 60px 10px rgb(var(--sun-rgb) / 0.25);
+  box-shadow: 0 0 44px 8px rgb(var(--sun-rgb) / 0.25);
 }
 
 .solar-planet {
@@ -408,20 +414,20 @@ a {
   position: absolute;
   top: 0;
   left: 50%;
-  width: 16px;
-  height: 16px;
-  margin-left: -8px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, rgb(var(--accent-rgb) / 0.95), var(--accent));
-  box-shadow: 0 0 16px 2px rgb(var(--accent-rgb) / 0.35);
+  box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / 0.35);
 }
 
 .solar-orbit-3 .solar-planet::after {
   background: radial-gradient(circle at 35% 35%, #fff, var(--text-muted));
   box-shadow: none;
-  width: 10px;
-  height: 10px;
-  margin-left: -5px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
 }
 
 @keyframes solar-spin {
@@ -501,6 +507,455 @@ section {
 
 .tile-card:hover .tile-card-media img {
   transform: scale(1.04);
+}
+
+/* ── Feature-tile mini scenes — decorative, animate only on hover ────────
+   Shared base + per-scene styles. Glyph "text" throughout uses the fixed
+   box-drawing set ╦╔╣╚╟╖╬ instead of real words. */
+.tile-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  font-family:
+    ui-monospace, 'Cascadia Code', 'SF Mono', 'Segoe UI Mono', Consolas, monospace;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+/* 1. Tile dashboard — 4 tiles continuously rotating through 4 slots */
+.dash-tile {
+  position: absolute;
+  top: 8%;
+  left: 8%;
+  width: 38%;
+  height: 38%;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: dash-swap 12s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.tile-card:hover .dash-tile {
+  animation-play-state: running;
+}
+
+.dash-tile-bar {
+  display: block;
+  width: 40%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-hover);
+}
+
+.dash-tile-a .dash-tile-bar {
+  background: var(--accent);
+}
+.dash-tile-c .dash-tile-bar {
+  background: rgb(var(--accent-rgb) / 0.5);
+}
+
+.dash-tile-glyph {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.dash-tile-b {
+  animation-delay: -3s;
+}
+.dash-tile-c {
+  animation-delay: -6s;
+}
+.dash-tile-d {
+  animation-delay: -9s;
+}
+
+@keyframes dash-swap {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(118%, 0);
+  }
+  50% {
+    transform: translate(118%, 118%);
+  }
+  75% {
+    transform: translate(0, 118%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* 2. Live console — streaming lines, JS-appended on hover (see scenes.js) */
+.tile-scene--console {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.console-line {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-panel) var(--ease-standard),
+    transform var(--duration-panel) var(--ease-standard);
+}
+
+.console-line.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.console-line--accent {
+  color: var(--accent);
+}
+.console-line--danger {
+  color: var(--danger);
+}
+.console-line--muted {
+  color: var(--text-muted);
+}
+
+/* 3. World management — small orbit system + alternating popup labels */
+.tile-scene--world {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.world-sun {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--sun), rgb(var(--sun-rgb) / 0.35));
+  box-shadow: 0 0 18px 3px rgb(var(--sun-rgb) / 0.25);
+}
+
+.world-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 50%;
+}
+
+.world-orbit-1 {
+  width: 92px;
+  height: 92px;
+  margin: -46px 0 0 -46px;
+}
+.world-orbit-2 {
+  width: 148px;
+  height: 148px;
+  margin: -74px 0 0 -74px;
+}
+
+.world-planet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  margin: -50% 0 0 -50%;
+  animation: solar-spin 9s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.world-orbit-2 .world-planet {
+  animation-duration: 15s;
+  animation-direction: reverse;
+}
+
+.tile-card:hover .world-planet {
+  animation-play-state: running;
+}
+
+.world-planet::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgb(var(--accent-rgb) / 0.95), var(--accent));
+  box-shadow: 0 0 8px 1px rgb(var(--accent-rgb) / 0.4);
+}
+
+.world-orbit-2 .world-planet::after {
+  background: radial-gradient(circle at 35% 35%, #fff, var(--text-muted));
+  box-shadow: none;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+}
+
+.world-popup {
+  position: absolute;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--accent);
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--border-hover);
+  border-radius: 5px;
+  padding: 2px 6px;
+  opacity: 0;
+  animation-duration: 8s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-play-state: paused;
+}
+
+.tile-card:hover .world-popup {
+  animation-play-state: running;
+}
+
+.world-popup-a {
+  top: 20%;
+  left: 10%;
+  animation-name: world-popup-a;
+}
+
+.world-popup-b {
+  bottom: 16%;
+  right: 8%;
+  animation-name: world-popup-b;
+}
+
+@keyframes world-popup-a {
+  0%,
+  4% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  10%,
+  38% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  46%,
+  100% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@keyframes world-popup-b {
+  0%,
+  50% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  56%,
+  88% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+/* 4. Backups — endless drifting row of backup chips, decelerate easing */
+.tile-scene--backups {
+  overflow: hidden;
+}
+
+.backup-chip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+  animation: backup-drift 12s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.tile-card:hover .backup-chip {
+  animation-play-state: running;
+}
+
+.backup-chip .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgb(var(--accent-rgb) / 0.6);
+  flex-shrink: 0;
+}
+
+@keyframes backup-drift {
+  0% {
+    transform: translate(-260%, -50%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(160%, -50%);
+    opacity: 0;
+  }
+}
+
+/* 5. Config editor — slow auto-scroll + randomly-flipping toggles/values */
+.tile-scene--config {
+  overflow: hidden;
+  padding: 10px 12px;
+}
+
+.config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: config-scroll 16s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.tile-card:hover .config-list {
+  animation-play-state: running;
+}
+
+@keyframes config-scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  letter-spacing: 1px;
+}
+
+.config-toggle {
+  position: relative;
+  width: 18px;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--hover-surface);
+  border: 0.5px solid var(--border-subtle);
+  flex-shrink: 0;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.config-toggle::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition:
+    transform var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+
+.config-toggle.on {
+  background: rgb(var(--accent-rgb) / 0.15);
+  border-color: var(--accent);
+}
+
+.config-toggle.on::after {
+  transform: translateX(8px);
+  background: var(--accent);
+}
+
+.config-value {
+  color: var(--text-muted);
+}
+
+/* 6. Mods & plugins — stacked tiles, one randomly cycles out/in via JS */
+.tile-scene--mods {
+  padding: 6% 8%;
+}
+
+.mods-tile {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 17%;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  background: var(--bg-surface);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 6px;
+  box-sizing: border-box;
+  transition:
+    transform var(--duration-panel) var(--ease-standard),
+    opacity var(--duration-panel) var(--ease-standard);
+}
+
+.mods-tile[data-slot='0'] {
+  top: 6%;
+}
+.mods-tile[data-slot='1'] {
+  top: 30%;
+}
+.mods-tile[data-slot='2'] {
+  top: 54%;
+}
+.mods-tile[data-slot='3'] {
+  top: 78%;
+}
+
+.mods-tile--exit {
+  transform: translateX(140%);
+  opacity: 0;
+}
+
+.mods-tile--enter-from {
+  transform: translateX(-140%);
+  opacity: 0;
+  transition: none;
 }
 
 .tile-card-body {
@@ -737,7 +1192,7 @@ footer {
 
 @media (max-width: 560px) {
   .hero {
-    padding: 140px 20px 72px;
+    padding: 120px 20px;
   }
 
   .notify-form {
@@ -775,5 +1230,19 @@ footer {
   .tile-card:hover,
   .tile-card:hover .tile-card-media img {
     transform: none !important;
+  }
+
+  /* Feature-tile scenes stay fully static, even on hover. */
+  .dash-tile,
+  .world-planet,
+  .world-popup,
+  .backup-chip,
+  .config-list {
+    animation: none !important;
+  }
+
+  .console-line,
+  .mods-tile {
+    transition: none !important;
   }
 }
