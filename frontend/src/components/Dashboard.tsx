@@ -19,13 +19,7 @@ function findBestPosition(
   const valid = occupied.filter((l) => isFinite(l.y))
   for (let y = 0; y < 500; y++) {
     for (let x = 0; x <= cols - w; x++) {
-      const fits = !valid.some(
-        (l) =>
-          x     < l.x + l.w &&
-          x + w > l.x       &&
-          y     < l.y + l.h &&
-          y + h > l.y,
-      )
+      const fits = !valid.some((l) => x < l.x + l.w && x + w > l.x && y < l.y + l.h && y + h > l.y)
       if (fits) return { x, y }
     }
   }
@@ -38,12 +32,17 @@ function findBestPosition(
 // collision check, so we guard the final placement here.
 function resolveDropCell(
   occupied: readonly LayoutItem[],
-  desiredX: number, desiredY: number,
-  w: number, h: number, cols: number,
+  desiredX: number,
+  desiredY: number,
+  w: number,
+  h: number,
+  cols: number,
 ): { x: number; y: number } {
   const valid = occupied.filter((l) => isFinite(l.y))
   const fits = (x: number, y: number) =>
-    x >= 0 && x <= cols - w && y >= 0 &&
+    x >= 0 &&
+    x <= cols - w &&
+    y >= 0 &&
     !valid.some((l) => x < l.x + l.w && x + w > l.x && y < l.y + l.h && y + h > l.y)
   if (fits(desiredX, desiredY)) return { x: desiredX, y: desiredY }
   for (let r = 1; r < 100; r++) {
@@ -67,8 +66,8 @@ function flipTransform(rect: DOMRect, containerRect: DOMRect, padding: number) {
   const fullH = containerRect.height - padding * 2
   const sx = rect.width / fullW
   const sy = rect.height / fullH
-  const tx = (rect.left + rect.width / 2) - (containerRect.left + containerRect.width / 2)
-  const ty = (rect.top + rect.height / 2) - (containerRect.top + containerRect.height / 2)
+  const tx = rect.left + rect.width / 2 - (containerRect.left + containerRect.width / 2)
+  const ty = rect.top + rect.height / 2 - (containerRect.top + containerRect.height / 2)
   return `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`
 }
 
@@ -76,10 +75,8 @@ export function Dashboard() {
   const { activeTileIds, loadTiles, removeTile } = useTileStore()
   const { currentLayout, updateLayout, loadPresets } = useLayoutStore()
   const { activeId: serverId } = useServerConfigStore()
-  const {
-    maximizeRequest, clearMaximizeRequest,
-    closeRequest, draggingTileId, flashTileId,
-  } = useUiStore()
+  const { maximizeRequest, clearMaximizeRequest, closeRequest, draggingTileId, flashTileId } =
+    useUiStore()
 
   // containerRef: the positioned root used to anchor the absolute overlay
   const containerRef = useRef<HTMLDivElement>(null)
@@ -117,10 +114,13 @@ export function Dashboard() {
     setClosing(true)
   }, [])
 
-  const toggleMaximize = useCallback((id: string) => {
-    if (maximizedId) closeMaximize()
-    else openMaximize(id)
-  }, [maximizedId, openMaximize, closeMaximize])
+  const toggleMaximize = useCallback(
+    (id: string) => {
+      if (maximizedId) closeMaximize()
+      else openMaximize(id)
+    },
+    [maximizedId, openMaximize, closeMaximize],
+  )
 
   // Consume maximize requests raised by the navbar
   useEffect(() => {
@@ -249,7 +249,9 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!maximizedId) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeMaximize() }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMaximize()
+    }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [maximizedId, closeMaximize])
@@ -286,7 +288,8 @@ export function Dashboard() {
         const { x, y } = findBestPosition(placed, tile.defaultW, tile.defaultH, COLS)
         const item: LayoutItem = {
           i: tile.id,
-          x, y,
+          x,
+          y,
           w: tile.defaultW,
           h: tile.defaultH,
           minW: tile.minW,
@@ -310,9 +313,10 @@ export function Dashboard() {
   )
 
   // Tile being dragged from the navbar, if it isn't already on canvas
-  const draggingTile = draggingTileId && !activeTileIds.includes(draggingTileId)
-    ? TILE_REGISTRY.find((t) => t.id === draggingTileId)
-    : undefined
+  const draggingTile =
+    draggingTileId && !activeTileIds.includes(draggingTileId)
+      ? TILE_REGISTRY.find((t) => t.id === draggingTileId)
+      : undefined
 
   const colStep = colWidth + MARGIN
   const rowStep = ROW_HEIGHT + MARGIN
@@ -326,25 +330,37 @@ export function Dashboard() {
   // Map a viewport point to the grid cell the tile would land on (its top-left),
   // collision-resolved so it never lands on an existing tile. Returns null when
   // the pointer is outside the canvas.
-  const pointerToCell = useCallback((clientX: number, clientY: number, tile: { defaultW: number; defaultH: number }) => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const rect = canvas.getBoundingClientRect()
-    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null
-    const { colWidth: cw, mergedLayout: ml } = geomRef.current
-    const cStep = cw + MARGIN
-    const rStep = ROW_HEIGHT + MARGIN
-    const itemPxW = cStep * tile.defaultW - MARGIN
-    const itemPxH = rStep * tile.defaultH - MARGIN
-    // Cursor in scroll-content space, tile centered on it
-    const curX = clientX - rect.left
-    const curY = clientY - rect.top + canvas.scrollTop
-    const pxX = Math.max(0, curX - itemPxW / 2)
-    const pxY = Math.max(0, curY - itemPxH / 2)
-    const gx = Math.max(0, Math.min(Math.round((pxX - CONTAINER_PADDING) / cStep), COLS - tile.defaultW))
-    const gy = Math.max(0, Math.round((pxY - CONTAINER_PADDING) / rStep))
-    return resolveDropCell(ml, gx, gy, tile.defaultW, tile.defaultH, COLS)
-  }, [])
+  const pointerToCell = useCallback(
+    (clientX: number, clientY: number, tile: { defaultW: number; defaultH: number }) => {
+      const canvas = canvasRef.current
+      if (!canvas) return null
+      const rect = canvas.getBoundingClientRect()
+      if (
+        clientX < rect.left ||
+        clientX > rect.right ||
+        clientY < rect.top ||
+        clientY > rect.bottom
+      )
+        return null
+      const { colWidth: cw, mergedLayout: ml } = geomRef.current
+      const cStep = cw + MARGIN
+      const rStep = ROW_HEIGHT + MARGIN
+      const itemPxW = cStep * tile.defaultW - MARGIN
+      const itemPxH = rStep * tile.defaultH - MARGIN
+      // Cursor in scroll-content space, tile centered on it
+      const curX = clientX - rect.left
+      const curY = clientY - rect.top + canvas.scrollTop
+      const pxX = Math.max(0, curX - itemPxW / 2)
+      const pxY = Math.max(0, curY - itemPxH / 2)
+      const gx = Math.max(
+        0,
+        Math.min(Math.round((pxX - CONTAINER_PADDING) / cStep), COLS - tile.defaultW),
+      )
+      const gy = Math.max(0, Math.round((pxY - CONTAINER_PADDING) / rStep))
+      return resolveDropCell(ml, gx, gy, tile.defaultW, tile.defaultH, COLS)
+    },
+    [],
+  )
 
   // Mounted once: track the pointer while dragging and perform the drop on
   // release. Reads live state via getState() to stay closure-stable.
@@ -364,7 +380,13 @@ export function Dashboard() {
       const cell = pointerToCell(e.clientX, e.clientY, tile)
       if (!cell) return // released outside the canvas → cancel
       const cl = useLayoutStore.getState().currentLayout
-      const persisted: LayoutItem = { i: id, x: cell.x, y: cell.y, w: tile.defaultW, h: tile.defaultH }
+      const persisted: LayoutItem = {
+        i: id,
+        x: cell.x,
+        y: cell.y,
+        w: tile.defaultW,
+        h: tile.defaultH,
+      }
       useLayoutStore.getState().updateLayout([...cl.filter((l) => l.i !== id), persisted])
       useTileStore.getState().addTile(id)
     }
@@ -377,43 +399,48 @@ export function Dashboard() {
   }, [pointerToCell])
 
   // Drop target cell + on-screen rectangles for the placeholder and wireframe.
-  const dropCell = dragPointer && draggingTile ? pointerToCell(dragPointer.x, dragPointer.y, draggingTile) : null
-  const dragVisual = dragPointer && draggingTile ? (() => {
-    const itemPxW = colStep * draggingTile.defaultW - MARGIN
-    const itemPxH = rowStep * draggingTile.defaultH - MARGIN
-    // Wireframe: free-floating, centered on the cursor (viewport-fixed coords)
-    const wireframe = {
-      left: dragPointer.x - itemPxW / 2,
-      top: dragPointer.y - itemPxH / 2,
-      width: itemPxW,
-      height: itemPxH,
-    }
-    // Placeholder: snapped to the grid cell, inside the scrollable canvas
-    const placeholder = dropCell ? (() => {
-      const scrollTop = canvasRef.current?.scrollTop ?? 0
-      return {
-        left: colStep * dropCell.x + CONTAINER_PADDING,
-        top: rowStep * dropCell.y + CONTAINER_PADDING - scrollTop,
-        width: itemPxW,
-        height: itemPxH,
-      }
-    })() : null
-    return { wireframe, placeholder }
-  })() : null
+  const dropCell =
+    dragPointer && draggingTile ? pointerToCell(dragPointer.x, dragPointer.y, draggingTile) : null
+  const dragVisual =
+    dragPointer && draggingTile
+      ? (() => {
+          const itemPxW = colStep * draggingTile.defaultW - MARGIN
+          const itemPxH = rowStep * draggingTile.defaultH - MARGIN
+          // Wireframe: free-floating, centered on the cursor (viewport-fixed coords)
+          const wireframe = {
+            left: dragPointer.x - itemPxW / 2,
+            top: dragPointer.y - itemPxH / 2,
+            width: itemPxW,
+            height: itemPxH,
+          }
+          // Placeholder: snapped to the grid cell, inside the scrollable canvas
+          const placeholder = dropCell
+            ? (() => {
+                const scrollTop = canvasRef.current?.scrollTop ?? 0
+                return {
+                  left: colStep * dropCell.x + CONTAINER_PADDING,
+                  top: rowStep * dropCell.y + CONTAINER_PADDING - scrollTop,
+                  width: itemPxW,
+                  height: itemPxH,
+                }
+              })()
+            : null
+          return { wireframe, placeholder }
+        })()
+      : null
 
   return (
     // containerRef is the positioned root for the absolute overlay — it covers
     // only the canvas area, so the navbar stays visible during fullscreen.
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden">
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden">
       <div
         ref={canvasRef}
-        className="w-full h-full overflow-y-auto"
+        className="bg-canvas h-full w-full overflow-y-auto bg-local"
+        // eslint-disable-next-line no-restricted-syntax -- background-size/position track the live grid col/row step (canvasWidth-dependent), not static
         style={{
-          backgroundColor: 'var(--bg-base)',
           backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)',
           backgroundSize: `${colStep}px ${rowStep}px`,
           backgroundPosition: `${CONTAINER_PADDING}px ${CONTAINER_PADDING}px`,
-          backgroundAttachment: 'local',
         }}
       >
         <ReactGridLayout
@@ -455,68 +482,57 @@ export function Dashboard() {
           Absolute inside containerRef (subtracts scrollTop for the visible spot). */}
       {dragVisual?.placeholder && (
         <div
-          style={{
-            position: 'absolute',
-            pointerEvents: 'none',
-            zIndex: 10,
-            borderRadius: 10,
-            background: 'rgba(255,255,255,0.06)',
-            border: '0.5px solid var(--border-subtle)',
-            ...dragVisual.placeholder,
-          }}
+          className="border-border-subtle pointer-events-none absolute z-10 rounded-[10px] border-[0.5px] bg-[rgba(255,255,255,0.06)]"
+          // eslint-disable-next-line no-restricted-syntax -- react-grid-layout drag placeholder position (top/left/width/height), computed per drag frame
+          style={{ ...dragVisual.placeholder }}
         />
       )}
 
       {/* Wireframe — follows the cursor freely, like the tile being moved. */}
       {dragVisual && (
         <div
-          style={{
-            position: 'fixed',
-            pointerEvents: 'none',
-            zIndex: 60,
-            borderRadius: 10,
-            border: '2px solid var(--accent)',
-            background: 'rgb(var(--accent-rgb) / 0.06)',
-            ...dragVisual.wireframe,
-          }}
+          className="border-accent bg-accent/6 pointer-events-none fixed z-[60] rounded-[10px] border-2"
+          // eslint-disable-next-line no-restricted-syntax -- react-grid-layout drag wireframe position (top/left/width/height), computed per drag frame
+          style={{ ...dragVisual.wireframe }}
         />
       )}
 
-      {maximizedId && (() => {
-        const tile = TILE_REGISTRY.find((t) => t.id === maximizedId)
-        if (!tile) return null
-        const TileComponent = tile.component
-        return (
-          <Fragment>
-            {/* Backdrop — animated separately from panel so only the bg fades */}
-            <div
-              ref={backdropRef}
-              className="absolute inset-0 z-50"
-              onClick={!closing ? closeMaximize : undefined}
-            />
-            {/* Panel — pointer-events-none on container so backdrop receives clicks */}
-            <div className="absolute inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
+      {maximizedId &&
+        (() => {
+          const tile = TILE_REGISTRY.find((t) => t.id === maximizedId)
+          if (!tile) return null
+          const TileComponent = tile.component
+          return (
+            <Fragment>
+              {/* Backdrop — animated separately from panel so only the bg fades */}
               <div
-                ref={panelRef}
-                className="w-full h-full pointer-events-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <TileWrapper
-                  id={tile.id}
-                  label={tile.label}
-                  icon={tile.icon}
-                  onRemove={removeTile}
-                  maximizable
-                  maximized
-                  onToggleMaximize={toggleMaximize}
+                ref={backdropRef}
+                className="absolute inset-0 z-50"
+                onClick={!closing ? closeMaximize : undefined}
+              />
+              {/* Panel — pointer-events-none on container so backdrop receives clicks */}
+              <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center p-6">
+                <div
+                  ref={panelRef}
+                  className="pointer-events-auto h-full w-full"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <TileComponent serverId={serverId} maximized />
-                </TileWrapper>
+                  <TileWrapper
+                    id={tile.id}
+                    label={tile.label}
+                    icon={tile.icon}
+                    onRemove={removeTile}
+                    maximizable
+                    maximized
+                    onToggleMaximize={toggleMaximize}
+                  >
+                    <TileComponent serverId={serverId} maximized />
+                  </TileWrapper>
+                </div>
               </div>
-            </div>
-          </Fragment>
-        )
-      })()}
+            </Fragment>
+          )
+        })()}
     </div>
   )
 }

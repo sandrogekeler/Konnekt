@@ -62,39 +62,16 @@ export function SettingsModal({ open, onClose }: Props) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.65)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.65)]"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
     >
-      <div
-        className="flex overflow-hidden rounded-xl"
-        style={{
-          width: 640,
-          height: 480,
-          background: 'var(--bg-base)',
-          border: '0.5px solid var(--border-subtle)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-        }}
-      >
+      <div className="bg-canvas border-border-subtle flex h-[480px] w-[640px] overflow-hidden rounded-xl border-[0.5px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
         {/* Left nav */}
-        <div
-          className="flex shrink-0 flex-col gap-0.5 p-3"
-          style={{
-            width: 160,
-            borderRight: '0.5px solid var(--border-subtle)',
-            background: 'var(--bg-surface)',
-          }}
-        >
-          <div
-            className="px-2 pt-1 pb-3"
-            style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-          >
-            <span
-              className="font-title text-xs font-semibold tracking-wider uppercase"
-              style={{ color: 'var(--text-muted)' }}
-            >
+        <div className="bg-surface border-border-subtle flex w-40 shrink-0 flex-col gap-0.5 border-r-[0.5px] p-3">
+          <div className="border-border-subtle border-b-[0.5px] px-2 pt-1 pb-3">
+            <span className="font-title text-text-muted text-xs font-semibold tracking-wider uppercase">
               Settings
             </span>
           </div>
@@ -103,11 +80,11 @@ export function SettingsModal({ open, onClose }: Props) {
               <button
                 key={item.id}
                 onClick={() => setSection(item.id)}
-                className="rounded-lg px-2 py-1.5 text-left text-sm transition-colors"
-                style={{
-                  color: section === item.id ? 'var(--accent)' : 'var(--text-secondary)',
-                  background: section === item.id ? 'rgb(var(--accent-rgb) / 0.1)' : 'transparent',
-                }}
+                className={`rounded-lg px-2 py-1.5 text-left text-sm transition-colors ${
+                  section === item.id
+                    ? 'text-accent bg-accent/10'
+                    : 'text-text-secondary bg-transparent'
+                }`}
               >
                 {item.label}
               </button>
@@ -118,17 +95,13 @@ export function SettingsModal({ open, onClose }: Props) {
         {/* Right content */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Header */}
-          <div
-            className="flex shrink-0 items-center justify-between px-5 py-3"
-            style={{ borderBottom: '0.5px solid var(--border-subtle)' }}
-          >
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <div className="border-border-subtle flex shrink-0 items-center justify-between border-b-[0.5px] px-5 py-3">
+            <span className="text-text-primary text-sm font-semibold">
               {NAV.find((n) => n.id === section)?.label}
             </span>
             <button
               onClick={onClose}
-              className="flex h-6 w-6 items-center justify-center rounded text-sm transition-colors"
-              style={{ color: 'var(--text-muted)' }}
+              className="text-text-muted flex h-6 w-6 items-center justify-center rounded text-sm transition-colors"
             >
               ×
             </button>
@@ -174,20 +147,17 @@ function ColorField({
         />
       ))}
       <label
-        className="relative h-7 w-7 shrink-0 cursor-pointer overflow-hidden rounded-full transition-transform hover:scale-110"
+        className="border-border-hover relative h-7 w-7 shrink-0 cursor-pointer overflow-hidden rounded-full border-[1.5px] border-dashed transition-transform hover:scale-110"
+        // eslint-disable-next-line no-restricted-syntax -- value is an arbitrary runtime hex color, not a static token
         style={{
           background: isPreset ? 'var(--hover-surface)' : value,
-          border: '1.5px dashed var(--border-hover)',
           outline: !isPreset ? `2.5px solid ${value}` : '2.5px solid transparent',
           outlineOffset: 2,
         }}
         title="Custom color"
       >
         {isPreset && (
-          <span
-            className="absolute inset-0 flex items-center justify-center text-[10px]"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="text-text-muted absolute inset-0 flex items-center justify-center text-[10px]">
             +
           </span>
         )}
@@ -214,21 +184,18 @@ function SkinCard({
   return (
     <button
       onClick={onClick}
-      className="flex shrink-0 flex-col gap-1.5 rounded-lg p-2 transition-colors"
-      style={{
-        width: 84,
-        border: selected ? '1.5px solid var(--accent)' : '1.5px solid var(--border-subtle)',
-        background: selected ? 'rgb(var(--accent-rgb) / 0.08)' : 'var(--hover-surface)',
-      }}
+      className={`flex w-21 shrink-0 flex-col gap-1.5 rounded-lg border-[1.5px] p-2 transition-colors ${
+        selected ? 'border-accent bg-accent/8' : 'border-border-subtle bg-hover'
+      }`}
     >
-      <div className="flex gap-0.5 overflow-hidden rounded-sm" style={{ height: 18 }}>
+      <div className="flex h-[18px] gap-0.5 overflow-hidden rounded-sm">
         {skin.previewColors.map((color, i) => (
+          // eslint-disable-next-line no-restricted-syntax -- color is a runtime hex from skin.previewColors, not a static token
           <div key={i} className="flex-1" style={{ background: color }} />
         ))}
       </div>
       <span
-        className="text-left text-[11px] leading-tight"
-        style={{ color: selected ? 'var(--accent)' : 'var(--text-secondary)' }}
+        className={`text-left text-[11px] leading-tight ${selected ? 'text-accent' : 'text-text-secondary'}`}
       >
         {skin.name}
       </span>
@@ -242,13 +209,9 @@ function AppearancePane({ settings, update }: { settings: AppSettings; update: U
   return (
     <div>
       {/* Skin gallery */}
-      <div className="py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
-        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-          Skin
-        </span>
-        <p className="mt-0.5 mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-          Built-in surface and border palette.
-        </p>
+      <div className="border-border-subtle border-b-[0.5px] py-3">
+        <span className="text-text-primary text-sm">Skin</span>
+        <p className="text-text-muted mt-0.5 mb-3 text-xs">Built-in surface and border palette.</p>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {BUILTIN_SKINS.map((skin) => (
             <SkinCard
@@ -271,23 +234,18 @@ function AppearancePane({ settings, update }: { settings: AppSettings; update: U
       </SettingRow>
 
       {/* Accent color */}
-      <div className="py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
+      <div className="border-border-subtle border-b-[0.5px] py-3">
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
-            <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-              Accent color
-            </span>
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-text-primary text-sm">Accent color</span>
+            <p className="text-text-muted mt-0.5 text-xs">
               Highlights, active states, and status indicators.
             </p>
           </div>
           <div
-            className="h-6 w-6 shrink-0 rounded-full"
-            style={{
-              background: settings.accentColor,
-              outline: '1.5px solid var(--border-hover)',
-              outlineOffset: 2,
-            }}
+            className="h-6 w-6 shrink-0 rounded-full [outline:1.5px_solid_var(--border-hover)] [outline-offset:2px]"
+            // eslint-disable-next-line no-restricted-syntax -- settings.accentColor is a runtime user-chosen hex, not a static token
+            style={{ background: settings.accentColor }}
           />
         </div>
         <ColorField
@@ -298,11 +256,9 @@ function AppearancePane({ settings, update }: { settings: AppSettings; update: U
       </div>
 
       {/* Status colors */}
-      <div className="py-3" style={{ borderBottom: '0.5px solid var(--border-subtle)' }}>
-        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-          Status colors
-        </span>
-        <p className="mt-0.5 mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+      <div className="border-border-subtle border-b-[0.5px] py-3">
+        <span className="text-text-primary text-sm">Status colors</span>
+        <p className="text-text-muted mt-0.5 mb-3 text-xs">
           Used for success, warnings, and errors across the app.
         </p>
         <div className="flex flex-col gap-3">
@@ -314,9 +270,7 @@ function AppearancePane({ settings, update }: { settings: AppSettings; update: U
             ] as const
           ).map(({ label, key, presets }) => (
             <div key={key} className="flex items-center justify-between gap-4">
-              <span className="w-14 shrink-0 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {label}
-              </span>
+              <span className="text-text-secondary w-14 shrink-0 text-xs">{label}</span>
               <ColorField
                 value={settings[key]}
                 onChange={(hex) => update({ [key]: hex } as Partial<AppSettings>)}
@@ -339,17 +293,8 @@ function AppearancePane({ settings, update }: { settings: AppSettings; update: U
       {/* Import stub */}
       <div className="py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm" style={{ color: 'var(--text-faint)' }}>
-            Import custom skin…
-          </span>
-          <span
-            className="rounded px-1.5 py-0.5 text-[10px]"
-            style={{
-              background: 'var(--hover-surface)',
-              color: 'var(--text-faint)',
-              border: '0.5px solid var(--border-subtle)',
-            }}
-          >
+          <span className="text-text-faint text-sm">Import custom skin…</span>
+          <span className="bg-hover text-text-faint border-border-subtle rounded border-[0.5px] px-1.5 py-0.5 text-[10px]">
             Coming soon
           </span>
         </div>
@@ -407,12 +352,7 @@ function ConsolePane({ settings, update }: { settings: AppSettings; update: Upda
           step={100}
           value={settings.consoleBufferLines}
           onChange={(e) => update({ consoleBufferLines: Math.max(100, Number(e.target.value)) })}
-          className="w-20 rounded px-2 py-1 text-right text-xs outline-none"
-          style={{
-            background: 'var(--hover-surface)',
-            border: '0.5px solid var(--border-subtle)',
-            color: 'var(--text-primary)',
-          }}
+          className="bg-hover border-border-subtle text-text-primary w-20 rounded border-[0.5px] px-2 py-1 text-right text-xs outline-none"
         />
       </SettingRow>
     </div>
@@ -451,30 +391,19 @@ function AboutPane() {
   return (
     <div className="flex flex-col gap-4 py-2">
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Konnekt
-        </span>
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Minecraft Server Manager
-        </span>
+        <span className="text-text-primary text-sm font-semibold">Konnekt</span>
+        <span className="text-text-muted text-xs">Minecraft Server Manager</span>
       </div>
       <div className="flex flex-col gap-2">
-        <div
-          className="flex items-center justify-between text-xs"
-          style={{ color: 'var(--text-secondary)' }}
-        >
+        <div className="text-text-secondary flex items-center justify-between text-xs">
           <span>License</span>
-          <span style={{ color: 'var(--text-muted)' }}>MIT</span>
+          <span className="text-text-muted">MIT</span>
         </div>
-        <div
-          className="flex items-center justify-between text-xs"
-          style={{ color: 'var(--text-secondary)' }}
-        >
+        <div className="text-text-secondary flex items-center justify-between text-xs">
           <span>Data directory</span>
           <button
             onClick={openFolder}
-            className="font-mono text-[11px] transition-colors"
-            style={{ color: 'var(--text-muted)' }}
+            className="text-text-muted font-mono text-[11px] transition-colors"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'
             }}

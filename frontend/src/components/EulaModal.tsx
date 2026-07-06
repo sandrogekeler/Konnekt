@@ -35,24 +35,13 @@ export function EulaModal({ serverId, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div
-        className="flex w-80 flex-col gap-4 rounded-xl p-5 font-mono"
-        style={{
-          background: 'var(--bg-base)',
-          border: '0.5px solid rgba(251,191,36,0.25)',
-        }}
-      >
+      <div className="bg-canvas flex w-80 flex-col gap-4 rounded-xl border-[0.5px] border-amber-400/25 p-5 font-mono">
         <div className="flex items-center gap-2.5">
           <span className="text-sm font-bold text-yellow-400">[!]</span>
-          <span
-            className="font-title text-sm font-semibold"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            EULA Required
-          </span>
+          <span className="font-title text-text-primary text-sm font-semibold">EULA Required</span>
         </div>
 
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-text-secondary text-xs leading-relaxed">
           The Minecraft server requires you to accept the End User License Agreement before it can
           run.
         </p>
@@ -64,15 +53,11 @@ export function EulaModal({ serverId, onClose }: Props) {
           Read the Minecraft EULA →
         </button>
 
-        <div className="flex gap-2 pt-1" style={{ borderTop: '0.5px solid var(--border-subtle)' }}>
+        <div className="border-border-subtle flex gap-2 border-t-[0.5px] pt-1">
           <button
             onClick={handleAccept}
             disabled={loading}
-            className="flex-1 rounded py-1.5 text-xs transition-colors disabled:opacity-40"
-            style={{
-              border: '0.5px solid rgb(var(--accent-rgb) / 0.3)',
-              color: 'var(--accent)',
-            }}
+            className="text-accent border-accent/30 flex-1 rounded border-[0.5px] py-1.5 text-xs transition-colors disabled:opacity-40"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.background =
                 'rgb(var(--accent-rgb) / 0.1)'
@@ -86,8 +71,7 @@ export function EulaModal({ serverId, onClose }: Props) {
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
-            style={{ color: 'var(--text-faint)' }}
+            className="text-text-faint px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
             }}

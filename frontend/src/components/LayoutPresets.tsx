@@ -37,8 +37,7 @@ export function LayoutPresets() {
     <div className="flex flex-col gap-2 overflow-hidden p-2">
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="font-title flex w-full items-center justify-between px-1 text-xs font-medium tracking-wider uppercase transition-colors"
-        style={{ color: 'var(--text-muted)' }}
+        className="font-title text-text-muted flex w-full items-center justify-between px-1 text-xs font-medium tracking-wider uppercase transition-colors"
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
         }}
@@ -48,38 +47,27 @@ export function LayoutPresets() {
       >
         <span>Layouts</span>
         <span
-          style={{
-            display: 'inline-block',
-            transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
-            transition: 'transform 200ms ease',
-          }}
+          className={`inline-block transition-transform duration-200 ease-[ease] ${collapsed ? '-rotate-90' : 'rotate-0'}`}
         >
           ▾
         </span>
       </button>
 
       <div
-        style={{
-          maxHeight: collapsed ? '0px' : '2000px',
-          transition: 'max-height 200ms ease',
-          overflow: 'hidden',
-          minWidth: 0,
-        }}
+        className={`min-w-0 overflow-hidden transition-[max-height] duration-200 ease-[ease] ${
+          collapsed ? 'max-h-0' : 'max-h-[2000px]'
+        }`}
       >
-        <div style={{ minHeight: 0, minWidth: 0 }} className="flex flex-col gap-2">
+        <div className="flex min-h-0 min-w-0 flex-col gap-2">
           {presets.map((preset) => (
             <div key={preset.name} className="flex items-center gap-1">
               <button
                 onClick={() => loadPreset(preset.name)}
-                className="flex-1 rounded px-3 py-1.5 text-left text-xs transition-all"
-                style={{
-                  color:
-                    preset.name === activePresetName ? 'var(--accent)' : 'var(--text-secondary)',
-                  background:
-                    preset.name === activePresetName
-                      ? 'rgb(var(--accent-rgb) / 0.1)'
-                      : 'transparent',
-                }}
+                className={`flex-1 rounded px-3 py-1.5 text-left text-xs transition-all ${
+                  preset.name === activePresetName
+                    ? 'text-accent bg-accent/10'
+                    : 'text-text-secondary bg-transparent'
+                }`}
                 onMouseEnter={(e) => {
                   if (preset.name !== activePresetName) {
                     ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
@@ -99,8 +87,7 @@ export function LayoutPresets() {
               {preset.name !== 'Default' && (
                 <button
                   onClick={() => deletePreset(preset.name)}
-                  className="px-1.5 text-xs transition-colors"
-                  style={{ color: 'var(--text-faint)' }}
+                  className="text-text-faint px-1.5 text-xs transition-colors"
                   onMouseEnter={(e) => {
                     ;(e.currentTarget as HTMLButtonElement).style.color = '#f87171'
                   }}
@@ -122,12 +109,7 @@ export function LayoutPresets() {
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder={activePresetName || 'Preset name...'}
-              className="min-w-0 flex-1 rounded px-2 py-1 text-xs outline-none"
-              style={{
-                background: 'var(--hover-surface)',
-                border: '0.5px solid var(--border-subtle)',
-                color: 'var(--text-primary)',
-              }}
+              className="bg-hover border-border-subtle text-text-primary min-w-0 flex-1 rounded border-[0.5px] px-2 py-1 text-xs outline-none"
               onFocus={(e) => {
                 ;(e.target as HTMLInputElement).style.borderColor = 'var(--border-hover)'
               }}
@@ -138,8 +120,7 @@ export function LayoutPresets() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="shrink-0 rounded px-2 py-1 text-xs transition-colors disabled:opacity-40"
-              style={{ border: '0.5px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+              className="border-border-subtle text-text-secondary shrink-0 rounded border-[0.5px] px-2 py-1 text-xs transition-colors disabled:opacity-40"
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
                 ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-hover)'
@@ -156,8 +137,7 @@ export function LayoutPresets() {
           <button
             onClick={handleReset}
             disabled={resetting}
-            className="mt-1 px-1 text-left text-xs transition-colors disabled:opacity-40"
-            style={{ color: 'var(--text-faint)' }}
+            className="text-text-faint mt-1 px-1 text-left text-xs transition-colors disabled:opacity-40"
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
             }}

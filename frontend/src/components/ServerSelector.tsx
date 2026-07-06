@@ -261,10 +261,7 @@ export function ServerSelector() {
       ))}
 
       {editing !== null ? (
-        <div
-          className="mt-1 flex flex-col gap-1.5 pt-2"
-          style={{ borderTop: '0.5px solid var(--border-subtle)' }}
-        >
+        <div className="border-border-subtle mt-1 flex flex-col gap-1.5 border-t-[0.5px] pt-2">
           {field('name', 'Name')}
           {browseField('jarPath', 'Jar path', browseJar)}
           {browseField('workingDir', 'Working dir', browseDir)}
@@ -305,16 +302,11 @@ export function ServerSelector() {
           const name = configs.find((c) => c.id === pendingDisconnect)?.name ?? 'this server'
           return (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.6)]"
               onClick={() => setPendingDisconnect(null)}
             >
               <div
-                className="flex w-72 flex-col gap-4 rounded-xl p-5"
-                style={{
-                  backgroundColor: 'var(--bg-base)',
-                  border: '0.5px solid var(--border-subtle)',
-                }}
+                className="bg-canvas border-border-subtle flex w-72 flex-col gap-4 rounded-xl border-[0.5px] p-5"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex flex-col gap-1">

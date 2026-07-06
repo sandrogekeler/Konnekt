@@ -55,6 +55,7 @@ export default tseslint.config(
   {
     files: [
       'src/components/ui/**/*.tsx',
+      'src/components/*.tsx',
       'src/tiles/TileWrapper/**/*.tsx',
       'src/tiles/stats/**/*.tsx',
       'src/tiles/notifications/**/*.tsx',

@@ -560,12 +560,94 @@ todo list, not a target.
     visual pass (editing a real `server.properties`, the MOTD builder, the
     toggle/select/chip widgets with live data) needs `wails dev` with a
     configured server, same limitation as every prior slice.
-- ~204 `style={{}}` usages remain across the rest of the codebase (~21
-  files). Continue tile-by-tile — the remaining hotspots: the rest of
-  `components/` (~64), worlds (45), players (32). These will need
-  more deliberate scoping (likely per-tile, not batched) and, for several,
-  live `wails dev` + a configured server to fully verify beyond what this
-  sandbox's headless preview can reach.
+- ✅ **Eighth slice done: `frontend/src/components/` (non-`ui/`)** — the
+  largest remaining cluster (confirmed count: 64 occurrences across 8 files).
+  Uniquely, this is the first slice fully live-verifiable in the headless
+  preview: the app-shell modals render on pure client state, no Wails bridge
+  needed (unlike every prior server-scoped tile slice). **5 of 8 files reach
+  zero remaining inline styles**: `LayoutPresets.tsx`, `EulaModal.tsx`,
+  `ServerSelector.tsx`, `TileCrate.tsx`, `ErrorBoundary.tsx`.
+  `SettingsModal.tsx` (35 → 3) keeps `ColorField`'s live-hex swatch background/
+  outline and `SkinCard`'s per-`previewColors`-entry background — genuine
+  runtime colors, not tokens. `Dashboard.tsx` (3 → 3, same count but now all
+  documented) keeps the drag-placeholder/wireframe `...dragVisual` position
+  spreads (react-grid-layout computed geometry, CLAUDE.md's sanctioned
+  exception) and the canvas dot-grid's `backgroundSize`/`backgroundPosition`
+  (tracks live `colStep`/`rowStep`, canvas-width-dependent).
+  `ActiveProcesses.tsx` (5 → 1) keeps only the live percent-width progress
+  bar fill. Added `src/components/*.tsx` (single star — top-level only, since
+  `ui/**` was already in the glob) to the ratcheted-`error` `files` glob in
+  `frontend/eslint.config.js`; `pnpm lint` passes with 0 errors, global
+  warning count 194 → 130.
+  - Same "static two-value ternary → conditional `className`" rule applied
+    throughout (nav active/inactive color+background in `SettingsModal`,
+    preset active/inactive in `LayoutPresets`, `onCanvas` color+background in
+    `TileCrate`). One extension confirmed this pass: **a static
+    `maxHeight`/`rotate()` ternary is "two fixed values" too** (matching the
+    scheduler slice's `rotate(180deg)`/`rotate(0deg)` precedent) —
+    `LayoutPresets`' collapse-chevron `rotate(-90deg)`/`rotate(0deg)` and its
+    accordion wrapper's `maxHeight: '0px'`/`'2000px'` both converted cleanly
+    to `-rotate-90`/`rotate-0` and `max-h-0`/`max-h-[2000px]`.
+  - **Tailwind v4 renders `rotate`/`scale`/`translate` via native standalone
+    CSS properties, not the legacy `transform` shorthand** — confirmed live:
+    `getComputedStyle(el).transform` reads `"none"` even when `-rotate-90` is
+    applied and visibly rotates the element; the utility's effect only shows
+    up under `getComputedStyle(el).rotate` (`"-90deg"`). Worth remembering for
+    any future computed-style verification of rotate/scale/translate
+    utilities — checking `.transform` alone gives a false negative.
+  - **A stacked `outline` + `outline-[1.5px]` + `outline-offset-2` utility
+    combo silently rendered `outline-width: 1px` instead of `1.5px`**
+    (verified live via computed style) — the bare `outline` utility's own
+    width declaration won the cascade over the arbitrary-width utility.
+    Fixed by switching to a single arbitrary-property class,
+    `[outline:1.5px_solid_var(--border-hover)] [outline-offset:2px]`, which
+    verified correctly afterwards. Lesson for future conversions: don't split
+    an `outline` shorthand across `outline`/`outline-[width]`/`outline-{color}`
+    utility classes — collapse it into one arbitrary-property declaration.
+  - `rgb(var(--accent-rgb) / 0.1)`-style tokens confirmed to convert to
+    Tailwind's opacity-modifier syntax exactly (`bg-accent/10`, `/8`, `/6`,
+    per the exact percentage) since `--color-accent` is a real registered
+    color in `@theme inline` — same technique already used elsewhere in the
+    codebase (`ServerSelector.tsx`'s pre-existing `bg-accent/10`), now
+    extended to every remaining `--accent-rgb` site in this cluster.
+  - Verified: `pnpm typecheck` (0 errors), `pnpm lint` (0 errors, 194 → 130
+    warnings), `pnpm test` (131/131 unchanged — no existing tests target
+    `components/*`), `pnpm build` (entry chunk 478.7 KB gzip, flat vs. the
+    prior slice), `pnpm check-bundle` (478.7 KB, well under the 550 KB
+    budget).
+  - **Live-verified in-browser** (first slice able to do this beyond
+    typecheck/lint/test): started `pnpm dev` directly via `pnpm --dir frontend
+    exec vite --port <port> --strictPort` (`.claude/launch.json`'s prior
+    `pnpm run dev` + auto-port form silently forwarded a literal `"--"` token
+    to Vite instead of stripping it as pnpm's arg separator, and separately
+    the auto-assigned proxy port didn't match the port Vite actually bound —
+    fixed by calling `vite` directly via `pnpm exec` with an explicit
+    `--strictPort`). Opened Settings (gear icon): confirmed the modal's
+    `640×480` size, `bg-canvas` background (`rgb(5, 6, 10)` = `--bg-base`),
+    and `shadow-[0_24px_64px_rgba(0,0,0,0.5)]` via computed style; confirmed
+    the active nav item's `text-accent`/`bg-accent/10` (`rgb(74, 222, 128)`,
+    exact accent green) versus inactive items' `text-text-secondary`
+    (`rgba(255, 255, 255, 0.6)`); confirmed the accent-color swatch's
+    `background-color` reflects the live `settings.accentColor` value with a
+    correctly-colored static outline. Confirmed a mounted tile's geometry is
+    non-zero (`Console` tile: 664px height) per the `TileWrapper` slice's
+    0-height-regression lesson. No new console errors beyond the pre-existing
+    `quick-commands` `window.go`-unavailable ones (React 19 dev-mode
+    double-invokes effects, which doubles each log line — a tooling
+    artifact, not a regression). `EulaModal`/`LayoutPresets` are also
+    client-renderable but not independently screenshotted this pass (the
+    screenshot tool itself timed out repeatedly in this environment;
+    `preview_inspect`/computed-style checks were used instead, per the
+    verification skill's own guidance to prefer them for style checks).
+- 143 `style={{}}` usages remain across 35 files. Continue tile-by-tile —
+  the remaining hotspots: worlds (45: `WorldHud.tsx` 19, `index.tsx` 15,
+  `scene/WorldsScene.tsx` 6, `scene/Planet.tsx` 5) and players (32:
+  `PlayerDetailPopup.tsx` 17, `PlayerRoster.tsx` 9, `PlayerCard.tsx` 4,
+  `PlayerGrid.tsx` 2). The rest (`App.tsx` 6, and already-migrated tiles'
+  documented exceptions) are accounted-for survivors, not backlog. worlds'
+  react-three-fiber scene code and players' server-scoped data mean both will
+  need `wails dev` + a configured server for full live verification, same
+  limitation as backups/mods/scheduler/config previously.
 
 **P2 — React Compiler-readiness lint rules**
 - Revisit enabling `eslint-plugin-react-hooks`'s full `recommended`/
