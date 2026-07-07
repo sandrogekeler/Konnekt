@@ -16,6 +16,26 @@ describe('useProcessesStore', () => {
     })
   })
 
+  it('start with no filename leaves it undefined', () => {
+    useProcessesStore.getState().start('p1', 'Backing up')
+    expect(useProcessesStore.getState().processes.p1.filename).toBeUndefined()
+  })
+
+  it('start with a filename stores it on the process', () => {
+    useProcessesStore.getState().start('p1', 'Backing up', 'world_x.zip')
+    expect(useProcessesStore.getState().processes.p1).toMatchObject({
+      filename: 'world_x.zip',
+    })
+  })
+
+  it('filename survives updateProgress and finish', () => {
+    useProcessesStore.getState().start('p1', 'Backing up', 'world_x.zip')
+    useProcessesStore.getState().updateProgress('p1', 42)
+    expect(useProcessesStore.getState().processes.p1.filename).toBe('world_x.zip')
+    useProcessesStore.getState().finish('p1', 'done')
+    expect(useProcessesStore.getState().processes.p1.filename).toBe('world_x.zip')
+  })
+
   it('updateProgress updates percent while running', () => {
     useProcessesStore.getState().start('p1', 'Backing up')
     useProcessesStore.getState().updateProgress('p1', 42)

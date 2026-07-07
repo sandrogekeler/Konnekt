@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { EventsOn } from '../../../wailsjs/runtime/runtime'
 import {
   ListBackups, CreateBackup, RestoreBackup, DeleteBackup,
@@ -6,6 +6,7 @@ import {
 } from '../../../wailsjs/go/main/App'
 import type { models } from '../../../wailsjs/go/models'
 import { EVENTS } from '../../lib/constants'
+import { useProcessesStore } from '../../stores/useProcessesStore'
 
 export type Backup = models.Backup
 
@@ -29,26 +30,21 @@ export function useBackups(serverId: string): BackupsState {
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-  const [creatingFilename, setCreatingFilename] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  // Snapshot-based in-progress detection: no dependency on backup:started event.
-  const backupsRef = useRef<Backup[]>([])
-  const creatingRef = useRef(false)
-  const preCreateFilenamesRef = useRef<Set<string>>(new Set())
+  // Sourced from the app-global process store (not local refs) so the
+  // in-progress marker survives tile unmount/remount (close+reopen,
+  // compact <-> maximized transitions).
+  const creatingFilename = useProcessesStore((s) => {
+    const p = s.processes[serverId]
+    return p && p.status === 'running' ? (p.filename ?? null) : null
+  })
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     setListError(null)
     try {
       const result = (await ListBackups(serverId) as Backup[]) ?? []
-      backupsRef.current = result
-      // While a create is in flight, identify the new file by exclusion from
-      // the pre-create snapshot and surface it as the in-progress entry.
-      if (creatingRef.current) {
-        const inProgress = result.find(b => !preCreateFilenamesRef.current.has(b.filename))
-        setCreatingFilename(inProgress?.filename ?? null)
-      }
       setBackups(result)
     } catch (e) {
       setListError(String(e))
@@ -60,20 +56,13 @@ export function useBackups(serverId: string): BackupsState {
   const create = useCallback(async () => {
     setCreating(true)
     setActionError(null)
-    // Snapshot current filenames so refresh() can spot the new file by exclusion.
-    preCreateFilenamesRef.current = new Set(backupsRef.current.map(b => b.filename))
-    creatingRef.current = true
     try {
       await CreateBackup(serverId)
-      // Clear before the final refresh so the completed backup renders normally.
-      creatingRef.current = false
       await refresh()
     } catch (e) {
       setActionError(String(e))
     } finally {
       setCreating(false)
-      creatingRef.current = false
-      setCreatingFilename(null)
     }
   }, [serverId, refresh])
 
@@ -128,16 +117,11 @@ export function useBackups(serverId: string): BackupsState {
     try {
       // Refresh list on backup/restore events. Notifications live in App.tsx
       // to avoid duplicates from React 18 Strict Mode double-effect runs.
-      c1 = EventsOn(EVENTS.BACKUP_COMPLETED, () => {
-        creatingRef.current = false  // prevent next refresh() from re-marking as in-progress
-        refresh(true)
-      })
+      // creatingFilename itself is derived from useProcessesStore, which the
+      // same events already update (see App.tsx) — no local bookkeeping needed here.
+      c1 = EventsOn(EVENTS.BACKUP_COMPLETED, () => { refresh(true) })
       c2 = EventsOn(EVENTS.RESTORE_COMPLETED, () => { refresh(true) })
-      c3 = EventsOn(EVENTS.BACKUP_FAILED, () => {
-        creatingRef.current = false
-        setCreatingFilename(null)
-        refresh(true)
-      })
+      c3 = EventsOn(EVENTS.BACKUP_FAILED, () => { refresh(true) })
     } catch { /* Wails runtime unavailable in dev without backend */ }
 
     return () => {

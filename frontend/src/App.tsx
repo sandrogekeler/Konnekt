@@ -136,8 +136,10 @@ function App() {
     let c4: (() => void) | undefined
     let c5: (() => void) | undefined
     try {
-      c1 = EventsOn(EVENTS.BACKUP_STARTED, (data?: { serverID?: string }) => {
-        useProcessesStore.getState().start(data?.serverID ?? 'backup', 'Backing up world…')
+      c1 = EventsOn(EVENTS.BACKUP_STARTED, (data?: { serverID?: string; filename?: string }) => {
+        useProcessesStore
+          .getState()
+          .start(data?.serverID ?? 'backup', 'Backing up world…', data?.filename)
       })
       c2 = EventsOn(EVENTS.BACKUP_PROGRESS, (data?: { serverID?: string; percent?: number }) => {
         useProcessesStore.getState().updateProgress(data?.serverID ?? 'backup', data?.percent ?? 0)
