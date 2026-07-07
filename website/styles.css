@@ -522,11 +522,11 @@ section {
   user-select: none;
 }
 
-/* 1. Tile dashboard — 4 tiles continuously rotating through 4 slots */
+/* 1. Tile dashboard — static 2x2 grid; scenes.js occasionally relocates one
+   tile (slow, dragged) while the tile it displaces snaps to the vacated
+   slot — imitating the app's own drag-and-drop tile reflow. */
 .dash-tile {
   position: absolute;
-  top: 8%;
-  left: 8%;
   width: 38%;
   height: 38%;
   background: var(--bg-surface);
@@ -537,13 +537,78 @@ section {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  animation: dash-swap 12s linear infinite;
-  animation-play-state: paused;
-  will-change: transform;
+  /* Deliberately slower than --duration-panel — "slowly moves to the
+     side", a genuinely one-off decorative motion (HEALTH_CHECKLIST). */
+  transition:
+    top 900ms var(--ease-standard),
+    left 900ms var(--ease-standard);
 }
 
-.tile-card:hover .dash-tile {
-  animation-play-state: running;
+.dash-tile--snap {
+  transition: none;
+}
+
+/* Lifted/floating look while a tile is being "dragged" to its new slot. */
+.dash-tile--dragging {
+  z-index: 2;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transform: scale(1.04);
+}
+
+.dash-tile[data-slot='0'] {
+  top: 8%;
+  left: 8%;
+}
+.dash-tile[data-slot='1'] {
+  top: 8%;
+  left: 54%;
+}
+.dash-tile[data-slot='2'] {
+  top: 54%;
+  left: 8%;
+}
+.dash-tile[data-slot='3'] {
+  top: 54%;
+  left: 54%;
+}
+
+/* Grey placeholder highlighting the tile's target slot, matching the real
+   app's react-grid-layout drag placeholder (see frontend/src/style.css's
+   .react-grid-placeholder). */
+.dash-placeholder {
+  position: absolute;
+  width: 38%;
+  height: 38%;
+  background: var(--hover-surface);
+  border: 0.5px dashed var(--border-hover);
+  border-radius: 6px;
+  opacity: 0;
+  transition:
+    opacity 200ms ease,
+    top 900ms var(--ease-standard),
+    left 900ms var(--ease-standard);
+  pointer-events: none;
+}
+
+.dash-placeholder.visible {
+  opacity: 1;
+}
+
+.dash-placeholder[data-slot='0'] {
+  top: 8%;
+  left: 8%;
+}
+.dash-placeholder[data-slot='1'] {
+  top: 8%;
+  left: 54%;
+}
+.dash-placeholder[data-slot='2'] {
+  top: 54%;
+  left: 8%;
+}
+.dash-placeholder[data-slot='3'] {
+  top: 54%;
+  left: 54%;
 }
 
 .dash-tile-bar {
@@ -566,34 +631,6 @@ section {
   letter-spacing: 1px;
 }
 
-.dash-tile-b {
-  animation-delay: -3s;
-}
-.dash-tile-c {
-  animation-delay: -6s;
-}
-.dash-tile-d {
-  animation-delay: -9s;
-}
-
-@keyframes dash-swap {
-  0% {
-    transform: translate(0, 0);
-  }
-  25% {
-    transform: translate(118%, 0);
-  }
-  50% {
-    transform: translate(118%, 118%);
-  }
-  75% {
-    transform: translate(0, 118%);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
 /* 2. Live console — streaming lines, JS-appended on hover (see scenes.js) */
 .tile-scene--console {
   display: flex;
@@ -602,6 +639,9 @@ section {
   gap: 4px;
   padding: 10px 12px;
   overflow: hidden;
+  /* Fade the topmost (possibly partial) line instead of hard-clipping it. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 28px);
+  mask-image: linear-gradient(to bottom, transparent, black 28px);
 }
 
 .console-line {
@@ -711,74 +751,6 @@ section {
   margin-left: -3px;
 }
 
-.world-popup {
-  position: absolute;
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--accent);
-  background: var(--bg-elevated);
-  border: 0.5px solid var(--border-hover);
-  border-radius: 5px;
-  padding: 2px 6px;
-  opacity: 0;
-  animation-duration: 8s;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  animation-play-state: paused;
-}
-
-.tile-card:hover .world-popup {
-  animation-play-state: running;
-}
-
-.world-popup-a {
-  top: 20%;
-  left: 10%;
-  animation-name: world-popup-a;
-}
-
-.world-popup-b {
-  bottom: 16%;
-  right: 8%;
-  animation-name: world-popup-b;
-}
-
-@keyframes world-popup-a {
-  0%,
-  4% {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-  10%,
-  38% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  46%,
-  100% {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-}
-
-@keyframes world-popup-b {
-  0%,
-  50% {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-  56%,
-  88% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  94%,
-  100% {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-}
-
 /* 4. Backups — endless drifting row of backup chips, decelerate easing */
 .tile-scene--backups {
   overflow: hidden;
@@ -790,15 +762,15 @@ section {
   left: 50%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
+  gap: 8px;
+  font-size: 11px;
   letter-spacing: 1px;
   white-space: nowrap;
   background: var(--bg-surface);
   border: 0.5px solid var(--border-subtle);
   border-radius: 999px;
-  padding: 4px 10px;
-  animation: backup-drift 12s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+  padding: 9px 14px;
+  animation: backup-drift 16s linear infinite;
   animation-play-state: paused;
   will-change: transform;
 }
@@ -808,8 +780,8 @@ section {
 }
 
 .backup-chip .dot {
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 6px rgb(var(--accent-rgb) / 0.6);
@@ -818,17 +790,25 @@ section {
 
 @keyframes backup-drift {
   0% {
-    transform: translate(-260%, -50%);
+    transform: translate(-300%, -50%);
     opacity: 0;
   }
-  8% {
+  6% {
     opacity: 1;
   }
-  92% {
+  10% {
+    /* Swift entrance: most of the leftward distance covered in the first
+       tenth of the cycle. */
+    transform: translate(-140%, -50%);
+  }
+  94% {
     opacity: 1;
   }
   100% {
-    transform: translate(160%, -50%);
+    /* Slow drift: the remaining 90% of the cycle covers the rest of the
+       track, joining the "traffic" moving off-screen right. Fewer, larger
+       chips with a longer cycle keep clear spacing between them. */
+    transform: translate(180%, -50%);
     opacity: 0;
   }
 }
@@ -842,7 +822,7 @@ section {
 .config-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 13px;
   animation: config-scroll 16s linear infinite;
   animation-play-state: paused;
   will-change: transform;
@@ -865,15 +845,15 @@ section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10.5px;
+  font-size: 13px;
   letter-spacing: 1px;
 }
 
 .config-toggle {
   position: relative;
-  width: 18px;
-  height: 10px;
-  border-radius: 6px;
+  width: 24px;
+  height: 13px;
+  border-radius: 7px;
   background: var(--hover-surface);
   border: 0.5px solid var(--border-subtle);
   flex-shrink: 0;
@@ -885,10 +865,10 @@ section {
 .config-toggle::after {
   content: '';
   position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 6px;
-  height: 6px;
+  top: 1.5px;
+  left: 1.5px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--text-faint);
   transition:
@@ -902,60 +882,84 @@ section {
 }
 
 .config-toggle.on::after {
-  transform: translateX(8px);
+  transform: translateX(11px);
   background: var(--accent);
 }
 
 .config-value {
+  display: inline-block;
+  width: 32px;
+  text-align: center;
   color: var(--text-muted);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 6px;
+  overflow: hidden;
 }
 
-/* 6. Mods & plugins — stacked tiles, one randomly cycles out/in via JS */
+/* 6. Mods & plugins — continuous scroll loop, same seamless-marquee
+   technique as the config editor's .config-list/@keyframes config-scroll. */
 .tile-scene--mods {
-  padding: 6% 8%;
+  overflow: hidden;
+  padding: 10px 12px;
 }
 
-.mods-tile {
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  height: 17%;
+.mods-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: mods-scroll 18s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.tile-card:hover .mods-list {
+  animation-play-state: running;
+}
+
+@keyframes mods-scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.mods-row {
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  justify-content: space-between;
+  padding: 6px 10px;
   font-size: 10.5px;
   letter-spacing: 1px;
   background: var(--bg-surface);
   border: 0.5px solid var(--border-subtle);
   border-radius: 6px;
   box-sizing: border-box;
-  transition:
-    transform var(--duration-panel) var(--ease-standard),
-    opacity var(--duration-panel) var(--ease-standard);
+  flex-shrink: 0;
 }
 
-.mods-tile[data-slot='0'] {
-  top: 6%;
-}
-.mods-tile[data-slot='1'] {
-  top: 30%;
-}
-.mods-tile[data-slot='2'] {
-  top: 54%;
-}
-.mods-tile[data-slot='3'] {
-  top: 78%;
+.mods-tile-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-.mods-tile--exit {
-  transform: translateX(140%);
-  opacity: 0;
+.mods-icon {
+  width: 8px;
+  height: 8px;
+  border: 0.5px solid var(--border-hover);
+  background: var(--hover-surface);
 }
 
-.mods-tile--enter-from {
-  transform: translateX(-140%);
-  opacity: 0;
-  transition: none;
+.mods-icon--circle {
+  border-radius: 50%;
+}
+
+.mods-icon--square {
+  border-radius: 2px;
 }
 
 .tile-card-body {
@@ -1235,14 +1239,15 @@ footer {
   /* Feature-tile scenes stay fully static, even on hover. */
   .dash-tile,
   .world-planet,
-  .world-popup,
   .backup-chip,
-  .config-list {
+  .config-list,
+  .mods-list {
     animation: none !important;
   }
 
   .console-line,
-  .mods-tile {
+  .dash-tile,
+  .dash-placeholder {
     transition: none !important;
   }
 }

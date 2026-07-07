@@ -86,19 +86,24 @@
         <div class="grid">
           <article class="tile-card reveal" style="--reveal-delay: 0ms">
             <div class="tile-card-media">
-              <div class="tile-scene tile-scene--dashboard" aria-hidden="true">
-                <div class="dash-tile dash-tile-a">
+              <div
+                class="tile-scene tile-scene--dashboard"
+                data-scene="dashboard"
+                aria-hidden="true"
+              >
+                <div class="dash-tile dash-tile-a" data-slot="0">
                   <span class="dash-tile-bar"></span><span class="dash-tile-glyph">╦╔╣</span>
                 </div>
-                <div class="dash-tile dash-tile-b">
+                <div class="dash-tile dash-tile-b" data-slot="1">
                   <span class="dash-tile-bar"></span><span class="dash-tile-glyph">╚╟╦</span>
                 </div>
-                <div class="dash-tile dash-tile-c">
+                <div class="dash-tile dash-tile-c" data-slot="2">
                   <span class="dash-tile-bar"></span><span class="dash-tile-glyph">╣╖╬</span>
                 </div>
-                <div class="dash-tile dash-tile-d">
+                <div class="dash-tile dash-tile-d" data-slot="3">
                   <span class="dash-tile-bar"></span><span class="dash-tile-glyph">╬╦╔</span>
                 </div>
+                <div class="dash-placeholder" data-slot="0"></div>
               </div>
             </div>
             <div class="tile-card-body">
@@ -113,9 +118,13 @@
           <article class="tile-card reveal" style="--reveal-delay: 60ms">
             <div class="tile-card-media">
               <div class="tile-scene tile-scene--console" data-scene="console" aria-hidden="true">
-                <div class="console-line in console-line--muted">╟╦╣╚╟╖╬╔╣╦╚</div>
-                <div class="console-line in console-line--accent">╦╔╣╖╬╟╚╣╦╔╣╖</div>
-                <div class="console-line in">╚╟╦╣╬╖╔╣╚╟</div>
+                <div class="console-line in console-line--muted">&gt; ╟╦╣╚╟╖╬╔╣╦╚</div>
+                <div class="console-line in">&gt; ╚╟╦╣╬╖╔╣╚╟╦╔</div>
+                <div class="console-line in console-line--accent">&gt; ╦╔╣╖╬╟╚╣╦╔╣╖</div>
+                <div class="console-line in console-line--muted">&gt; ╬╦╔╣╚╟╖╬╣╦</div>
+                <div class="console-line in">&gt; ╟╣╖╬╔╦╚╟╣╬╖╦</div>
+                <div class="console-line in console-line--danger">&gt; ╚╬╦╣╟╖╔╦╚</div>
+                <div class="console-line in">&gt; ╔╣╬╟╦╚╖╣╔╬╦╚╟</div>
               </div>
             </div>
             <div class="tile-card-body">
@@ -130,11 +139,13 @@
           <article class="tile-card reveal" style="--reveal-delay: 120ms">
             <div class="tile-card-media">
               <div class="tile-scene tile-scene--world" aria-hidden="true">
-                <div class="world-orbit world-orbit-1"><div class="world-planet"></div></div>
-                <div class="world-orbit world-orbit-2"><div class="world-planet"></div></div>
+                <div class="world-orbit world-orbit-1">
+                  <div class="world-planet"></div>
+                </div>
+                <div class="world-orbit world-orbit-2">
+                  <div class="world-planet"></div>
+                </div>
                 <div class="world-sun"></div>
-                <div class="world-popup world-popup-a">╟╦╣</div>
-                <div class="world-popup world-popup-b">╬╖╚</div>
               </div>
             </div>
             <div class="tile-card-body">
@@ -152,17 +163,11 @@
                 <div class="backup-chip" style="animation-delay: -0s">
                   <span class="dot"></span>╦╔╣
                 </div>
-                <div class="backup-chip" style="animation-delay: -2.4s">
+                <div class="backup-chip" style="animation-delay: -5.33s">
                   <span class="dot"></span>╚╟╦
                 </div>
-                <div class="backup-chip" style="animation-delay: -4.8s">
+                <div class="backup-chip" style="animation-delay: -10.67s">
                   <span class="dot"></span>╣╖╬
-                </div>
-                <div class="backup-chip" style="animation-delay: -7.2s">
-                  <span class="dot"></span>╬╦╔
-                </div>
-                <div class="backup-chip" style="animation-delay: -9.6s">
-                  <span class="dot"></span>╟╣╖
                 </div>
               </div>
             </div>
@@ -195,19 +200,49 @@
                     <span>╔╣╬</span><span class="config-toggle on"></span>
                   </div>
                   <div class="config-row">
+                    <span>╦╣╬</span><span class="config-toggle"></span>
+                  </div>
+                  <div class="config-row">
+                    <span>╟╔╦</span><span class="config-value">╬╚╖</span>
+                  </div>
+                  <div class="config-row">
+                    <span>╖╟╣</span><span class="config-toggle on"></span>
+                  </div>
+                  <div class="config-row">
+                    <span>╬╔╟</span><span class="config-value">╦╣╚</span>
+                  </div>
+                  <div class="config-row">
+                    <span>╚╦╬</span><span class="config-toggle"></span>
+                  </div>
+                  <div class="config-row" aria-hidden="true">
                     <span>╦╔╣</span><span class="config-toggle on"></span>
                   </div>
-                  <div class="config-row">
+                  <div class="config-row" aria-hidden="true">
                     <span>╚╟╦</span><span class="config-value">╣╖╬</span>
                   </div>
-                  <div class="config-row">
+                  <div class="config-row" aria-hidden="true">
                     <span>╬╦╔</span><span class="config-toggle"></span>
                   </div>
-                  <div class="config-row">
+                  <div class="config-row" aria-hidden="true">
                     <span>╟╣╖</span><span class="config-value">╚╬╦</span>
                   </div>
-                  <div class="config-row">
+                  <div class="config-row" aria-hidden="true">
                     <span>╔╣╬</span><span class="config-toggle on"></span>
+                  </div>
+                  <div class="config-row" aria-hidden="true">
+                    <span>╦╣╬</span><span class="config-toggle"></span>
+                  </div>
+                  <div class="config-row" aria-hidden="true">
+                    <span>╟╔╦</span><span class="config-value">╬╚╖</span>
+                  </div>
+                  <div class="config-row" aria-hidden="true">
+                    <span>╖╟╣</span><span class="config-toggle on"></span>
+                  </div>
+                  <div class="config-row" aria-hidden="true">
+                    <span>╬╔╟</span><span class="config-value">╦╣╚</span>
+                  </div>
+                  <div class="config-row" aria-hidden="true">
+                    <span>╚╦╬</span><span class="config-toggle"></span>
                   </div>
                 </div>
               </div>
@@ -223,11 +258,121 @@
 
           <article class="tile-card reveal" style="--reveal-delay: 300ms">
             <div class="tile-card-media">
-              <div class="tile-scene tile-scene--mods" data-scene="mods" aria-hidden="true">
-                <div class="mods-tile" data-slot="0">╦╔╣╚</div>
-                <div class="mods-tile" data-slot="1">╟╦╣╖</div>
-                <div class="mods-tile" data-slot="2">╬╦╔╣</div>
-                <div class="mods-tile" data-slot="3">╚╟╬╖</div>
+              <div class="tile-scene tile-scene--mods" aria-hidden="true">
+                <div class="mods-list">
+                  <div class="mods-row">
+                    <span class="mods-row-label">╦╔╣╚</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╟╦╣╖</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╬╦╔╣</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╚╟╬╖</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╣╖╬╔</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╔╣╬╟</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╚╬╦╔</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row">
+                    <span class="mods-row-label">╟╣╚╖</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╦╔╣╚</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╟╦╣╖</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╬╦╔╣</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╚╟╬╖</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╣╖╬╔</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╔╣╬╟</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╚╬╦╔</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                  <div class="mods-row" aria-hidden="true">
+                    <span class="mods-row-label">╟╣╚╖</span>
+                    <span class="mods-tile-icons">
+                      <span class="mods-icon mods-icon--circle"></span>
+                      <span class="mods-icon mods-icon--square"></span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="tile-card-body">

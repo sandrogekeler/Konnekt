@@ -85,33 +85,57 @@
     }
   }
 
-  // ── Mods & plugins — a random stacked tile cycles out/in ────────────────
-  function modsController(scene) {
+  // ── Tile dashboard — one tile "drags" to another slot (slow, animated),
+  // the tile it displaces "snaps" to the vacated slot instantly ──────────
+  function dashboardController(scene) {
     var timer = null
-    var exitMs = 280 // matches --duration-panel
 
-    function cycleOne() {
-      var tiles = scene.querySelectorAll('.mods-tile')
-      var tile = tiles[Math.floor(Math.random() * tiles.length)]
+    function cycleOnce() {
+      var tiles = scene.querySelectorAll('.dash-tile')
+      var slotA = Math.floor(Math.random() * tiles.length)
+      var slotB = Math.floor(Math.random() * tiles.length)
+      if (slotB === slotA) slotB = (slotB + 1 + Math.floor(Math.random() * 3)) % tiles.length
 
-      tile.classList.add('mods-tile--exit')
+      var tileA = null
+      var tileB = null
+      tiles.forEach(function (t) {
+        var slot = Number(t.getAttribute('data-slot'))
+        if (slot === slotA) tileA = t
+        if (slot === slotB) tileB = t
+      })
 
-      setTimeout(function () {
-        tile.textContent = randomGlyphs(3, 5)
-        tile.classList.remove('mods-tile--exit')
-        tile.classList.add('mods-tile--enter-from')
-        // Force reflow so the "from" position applies before we transition back.
-        void tile.offsetWidth
-        tile.classList.remove('mods-tile--enter-from')
-      }, exitMs)
+      if (tileA && tileB) {
+        var placeholder = scene.querySelector('.dash-placeholder')
+        var moveMs = 900 // matches .dash-tile's top/left transition duration
 
-      timer = setTimeout(cycleOne, randomBetween(2000, 3200))
+        // Highlight the target slot and lift the "dragged" tile while it
+        // floats there — mirrors the app's own drag-and-drop feedback.
+        if (placeholder) {
+          placeholder.setAttribute('data-slot', String(slotB))
+          placeholder.classList.add('visible')
+        }
+        tileA.classList.add('dash-tile--dragging')
+        tileA.setAttribute('data-slot', String(slotB))
+
+        // The tile it displaced snaps instantly into the vacated slot.
+        tileB.classList.add('dash-tile--snap')
+        tileB.setAttribute('data-slot', String(slotA))
+        void tileB.offsetWidth
+        tileB.classList.remove('dash-tile--snap')
+
+        setTimeout(function () {
+          tileA.classList.remove('dash-tile--dragging')
+          if (placeholder) placeholder.classList.remove('visible')
+        }, moveMs)
+      }
+
+      timer = setTimeout(cycleOnce, randomBetween(3000, 4000))
     }
 
     return {
       start: function () {
         if (timer) return
-        timer = setTimeout(cycleOne, randomBetween(800, 1600))
+        timer = setTimeout(cycleOnce, 1200)
       },
       stop: function () {
         clearTimeout(timer)
@@ -121,9 +145,9 @@
   }
 
   var factories = {
+    dashboard: dashboardController,
     console: consoleController,
     config: configController,
-    mods: modsController,
   }
 
   document.querySelectorAll('[data-scene]').forEach(function (scene) {
