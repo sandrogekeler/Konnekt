@@ -23,3 +23,6 @@ testserver*/
 
 # Claude Code local settings
 .claude/
+
+# Graphify AST cache (regenerable, hash-keyed)
+graphify-out/cache/

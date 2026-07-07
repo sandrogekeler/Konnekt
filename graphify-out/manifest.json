@@ -1,0 +1,1092 @@
+{
+  "app.go": {
+    "mtime": 1783022935.5605261,
+    "ast_hash": "b22c2fd6d34cf3eaf528ac85d40c0b88",
+    "semantic_hash": ""
+  },
+  "backend/models/backup.go": {
+    "mtime": 1782056016.8019586,
+    "ast_hash": "3c944d8ec1be6aabc1f0666424de9319",
+    "semantic_hash": ""
+  },
+  "backend/models/config_file.go": {
+    "mtime": 1781921696.6943114,
+    "ast_hash": "6a8e28985cfc423b42a5157e4ba7e350",
+    "semantic_hash": ""
+  },
+  "backend/models/console.go": {
+    "mtime": 1781921696.6943114,
+    "ast_hash": "8911a31a8e584bdc4b105a45a2300b71",
+    "semantic_hash": ""
+  },
+  "backend/models/layout.go": {
+    "mtime": 1783022935.5529363,
+    "ast_hash": "49fb03b26d70bf5dce95edb6d672eda6",
+    "semantic_hash": ""
+  },
+  "backend/models/mod.go": {
+    "mtime": 1783022935.5534437,
+    "ast_hash": "c8825f1e43826921686c10e17c2b1961",
+    "semantic_hash": ""
+  },
+  "backend/models/player.go": {
+    "mtime": 1781921696.6943114,
+    "ast_hash": "d6e0ce33cfc2dcd4e75b6d30eeea811a",
+    "semantic_hash": ""
+  },
+  "backend/models/scheduler.go": {
+    "mtime": 1783022935.557925,
+    "ast_hash": "c6b0c220dcabf3948ce859ca51f1ba6e",
+    "semantic_hash": ""
+  },
+  "backend/models/server.go": {
+    "mtime": 1782172441.199406,
+    "ast_hash": "05235303858a4af6016e77bb3c30f9e7",
+    "semantic_hash": ""
+  },
+  "backend/models/settings.go": {
+    "mtime": 1783183140.6047232,
+    "ast_hash": "e800c56663b27e350f7ffd9154cd0f1a",
+    "semantic_hash": ""
+  },
+  "backend/models/world.go": {
+    "mtime": 1783022935.555195,
+    "ast_hash": "9948a1020c8986dd1bf9543d6dd7ccc3",
+    "semantic_hash": ""
+  },
+  "backend/services/backup.go": {
+    "mtime": 1783036770.0391147,
+    "ast_hash": "566688ab9f88c27d1dce27f92d9186ff",
+    "semantic_hash": ""
+  },
+  "backend/services/backup_test.go": {
+    "mtime": 1783025341.4362974,
+    "ast_hash": "43371785240bbd946126470cf882a87c",
+    "semantic_hash": ""
+  },
+  "backend/services/config.go": {
+    "mtime": 1783183140.6057286,
+    "ast_hash": "81b76d0b4dd54bf5d71f2286428ee670",
+    "semantic_hash": ""
+  },
+  "backend/services/config_editor.go": {
+    "mtime": 1783036774.2280545,
+    "ast_hash": "79606d37eaf5ade0a2c743187592382e",
+    "semantic_hash": ""
+  },
+  "backend/services/config_editor_test.go": {
+    "mtime": 1783025363.3468325,
+    "ast_hash": "b64a21794cb934c1fc6dee0225815762",
+    "semantic_hash": ""
+  },
+  "backend/services/eventbus.go": {
+    "mtime": 1781921696.6999497,
+    "ast_hash": "c73d2a2198ef2c92b1d7a66c7a2de3e3",
+    "semantic_hash": ""
+  },
+  "backend/services/events.go": {
+    "mtime": 1782172623.6888955,
+    "ast_hash": "55f0a376fb7855fbaa79054da7c310d1",
+    "semantic_hash": ""
+  },
+  "backend/services/modjar.go": {
+    "mtime": 1783022935.568621,
+    "ast_hash": "8fdb9284841f6fdd1aa8d7ddf1a9d2ad",
+    "semantic_hash": ""
+  },
+  "backend/services/modprovider.go": {
+    "mtime": 1782184198.7137887,
+    "ast_hash": "e9ae394393871f64647d5b683ecd737c",
+    "semantic_hash": ""
+  },
+  "backend/services/modrinth.go": {
+    "mtime": 1783022935.5651884,
+    "ast_hash": "a0a71ae9f8e3b45e99c73fa02ae9cc64",
+    "semantic_hash": ""
+  },
+  "backend/services/modrinth_test.go": {
+    "mtime": 1783025379.3801987,
+    "ast_hash": "2b29acb3728f1eed69e0b4ed816d77f5",
+    "semantic_hash": ""
+  },
+  "backend/services/modservice.go": {
+    "mtime": 1783036786.1398978,
+    "ast_hash": "28b99bdd2e27dff6426e1c0e066977e6",
+    "semantic_hash": ""
+  },
+  "backend/services/nbt.go": {
+    "mtime": 1783022935.5639496,
+    "ast_hash": "94a0dbe0ce0d5b378051996cc334f9f0",
+    "semantic_hash": ""
+  },
+  "backend/services/nbt_test.go": {
+    "mtime": 1781921696.7026062,
+    "ast_hash": "1a3bef22a5707dd3395cdddc23bf9aef",
+    "semantic_hash": ""
+  },
+  "backend/services/opener.go": {
+    "mtime": 1781921696.7026062,
+    "ast_hash": "44469fcc86034566393fbaa26af8b9fc",
+    "semantic_hash": ""
+  },
+  "backend/services/players.go": {
+    "mtime": 1783036777.8304853,
+    "ast_hash": "116f51ffd30520f81aabfbccfeede0ee",
+    "semantic_hash": ""
+  },
+  "backend/services/properties.go": {
+    "mtime": 1781921696.7041664,
+    "ast_hash": "ebcc2d064241fb4f81048c2e00063472",
+    "semantic_hash": ""
+  },
+  "backend/services/rcon.go": {
+    "mtime": 1781921696.7041664,
+    "ast_hash": "fdf614c42b613aa6b1342e5508a7b385",
+    "semantic_hash": ""
+  },
+  "backend/services/rcon_test.go": {
+    "mtime": 1783025296.0602555,
+    "ast_hash": "bb2abaf9d86f6a6aea165ab52f15f0fd",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler.go": {
+    "mtime": 1783128079.7429643,
+    "ast_hash": "cea09115e61031e8a9529e7e0c56e9ad",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_attributes.go": {
+    "mtime": 1783022935.568621,
+    "ast_hash": "b1816f34c42f6713d5a8ae98bf29015c",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_blocks.go": {
+    "mtime": 1783124282.5885987,
+    "ast_hash": "8fbbf1dde260fb6097fbd731e1786863",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_engine.go": {
+    "mtime": 1783128206.7557898,
+    "ast_hash": "5fabaab37192ac715ec0ee64d2c4cf0c",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_engine_test.go": {
+    "mtime": 1783128160.104131,
+    "ast_hash": "6286634fe9f48db4cb5d6258d114ce11",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_expr.go": {
+    "mtime": 1781921696.7091677,
+    "ast_hash": "64824be4c7e5bddaaf4d136ab0ae8d22",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_expr_test.go": {
+    "mtime": 1781921696.7095532,
+    "ast_hash": "acfef0271494eed345deb93ccde41ae3",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_nextrun.go": {
+    "mtime": 1781921696.7095532,
+    "ast_hash": "202b59500b816a1e6b0d7b67dfe2646c",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_nextrun_test.go": {
+    "mtime": 1783128149.4646378,
+    "ast_hash": "2006737205546ca0559c30623960aace",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_preview.go": {
+    "mtime": 1781921696.7110617,
+    "ast_hash": "81645e003c07de512fefe69746c05af1",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_registry.go": {
+    "mtime": 1783022935.558454,
+    "ast_hash": "2610bdf66892a08b9258cfa680281812",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_triggers.go": {
+    "mtime": 1781921696.7110617,
+    "ast_hash": "6e98a2a1d5e08b889199669857f6528f",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_triggers_test.go": {
+    "mtime": 1783128160.1035066,
+    "ast_hash": "ba064cb7d3f8fabccc593bca8195b111",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_validate.go": {
+    "mtime": 1783124322.6297317,
+    "ast_hash": "ff3a508d927cdeeb0f4982b665082826",
+    "semantic_hash": ""
+  },
+  "backend/services/scheduler_validate_test.go": {
+    "mtime": 1783124356.0184877,
+    "ast_hash": "93099fbd1449190edad07bf5468061bf",
+    "semantic_hash": ""
+  },
+  "backend/services/server.go": {
+    "mtime": 1783036861.3378258,
+    "ast_hash": "372ef96ddf7910275f248c7a08b652b3",
+    "semantic_hash": ""
+  },
+  "backend/services/server_other.go": {
+    "mtime": 1783036855.6320205,
+    "ast_hash": "ae96fb274644b0b4289927ccc0e023f7",
+    "semantic_hash": ""
+  },
+  "backend/services/server_windows.go": {
+    "mtime": 1783036850.4320683,
+    "ast_hash": "5d4b9df8518608fc0201dfe508800068",
+    "semantic_hash": ""
+  },
+  "backend/services/stats.go": {
+    "mtime": 1781921696.7164042,
+    "ast_hash": "27807cce82357f56fa0f698417fdac28",
+    "semantic_hash": ""
+  },
+  "backend/services/worlds.go": {
+    "mtime": 1783036751.4022534,
+    "ast_hash": "11e76abc508c070f3153c4c3ba9d68f2",
+    "semantic_hash": ""
+  },
+  "frontend/.prettierrc.json": {
+    "mtime": 1783019763.886515,
+    "ast_hash": "1c2451283a266cba78d639a1b8b143ec",
+    "semantic_hash": ""
+  },
+  "frontend/eslint.config.js": {
+    "mtime": 1783358525.330521,
+    "ast_hash": "f18c0f348474a5572674ca03cb4caf5b",
+    "semantic_hash": ""
+  },
+  "frontend/package.json": {
+    "mtime": 1783122493.01931,
+    "ast_hash": "30e3d3b7a58d9194f8bd8ce6df72dc06",
+    "semantic_hash": ""
+  },
+  "frontend/pnpm.json": {
+    "mtime": 1781138959.3103957,
+    "ast_hash": "bde71a71e0708fdb6dd59532f3c082f4",
+    "semantic_hash": ""
+  },
+  "frontend/scripts/check-bundle-size.mjs": {
+    "mtime": 1783027106.139998,
+    "ast_hash": "450615aceb5667e179a64607ccece6e8",
+    "semantic_hash": ""
+  },
+  "frontend/src/App.tsx": {
+    "mtime": 1783356630.3597107,
+    "ast_hash": "6004d4fea0c91d85c0a8b5b3c75d077d",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ActiveProcesses.tsx": {
+    "mtime": 1783358525.3319979,
+    "ast_hash": "ba7d58af3570e6af5dd5b617ea55bb34",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/Dashboard.tsx": {
+    "mtime": 1783358525.333077,
+    "ast_hash": "8da0faa5169aa39b280d36d9f92c0f5a",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ErrorBoundary.tsx": {
+    "mtime": 1783358525.3341794,
+    "ast_hash": "b38b285bcd4252fd5ecf965e2d5406e1",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/EulaModal.tsx": {
+    "mtime": 1783358525.335245,
+    "ast_hash": "680b25b43ca0356b06746de26f9a77d4",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/LayoutPresets.tsx": {
+    "mtime": 1783358525.3357909,
+    "ast_hash": "7eed71fae182040e05fead9f3a94c7e2",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ServerSelector.tsx": {
+    "mtime": 1783358525.3368647,
+    "ast_hash": "5ac5937cef0a86a0e4eb56f829e2e185",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/SettingsModal.tsx": {
+    "mtime": 1783358525.3374023,
+    "ast_hash": "08922624dc7ee1a4ae52ce0712b5ac0b",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/SplashScreen.tsx": {
+    "mtime": 1781921696.726679,
+    "ast_hash": "17cc33dab10bfbb5dbc5cc2d076387a2",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/TileCrate.tsx": {
+    "mtime": 1783358525.3391542,
+    "ast_hash": "ee686161c959c655a5f7063a20801aa6",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/ColorSwatch.tsx": {
+    "mtime": 1783035611.6539123,
+    "ast_hash": "f11423c3cf27e28c8c918136703eb0f6",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/Popover.tsx": {
+    "mtime": 1783035611.695737,
+    "ast_hash": "b6d80e526903e3f88dbd93f80e4235cb",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/Segmented.tsx": {
+    "mtime": 1783035611.7451806,
+    "ast_hash": "d2c13041fb71c50e96c71017dcccd0a0",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/SettingRow.tsx": {
+    "mtime": 1783035611.7689857,
+    "ast_hash": "476e17ba4957460b9212cdc7cfad978d",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/Toggle.tsx": {
+    "mtime": 1783035611.7895105,
+    "ast_hash": "fdc26ae9c85ce90f933cb4660cbfd595",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/usePopover.ts": {
+    "mtime": 1782253337.7623725,
+    "ast_hash": "58193f84a1f6eab004420e18ca800e50",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useWailsCall.ts": {
+    "mtime": 1781138959.316417,
+    "ast_hash": "6659126ac7d2a16719ed27ef6b776a01",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/constants.ts": {
+    "mtime": 1782253334.1710389,
+    "ast_hash": "30df89c8b81d8619e618b3e703f01cdc",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/format.test.ts": {
+    "mtime": 1783025147.55337,
+    "ast_hash": "13f4f31090a5db002274f5f5b25126ca",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/format.ts": {
+    "mtime": 1782253329.247775,
+    "ast_hash": "cedf31980e6c3957113f3f8644b5a8d6",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/layout.test.ts": {
+    "mtime": 1783025163.3863401,
+    "ast_hash": "e3b58a7c7a79be9f1bc59297908eb5d7",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/layout.ts": {
+    "mtime": 1781921696.7302814,
+    "ast_hash": "5b94d9b427dfcf134ea62494e31fdc78",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/notify.ts": {
+    "mtime": 1781921696.733099,
+    "ast_hash": "01023f765dffaa7f5b53a4e37bbda2ad",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/theme.ts": {
+    "mtime": 1782008065.1005714,
+    "ast_hash": "1b30db93db2860b275c9722591e4dacc",
+    "semantic_hash": ""
+  },
+  "frontend/src/main.tsx": {
+    "mtime": 1781921696.7341201,
+    "ast_hash": "ca0a4487c857c27165cb26dc64f5a5ce",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useConsoleStore.test.ts": {
+    "mtime": 1783025564.0733066,
+    "ast_hash": "ed1357ceeb2acb46504d8cb8ee89a454",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useConsoleStore.ts": {
+    "mtime": 1781921696.7341201,
+    "ast_hash": "2fe49669864ca2755d0f2b3a1b1f89f6",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useLayoutStore.test.ts": {
+    "mtime": 1783183140.6067276,
+    "ast_hash": "b24ee2f77af563984cc4a059d7c4fc7a",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useLayoutStore.ts": {
+    "mtime": 1783183140.607728,
+    "ast_hash": "d3d8dd15f839fa53453ea5822883a9cf",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useNotificationsStore.test.ts": {
+    "mtime": 1783025205.3235679,
+    "ast_hash": "f464dfb701bf34a494f7452341631d65",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useNotificationsStore.ts": {
+    "mtime": 1781921696.7341201,
+    "ast_hash": "955500257195a9f89f0f9ea718684067",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useProcessesStore.test.ts": {
+    "mtime": 1783025215.1434436,
+    "ast_hash": "0117cd13ff4fc430914d3754db139d0f",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useProcessesStore.ts": {
+    "mtime": 1781921696.736923,
+    "ast_hash": "3ccdbc2f1bfd674104195d46b150e15a",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useServerConfigStore.test.ts": {
+    "mtime": 1783183140.6087275,
+    "ast_hash": "54065cf456cb1754336182c5ff7f0234",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useServerConfigStore.ts": {
+    "mtime": 1783022258.5281658,
+    "ast_hash": "8397eb6004378c2b0f6b155ca83946e7",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useServerStore.ts": {
+    "mtime": 1781138959.3184166,
+    "ast_hash": "1c74f173ae1a8fc0d308dd419be896e6",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useSettingsStore.test.ts": {
+    "mtime": 1783183140.6087275,
+    "ast_hash": "a0211e56c03ce704c689c81e5dc5b092",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useSettingsStore.ts": {
+    "mtime": 1783183140.6097274,
+    "ast_hash": "d157f6eb6504903e0936be6da99c8b4e",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useTileStore.test.ts": {
+    "mtime": 1783183140.6097274,
+    "ast_hash": "69177cf82a394bfec1ff32fa657580ba",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useTileStore.ts": {
+    "mtime": 1783178835.084685,
+    "ast_hash": "830aefda150df2f043e2f95e94ba8b5e",
+    "semantic_hash": ""
+  },
+  "frontend/src/stores/useUiStore.ts": {
+    "mtime": 1781921696.7388134,
+    "ast_hash": "afe32928d5d5bdbb54d7b858636ffa7c",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/TileWrapper/index.tsx": {
+    "mtime": 1783354948.5776312,
+    "ast_hash": "3ffbbd34d8f92fb83177c4c6899d10d9",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/BackupCard.tsx": {
+    "mtime": 1783200589.753859,
+    "ast_hash": "e51ba1537354e6b9c8fbda7f50937982",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/BackupCarousel.tsx": {
+    "mtime": 1783200589.7913833,
+    "ast_hash": "2122d8e645b89fb494d616a624511798",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/BackupRunningDialog.tsx": {
+    "mtime": 1783200589.8032877,
+    "ast_hash": "c3cd4c509dae2aea797786899b442946",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/BackupsSummary.tsx": {
+    "mtime": 1783200589.8205628,
+    "ast_hash": "6f8de9aeae7fa122e293418123beb8a4",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/ServerInfoPanel.tsx": {
+    "mtime": 1783352199.688518,
+    "ast_hash": "79c281fbaf63ae574c081d9b51157b40",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/SolarSystem.tsx": {
+    "mtime": 1783352198.975481,
+    "ast_hash": "d731d8278163dc93c912bf32e1ac2040",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/WireframeSphere.tsx": {
+    "mtime": 1783200589.8891585,
+    "ast_hash": "d0c6129dd0a980a63d3832512eba07cf",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/WorldInfoPanel.tsx": {
+    "mtime": 1783200589.905133,
+    "ast_hash": "86a3dbe5b0c9aa76fe7d6f60477b53da",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/focusLayout.ts": {
+    "mtime": 1782168618.4464366,
+    "ast_hash": "f6d32961ab33e33575a18b02680095d9",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/format.ts": {
+    "mtime": 1782009527.6868227,
+    "ast_hash": "0ac8140043c0a5a50de879858562ad75",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/index.tsx": {
+    "mtime": 1783200589.9559205,
+    "ast_hash": "fa0fcc6230051cc42dd79904a479cc9d",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/useBackupWorlds.ts": {
+    "mtime": 1782071757.3169868,
+    "ast_hash": "baa3d4f6d3231cc3b027068b2dfd7678",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/backups/useBackups.ts": {
+    "mtime": 1782059407.2770302,
+    "ast_hash": "6d8ffa5027b246aabce15b3d43d986de",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/ConfigSummary.tsx": {
+    "mtime": 1783207354.7147567,
+    "ast_hash": "4f3c43366b2b16a52e76e7576e0783dc",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/EditorPanel.tsx": {
+    "mtime": 1783353780.6933079,
+    "ast_hash": "bf6c68c1ba62a18bb616be497641f800",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/FileList.tsx": {
+    "mtime": 1783207354.8704596,
+    "ast_hash": "50600902d6104640e4fb51ee0a9cb969",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/ConfigForm.tsx": {
+    "mtime": 1783207354.9192758,
+    "ast_hash": "a9a594670238294c820746d42407438f",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/inferType.ts": {
+    "mtime": 1781921696.746174,
+    "ast_hash": "26fa4cc73c18d910379a1919d1cc038d",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/parseJson.ts": {
+    "mtime": 1781921696.7472742,
+    "ast_hash": "e809b622a3e030de717d857b9f35ab5a",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/parseProperties.ts": {
+    "mtime": 1781921696.7472742,
+    "ast_hash": "78f1edd8c36c78d797fedbc467593d28",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/parseToml.ts": {
+    "mtime": 1781921696.7482924,
+    "ast_hash": "f81741706a67158c861bce2ce0fa2c33",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/parseYaml.ts": {
+    "mtime": 1781921696.7482924,
+    "ast_hash": "24fc661270c955dacbb68e7ab7d26a21",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/propertiesSchema.ts": {
+    "mtime": 1781921696.7482924,
+    "ast_hash": "9285217d52c8127397339bfbc7b42a03",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/form/widgets.tsx": {
+    "mtime": 1783207355.0430694,
+    "ast_hash": "4d8a70b4286302ceaf5a0bdc51822bce",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/index.tsx": {
+    "mtime": 1783207355.084354,
+    "ast_hash": "484e6064a68dc91350d695735cfac759",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/config/useConfigEditor.ts": {
+    "mtime": 1781921696.749298,
+    "ast_hash": "bb7bdc520d18cc26ad2b1806a4b55d96",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/console/index.tsx": {
+    "mtime": 1783353776.1428232,
+    "ast_hash": "7fe6bd2323a5e4fbb34f649d47a6172f",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/BrowsePanel.tsx": {
+    "mtime": 1783183140.6107295,
+    "ast_hash": "2991b1f6b0a6159def6e8ecdbf98a4a8",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/ContentCard.tsx": {
+    "mtime": 1783183140.6107295,
+    "ast_hash": "f817485744bf12501791876849c9a081",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/ContentDetailPanel.tsx": {
+    "mtime": 1783183140.6117272,
+    "ast_hash": "b85fad1ed6f990eb08ced3343203fb47",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/DependencyDialog.tsx": {
+    "mtime": 1783183140.6127284,
+    "ast_hash": "0e0537b7276b1476bbd7384b153edd16",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/InstalledPanel.tsx": {
+    "mtime": 1783183140.6127284,
+    "ast_hash": "f51d65e33c91b5fa03544b63ddcd839b",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/ModAboutBody.tsx": {
+    "mtime": 1783183140.614234,
+    "ast_hash": "9d9ed3cbb36ac5cda4c5a222c63219d7",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/ModPreviewDialog.tsx": {
+    "mtime": 1783183140.614753,
+    "ast_hash": "47359afe3f9cbe29292b8c3a75b250a3",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/Pagination.tsx": {
+    "mtime": 1783183140.615757,
+    "ast_hash": "cf6ee0e6e31ff3042ff46ea091c6e1dc",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/index.tsx": {
+    "mtime": 1783183140.615757,
+    "ast_hash": "4ed5246ac731677edcd3484a58859c66",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/useGridPageAnimation.ts": {
+    "mtime": 1782254884.6501937,
+    "ast_hash": "73965ca205d4ef94c88ce3b25f084e5e",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/mods/useMods.ts": {
+    "mtime": 1782253768.2435832,
+    "ast_hash": "875635ccb37f6aa3771aadd95915c5fb",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/notifications/index.tsx": {
+    "mtime": 1783039946.0231934,
+    "ast_hash": "73e4f3b6803347adbf64157b3eb5df1a",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/performance/charts.tsx": {
+    "mtime": 1783039557.7559829,
+    "ast_hash": "dae4b4b63e197ee6d8335a455ccde847",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/performance/helpers.ts": {
+    "mtime": 1783026938.2744863,
+    "ast_hash": "9c850b00eb663536fda8cdcb4cc6297c",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/performance/index.tsx": {
+    "mtime": 1783039946.2265325,
+    "ast_hash": "4b537f9e4834319a5382aa8999ed2b4b",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/performance/usePerformanceHistory.ts": {
+    "mtime": 1781921696.7549407,
+    "ast_hash": "ba172cf5874370dc4303552a2e575212",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/players/PlayerCard.tsx": {
+    "mtime": 1781921696.7554696,
+    "ast_hash": "a48724dc3d419197d3c7f4842d52ca8a",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/players/PlayerDetailPopup.tsx": {
+    "mtime": 1781921696.756079,
+    "ast_hash": "c4e70731c30250e659edbce741748a35",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/players/PlayerGrid.tsx": {
+    "mtime": 1781921696.7566168,
+    "ast_hash": "d5ae3b62a9ecb55b5b1d611e0aca33a2",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/players/PlayerRoster.tsx": {
+    "mtime": 1781921696.7571664,
+    "ast_hash": "560eede452e71baf06776509b1096dc0",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/players/index.tsx": {
+    "mtime": 1781921696.7576861,
+    "ast_hash": "5a7f0bb2e9f166efac16652680581cc0",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/quick-commands/index.tsx": {
+    "mtime": 1783039946.4394672,
+    "ast_hash": "47fb785c62823f332d43aa7f9d867bef",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/registry.ts": {
+    "mtime": 1782184473.3081307,
+    "ast_hash": "17563b1e6875ee1c11ac4e6825f2ac29",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/SchedulerSummary.tsx": {
+    "mtime": 1783205235.6674132,
+    "ast_hash": "46ff1e49349946d3437b9a2eff74e91b",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/AnimatedEdge.test.tsx": {
+    "mtime": 1783183127.984532,
+    "ast_hash": "7c1bcdfefa8abdee6fa5686ca46fb64e",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/AnimatedEdge.tsx": {
+    "mtime": 1783205235.6974547,
+    "ast_hash": "71a7d6252d50d32e4dd1d1c1c0a6b773",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/BlockNode.tsx": {
+    "mtime": 1783205235.7510757,
+    "ast_hash": "2e984ee6fbfd01c9b6e8aa94cbae7eb6",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/BlockPalette.tsx": {
+    "mtime": 1783205235.770696,
+    "ast_hash": "1ccbb7b1e7dbcce7a79ecfa531a71197",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/GraphEditor.tsx": {
+    "mtime": 1783205235.8504941,
+    "ast_hash": "e23269c9862e65aac42b4808a0079ff2",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/NodeConfigPanel.tsx": {
+    "mtime": 1783205235.8733885,
+    "ast_hash": "74398ba464372f1361c744de8f7b0bef",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/NodeDataPanel.tsx": {
+    "mtime": 1783205235.8873744,
+    "ast_hash": "0e7727c1a3017c6e46556a5a13d14d62",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/QuickAddMenu.tsx": {
+    "mtime": 1783205235.9107208,
+    "ast_hash": "f756478419c4ae05297f81cd48e6cd88",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/blockMeta.ts": {
+    "mtime": 1783205235.9220004,
+    "ast_hash": "12683397ca33e0fca67119430473fb61",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/graphMapping.test.ts": {
+    "mtime": 1783183140.617822,
+    "ast_hash": "3189c24b9d8d26831e8caec9cd23218a",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/graphMapping.ts": {
+    "mtime": 1783178026.56256,
+    "ast_hash": "92a2ee2144880588937d4b95f3b2cb42",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/portTypes.test.ts": {
+    "mtime": 1783127111.8579714,
+    "ast_hash": "b2583b901bdf98af82c10ca7b30c9442",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/portTypes.ts": {
+    "mtime": 1783127111.8691566,
+    "ast_hash": "126c6a15ef7d2e2a3c18ecdcd730a212",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/editor/schedulerContext.ts": {
+    "mtime": 1781921696.770703,
+    "ast_hash": "bcbaca4cef1ad5fbdcb11508f62de156",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/index.tsx": {
+    "mtime": 1781921696.7718668,
+    "ast_hash": "edb9463af56e20537d496254f72035df",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/useScheduler.test.ts": {
+    "mtime": 1783183140.617822,
+    "ast_hash": "1f668e95847085278645686ca5de24e4",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/scheduler/useScheduler.ts": {
+    "mtime": 1781921696.7738857,
+    "ast_hash": "a587610b54321c7b03eb7bc192c8a220",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/stats/index.tsx": {
+    "mtime": 1783039946.6041257,
+    "ast_hash": "d50c8bb7f736e5d738b8f5cac632bfc6",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/WorldHud.tsx": {
+    "mtime": 1781921696.7767873,
+    "ast_hash": "67b159e193425ea23f73b8ea4a8b5b71",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/index.tsx": {
+    "mtime": 1783022258.9609938,
+    "ast_hash": "547aed3771a1bebf30e4ae7bb9ec85b1",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/Galaxy.tsx": {
+    "mtime": 1783022258.9765668,
+    "ast_hash": "2033dd8d9a38d8d62f6993b0c60a10f0",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/OrbitPath.tsx": {
+    "mtime": 1781921696.7802453,
+    "ast_hash": "7cc30214eb17e38f52a563e786f8b8f5",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/OrbitRing.tsx": {
+    "mtime": 1781921696.7808094,
+    "ast_hash": "0fc6e7ab01222325ef2b03b9864831f3",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/Planet.tsx": {
+    "mtime": 1781921696.781983,
+    "ast_hash": "ef0af7007202e24eb469d55d463e9d2e",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/Sun.tsx": {
+    "mtime": 1783022258.9890325,
+    "ast_hash": "e7781df12ed4ff50cbbdecf7642bcbbe",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/WorldSystem.tsx": {
+    "mtime": 1781921696.7835767,
+    "ast_hash": "098e0e7120038681367cc4f30f94a771",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/WorldsScene.tsx": {
+    "mtime": 1781921696.7847564,
+    "ast_hash": "0c586b3e969f5ed6e680e7835db6ea92",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/scene/useParallax.ts": {
+    "mtime": 1781921696.7852907,
+    "ast_hash": "d275b4fa679b8ebd4fba10d527e96998",
+    "semantic_hash": ""
+  },
+  "frontend/src/tiles/worlds/useWorlds.ts": {
+    "mtime": 1781921696.786546,
+    "ast_hash": "f2aa38f528a137ae2b6a9b39d9576591",
+    "semantic_hash": ""
+  },
+  "frontend/src/types/index.ts": {
+    "mtime": 1783183140.618829,
+    "ast_hash": "ef78962b13cc38ab3d0f860b708cc54d",
+    "semantic_hash": ""
+  },
+  "frontend/src/vite-env.d.ts": {
+    "mtime": 1781138959.3269596,
+    "ast_hash": "8f68c27c3fc38817b2726b20e2d4f1ee",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.json": {
+    "mtime": 1781138959.3279595,
+    "ast_hash": "350c031e1f1266e5e8c43bb53a8191c7",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.node.json": {
+    "mtime": 1781138959.3279595,
+    "ast_hash": "084a8ff8b3cc049c430043ba2548ae02",
+    "semantic_hash": ""
+  },
+  "frontend/vite.config.ts": {
+    "mtime": 1783025126.843433,
+    "ast_hash": "fbee0f536451dd5daeaf06c4af52325d",
+    "semantic_hash": ""
+  },
+  "frontend/wailsjs/go/main/App.d.ts": {
+    "mtime": 1783358402.9026442,
+    "ast_hash": "246531b4a9dda069b19a65b6f9c8cc39",
+    "semantic_hash": ""
+  },
+  "frontend/wailsjs/go/main/App.js": {
+    "mtime": 1783358402.9026442,
+    "ast_hash": "e1de5d6612fb6882aeef6659c90fc88d",
+    "semantic_hash": ""
+  },
+  "frontend/wailsjs/go/models.ts": {
+    "mtime": 1783358402.9073884,
+    "ast_hash": "fefcc25d04b4b741a813b1321636684f",
+    "semantic_hash": ""
+  },
+  "frontend/wailsjs/runtime/package.json": {
+    "mtime": 1783358402.9275856,
+    "ast_hash": "a79e9c39ebcda0fdeb14a44939bc489e",
+    "semantic_hash": ""
+  },
+  "frontend/wailsjs/runtime/runtime.d.ts": {
+    "mtime": 1783358402.9281518,
+    "ast_hash": "dcd9fca4af1912f552547c22f315c25e",
+    "semantic_hash": ""
+  },
+  "frontend/wailsjs/runtime/runtime.js": {
+    "mtime": 1783358402.9287093,
+    "ast_hash": "efc7f0ddc7f96e446ad0252df27b477f",
+    "semantic_hash": ""
+  },
+  "go.mod": {
+    "mtime": 1781921696.79276,
+    "ast_hash": "a3af5ce79a7688b814c084c033ab9550",
+    "semantic_hash": ""
+  },
+  "main.go": {
+    "mtime": 1783022935.9114852,
+    "ast_hash": "ed4c2db27e9c5118bd19622441f936b7",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1783019834.9451475,
+    "ast_hash": "7421572d562bdea835ae3d1528dce102",
+    "semantic_hash": ""
+  },
+  "wails.json": {
+    "mtime": 1781138959.3333592,
+    "ast_hash": "5f81a98f41fb6e73f58951924655cf72",
+    "semantic_hash": ""
+  },
+  "website/main.js": {
+    "mtime": 1783359152.0282626,
+    "ast_hash": "d38c0d55a8b7a1a810d7ac75ca55d32a",
+    "semantic_hash": ""
+  },
+  "website/scenes.js": {
+    "mtime": 1783464709.9605784,
+    "ast_hash": "2e3b617af079cac18b3b2b793a610cfb",
+    "semantic_hash": ""
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1783027114.869706,
+    "ast_hash": "78d98d402b95fdf10ab6de59d10f892e",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1783466042.120539,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1783191607.0696962,
+    "ast_hash": "cccfd715e77e87f9c01109cc8cad0715",
+    "semantic_hash": ""
+  },
+  "agent_docs/CLAUDE.md": {
+    "mtime": 1783122493.8786457,
+    "ast_hash": "f962030358a5021be641048078bf34af",
+    "semantic_hash": ""
+  },
+  "agent_docs/DEPENDENCIES.md": {
+    "mtime": 1783122529.257713,
+    "ast_hash": "34c2b1ec0aa17f303bd9d6b4afc5e8a9",
+    "semantic_hash": ""
+  },
+  "agent_docs/HEALTH_CHECKLIST.md": {
+    "mtime": 1783358525.328244,
+    "ast_hash": "e9bbc5ed8894ef1343045d23a5560609",
+    "semantic_hash": ""
+  },
+  "agent_docs/ROADMAP.md": {
+    "mtime": 1783127231.4476821,
+    "ast_hash": "6144fe94cbccd63e637918bcfe1fd386",
+    "semantic_hash": ""
+  },
+  "agent_docs/scheduler-blocks-rework.md": {
+    "mtime": 1781921696.7967613,
+    "ast_hash": "f0467ed138c948f6a2d9a099e8d78030",
+    "semantic_hash": ""
+  },
+  "frontend/index.html": {
+    "mtime": 1783353747.9749618,
+    "ast_hash": "e57b5ceb900dd09402420b6fced076b9",
+    "semantic_hash": ""
+  },
+  "frontend/pnpm-workspace.yaml": {
+    "mtime": 1781138959.3103957,
+    "ast_hash": "06a54e4a6922cd3ce23336eff6eae2b1",
+    "semantic_hash": ""
+  },
+  "lefthook.yml": {
+    "mtime": 1783019870.6117232,
+    "ast_hash": "98ff1af206cac5ebc2b79cb800ef44b0",
+    "semantic_hash": ""
+  },
+  "pnpm-workspace.yaml": {
+    "mtime": 1783019852.601904,
+    "ast_hash": "5c7e7c09118fa8b3296b9b4f89ed7e66",
+    "semantic_hash": ""
+  },
+  "website/index.html": {
+    "mtime": 1783464802.5704808,
+    "ast_hash": "b455a93a90334db0ef5978a510749259",
+    "semantic_hash": ""
+  },
+  "docs/images/backups.png": {
+    "mtime": 1783186634.5662415,
+    "ast_hash": "ea3c142bbebdc64953c734484f96fc26",
+    "semantic_hash": ""
+  },
+  "docs/images/live-console.png": {
+    "mtime": 1783186634.5682197,
+    "ast_hash": "4f8c351b900d481c416e7b72697d5748",
+    "semantic_hash": ""
+  },
+  "docs/images/mod-icon-placeholder.svg": {
+    "mtime": 1783191481.1275241,
+    "ast_hash": "8bfe972f57374378e106ad78ba989642",
+    "semantic_hash": ""
+  },
+  "docs/images/mods-plugins.png": {
+    "mtime": 1783186634.5712197,
+    "ast_hash": "071e9459739c6e8c191eb9c649be2fae",
+    "semantic_hash": ""
+  },
+  "docs/images/server-config.png": {
+    "mtime": 1783186634.5722203,
+    "ast_hash": "fffc4d4506ea79a085722d15af0ac7e8",
+    "semantic_hash": ""
+  },
+  "docs/images/tile-dashboard.png": {
+    "mtime": 1783186634.5742211,
+    "ast_hash": "69e1423ecfdd15c9efb5d89686328407",
+    "semantic_hash": ""
+  },
+  "docs/images/visual-scheduler.png": {
+    "mtime": 1783186634.5742211,
+    "ast_hash": "b4d88404766a7e6849744242e194f8b6",
+    "semantic_hash": ""
+  },
+  "docs/images/world-management-1.png": {
+    "mtime": 1783186634.5757267,
+    "ast_hash": "fc3eebf81bc29e1d2be4d05b5ccba5d0",
+    "semantic_hash": ""
+  },
+  "docs/images/world-management-2.png": {
+    "mtime": 1783186634.577752,
+    "ast_hash": "616f7a765babbb0a3518e1140ded5168",
+    "semantic_hash": ""
+  },
+  "frontend/src/assets/images/logo-universal.png": {
+    "mtime": 1781138959.3144107,
+    "ast_hash": "f7ae2c8bdd62b57052a7ce127fcb3a01",
+    "semantic_hash": ""
+  },
+  "website/assets/img/visual-scheduler.png": {
+    "mtime": 1783359054.5132022,
+    "ast_hash": "b4d88404766a7e6849744242e194f8b6",
+    "semantic_hash": ""
+  }
+}
