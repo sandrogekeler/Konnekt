@@ -13,6 +13,7 @@ import { useConsoleStore } from './stores/useConsoleStore'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessesStore } from './stores/useProcessesStore'
 import { emitNotification } from './lib/notify'
+import { prefetchHeavyChunks } from './lib/prefetch'
 import { EVENTS } from './lib/constants'
 
 function App() {
@@ -25,6 +26,12 @@ function App() {
 
   useEffect(() => {
     useSettingsStore.getState().load()
+  }, [])
+
+  // Warm the heavy lazy-loaded tile chunks (worlds scene, charts) during
+  // idle time so the first tile open doesn't stutter on a cold fetch+eval.
+  useEffect(() => {
+    prefetchHeavyChunks()
   }, [])
 
   // Auto-start active server on launch
