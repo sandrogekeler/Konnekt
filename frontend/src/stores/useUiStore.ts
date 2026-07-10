@@ -14,6 +14,10 @@ interface UiStore {
   // Tile to briefly glow green on the canvas (utility-tile click).
   flashTileId: string | null
   flashTile: (id: string) => void
+  // Set by the maximized tile to veto a close (e.g. unsaved changes). Returning
+  // true blocks the close and takes over showing its own confirm UI.
+  closeGuard: (() => boolean) | null
+  setCloseGuard: (fn: (() => boolean) | null) => void
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -34,4 +38,7 @@ export const useUiStore = create<UiStore>((set) => ({
       set((s) => (s.flashTileId === id ? { flashTileId: null } : s))
     }, 1200)
   },
+
+  closeGuard: null,
+  setCloseGuard: (fn) => set({ closeGuard: fn }),
 }))

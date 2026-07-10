@@ -118,6 +118,50 @@ export function randId(): string {
   return Math.random().toString(36).slice(2, 10)
 }
 
+// A stable fingerprint of everything a "save" persists, for dirty-checking
+// against a last-saved snapshot. Deliberately excludes fields that change
+// without representing a real edit: React Flow `selected`/`dimensions`,
+// `_animDelay` (load-only stagger, already absent from flowToGraph output),
+// and `_collapsed` (a view toggle, not graph content). Node `position` is
+// included on purpose — dragging a node counts as an unsaved change.
+export function graphSignature(
+  meta: Pick<models.Graph, 'name' | 'enabled'>,
+  nodes: FlowNode[],
+  edges: FlowEdge[],
+): string {
+  return JSON.stringify({
+    name: meta.name,
+    enabled: meta.enabled,
+    nodes: nodes
+      .map((n) => ({
+        id: n.id,
+        type: (n.data as NodeData).blockType,
+        config: stripCollapsed((n.data as NodeData).config),
+        position: { x: n.position.x, y: n.position.y },
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+    edges: edges
+      .map((e) => {
+        const srcH = e.sourceHandle ?? ''
+        const tgtH = e.targetHandle ?? ''
+        return {
+          id: e.id,
+          kind: srcH.startsWith('data:') ? 'data' : 'control',
+          source: e.source,
+          sourcePort: srcH.replace(/^(ctrl|data):/, ''),
+          target: e.target,
+          targetPort: tgtH.replace(/^(ctrl|data):/, ''),
+        }
+      })
+      .sort((a, b) => a.id.localeCompare(b.id)),
+  })
+}
+
+function stripCollapsed(config: Record<string, unknown>): Record<string, unknown> {
+  const { _collapsed, ...rest } = config
+  return rest
+}
+
 // detectControlCycles finds nodes and edges that participate in a control-flow
 // cycle. The engine aborts any run that loops (maxNodesPerRun guard), so the
 // editor flags cycles statically to warn the author before they run.

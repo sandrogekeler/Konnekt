@@ -26,6 +26,7 @@ import { QuickAddMenu } from './QuickAddMenu'
 import {
   graphToFlow,
   flowToGraph,
+  graphSignature,
   isValidConnection as isValidGraphConnection,
   randId,
   defaultConfig,
@@ -33,8 +34,10 @@ import {
   type NodeData,
   type BlockFlowNode,
 } from './graphMapping'
+import { CloseConfirmDialog } from './CloseConfirmDialog'
 import { EventsOn } from '../../../../wailsjs/runtime/runtime'
 import { EVENTS } from '../../../lib/constants'
+import { useUiStore } from '../../../stores/useUiStore'
 import type { models } from '../../../../wailsjs/go/models'
 
 // schedule:* event payload shapes (emitted by the Go engine via EventBus).
@@ -108,6 +111,33 @@ function GraphEditorInner({
   const [runStatus, setRunStatus] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const runStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Unsaved-changes guard ─────────────────────────────────────────────────
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  // State (not a ref) so changing it — on load/save/discard — reliably
+  // invalidates the `dirty` memo below.
+  const [savedSig, setSavedSig] = useState('')
+  const dirty = useMemo(
+    () => graphSignature({ name: graphName, enabled: graphEnabled }, nodes, edges) !== savedSig,
+    [graphName, graphEnabled, nodes, edges, savedSig],
+  )
+  const dirtyRef = useRef(false)
+  useEffect(() => {
+    dirtyRef.current = dirty
+  }, [dirty])
+
+  // Veto a Dashboard-initiated close (Escape / backdrop / restore button /
+  // navbar) while there are unsaved changes, in favor of our own confirm
+  // dialog. Registered only while this editor is mounted (i.e. maximized).
+  const setCloseGuard = useUiStore((s) => s.setCloseGuard)
+  useEffect(() => {
+    setCloseGuard(() => {
+      if (!dirtyRef.current) return false
+      setShowCloseConfirm(true)
+      return true
+    })
+    return () => setCloseGuard(null)
+  }, [setCloseGuard])
 
   // ── Live run highlighting (driven by schedule:* events) ───────────────────
   const [nodeRunState, setNodeRunState] = useState<Map<string, NodeRunState>>(new Map())
@@ -244,6 +274,7 @@ function GraphEditorInner({
       setSelectedNodeId(null)
       setNodeRunState(new Map())
       setFiredEdges(new Set())
+      setSavedSig(graphSignature({ name: g.name, enabled: g.enabled }, animNodes, animEdges))
       // Re-measure handle positions after the maximize animation (panel animates
       // for 180ms). ReactFlow's initial measurement runs while the panel ancestor
       // may still have scale < 1, producing stale edge endpoints. Waiting 220ms
@@ -400,6 +431,7 @@ function GraphEditorInner({
     setGraphEnabled(false)
     setCreatedAt(0)
     setSelectedNodeId(null)
+    setSavedSig(graphSignature({ name: 'New graph', enabled: false }, [], []))
   }, [setNodes, setEdges])
 
   // ── Save ──────────────────────────────────────────────────────────────────
@@ -414,6 +446,7 @@ function GraphEditorInner({
       const saved = await onSave(graph)
       setGraphId(saved.id)
       setCreatedAt(saved.createdAt)
+      setSavedSig(graphSignature({ name: graphName, enabled: graphEnabled }, nodes, edges))
       return saved.id
     } finally {
       setSaving(false)
@@ -557,10 +590,16 @@ function GraphEditorInner({
           ) : (
             <span
               onClick={() => setNameEditing(true)}
-              className="text-text-muted border-border-subtle min-w-[60px] cursor-text border-b-[0.5px] border-dashed font-mono text-[11px]"
+              className="text-text-muted border-border-subtle flex min-w-[60px] cursor-text items-center gap-1.5 border-b-[0.5px] border-dashed font-mono text-[11px]"
               title="Click to rename"
             >
               {graphName || 'Untitled'}
+              {dirty && (
+                <span
+                  className="bg-accent h-1.5 w-1.5 shrink-0 rounded-full"
+                  title="Unsaved changes"
+                />
+              )}
             </span>
           )}
 
@@ -703,6 +742,23 @@ function GraphEditorInner({
             setQuickAdd(null)
           }}
           onClose={() => setQuickAdd(null)}
+        />
+      )}
+
+      {showCloseConfirm && (
+        <CloseConfirmDialog
+          saving={saving}
+          onCancel={() => setShowCloseConfirm(false)}
+          onDiscard={() => {
+            setSavedSig(graphSignature({ name: graphName, enabled: graphEnabled }, nodes, edges))
+            setShowCloseConfirm(false)
+            useUiStore.getState().requestCloseMaximize()
+          }}
+          onSaveAndClose={async () => {
+            await handleSave()
+            setShowCloseConfirm(false)
+            useUiStore.getState().requestCloseMaximize()
+          }}
         />
       )}
     </SchedulerCtx.Provider>
