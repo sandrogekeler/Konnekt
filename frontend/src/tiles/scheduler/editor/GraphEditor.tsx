@@ -14,6 +14,8 @@ import {
   type Connection,
   type Node as FlowNode,
   type Edge as FlowEdge,
+  type NodeChange,
+  type EdgeChange,
 } from '@xyflow/react'
 import { CATEGORY_COLOR } from './blockMeta'
 import { SchedulerCtx, type NodeRunState } from './schedulerContext'
@@ -33,6 +35,16 @@ import {
   type NodeData,
   type BlockFlowNode,
 } from './graphMapping'
+import {
+  emptyHistory,
+  record as recordHistory,
+  undo as undoHistory,
+  redo as redoHistory,
+  canUndo,
+  canRedo,
+  type HistoryState,
+  type GraphSnapshot,
+} from './graphHistory'
 import { EventsOn } from '../../../../wailsjs/runtime/runtime'
 import { EVENTS } from '../../../lib/constants'
 import type { models } from '../../../../wailsjs/go/models'
@@ -104,6 +116,12 @@ function GraphEditorInner({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [panelTab, setPanelTab] = useState<'config' | 'data'>('config')
 
+  // ── Undo/redo history (up to 10 past actions, tile-local — see graphHistory.ts) ──
+  const [history, setHistory] = useState<HistoryState>(emptyHistory())
+  const historyRef = useRef<HistoryState>(history)
+  const nodesRef = useRef<BlockFlowNode[]>(nodes)
+  const dragSnapshotRef = useRef<GraphSnapshot | null>(null)
+
   // ── UI state ──────────────────────────────────────────────────────────────
   const [runStatus, setRunStatus] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -144,8 +162,67 @@ function GraphEditorInner({
     edgesRef.current = edges
   }, [edges])
   useEffect(() => {
+    nodesRef.current = nodes
+  }, [nodes])
+  useEffect(() => {
     graphIdRef.current = graphId
   }, [graphId])
+  useEffect(() => {
+    historyRef.current = history
+  }, [history])
+
+  // Snapshot the pre-mutation graph into history. Calls sharing the same tag
+  // (e.g. successive keystrokes in one config field) coalesce into one entry.
+  const recordPre = useCallback((tag: string | null = null) => {
+    setHistory((h) => recordHistory(h, { nodes: nodesRef.current, edges: edgesRef.current }, tag))
+  }, [])
+
+  const applySnapshot = useCallback(
+    (snapshot: GraphSnapshot) => {
+      setNodes(snapshot.nodes)
+      setEdges(snapshot.edges)
+      setSelectedNodeId((id) => (id && snapshot.nodes.some((n) => n.id === id) ? id : null))
+      const ids = snapshot.nodes.map((n) => n.id)
+      setTimeout(() => updateNodeInternals(ids), 0)
+    },
+    [setNodes, setEdges, updateNodeInternals],
+  )
+
+  const doUndo = useCallback(() => {
+    const result = undoHistory(historyRef.current, {
+      nodes: nodesRef.current,
+      edges: edgesRef.current,
+    })
+    if (!result) return
+    setHistory(result.state)
+    applySnapshot(result.snapshot)
+  }, [applySnapshot])
+
+  const doRedo = useCallback(() => {
+    const result = redoHistory(historyRef.current, {
+      nodes: nodesRef.current,
+      edges: edgesRef.current,
+    })
+    if (!result) return
+    setHistory(result.state)
+    applySnapshot(result.snapshot)
+  }, [applySnapshot])
+
+  // ── Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo ─────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return
+      const key = e.key.toLowerCase()
+      if (key !== 'z' && key !== 'y') return
+      const tag = (document.activeElement as HTMLElement | null)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return
+      e.preventDefault()
+      if (key === 'y' || (key === 'z' && e.shiftKey)) doRedo()
+      else doUndo()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [doUndo, doRedo])
 
   // ── Subscribe to live run events ──────────────────────────────────────────
   // The engine emits these for every graph; we only reflect the loaded one.
@@ -244,6 +321,7 @@ function GraphEditorInner({
       setSelectedNodeId(null)
       setNodeRunState(new Map())
       setFiredEdges(new Set())
+      setHistory(emptyHistory())
       // Re-measure handle positions after the maximize animation (panel animates
       // for 180ms). ReactFlow's initial measurement runs while the panel ancestor
       // may still have scale < 1, producing stale edge endpoints. Waiting 220ms
@@ -264,6 +342,7 @@ function GraphEditorInner({
   // ── Connect handler ───────────────────────────────────────────────────────
   const onConnect = useCallback(
     (connection: Connection) => {
+      recordPre()
       const srcH = connection.sourceHandle ?? ''
       const isData = srcH.startsWith('data:')
       setEdges((es) =>
@@ -279,7 +358,7 @@ function GraphEditorInner({
         ),
       )
     },
-    [setEdges],
+    [setEdges, recordPre],
   )
 
   const isValidConnection = useCallback(
@@ -290,6 +369,9 @@ function GraphEditorInner({
   // ── Alt+drag → duplicate node at its original position ───────────────────
   const onNodeDragStart = useCallback(
     (e: MouseEvent | TouchEvent, node: FlowNode) => {
+      // Snapshot before any drag/duplicate mutation; onNodeDragStop decides
+      // whether the gesture actually changed anything worth an undo entry.
+      dragSnapshotRef.current = { nodes: nodesRef.current, edges: edgesRef.current }
       if (!('altKey' in e) || !e.altKey) return
       const newId = randId()
       setNodes((ns) => [
@@ -321,6 +403,23 @@ function GraphEditorInner({
     [setNodes, setEdges],
   )
 
+  // A completed drag (move, or Alt-drag duplicate+move) is one undo entry —
+  // recorded here rather than on drag start, so a no-op click/Alt-click
+  // (no actual position change or new node) doesn't pollute the history.
+  const onNodeDragStop = useCallback(() => {
+    const snap = dragSnapshotRef.current
+    dragSnapshotRef.current = null
+    if (!snap) return
+    const changed =
+      nodesRef.current.length !== snap.nodes.length ||
+      nodesRef.current.some((n) => {
+        const prev = snap.nodes.find((p) => p.id === n.id)
+        return !prev || prev.position.x !== n.position.x || prev.position.y !== n.position.y
+      })
+    if (!changed) return
+    setHistory((h) => recordHistory(h, snap))
+  }, [])
+
   // ── Node selection ────────────────────────────────────────────────────────
   const onNodeClick = useCallback((_: React.MouseEvent, node: FlowNode) => {
     setSelectedNodeId(node.id)
@@ -336,6 +435,9 @@ function GraphEditorInner({
   const updateNodeConfig = useCallback(
     (key: string, value: unknown) => {
       if (!selectedNodeId) return
+      // Tagged so a burst of keystrokes on the same field coalesces into one
+      // undo entry (restoring the pre-edit value), instead of one per change.
+      recordPre(`cfg:${selectedNodeId}:${key}`)
       setNodes((ns) =>
         ns.map((n) =>
           n.id === selectedNodeId
@@ -347,12 +449,13 @@ function GraphEditorInner({
         ),
       )
     },
-    [selectedNodeId, setNodes],
+    [selectedNodeId, setNodes, recordPre],
   )
 
   // ── Add block ─────────────────────────────────────────────────────────────
   const addBlock = useCallback(
     (def: models.BlockDef, position?: { x: number; y: number }) => {
+      recordPre()
       const id = randId()
       const pos = position ?? { x: 80 + nodes.length * 30, y: 80 + nodes.length * 20 }
       setNodes((ns) => [
@@ -370,7 +473,7 @@ function GraphEditorInner({
       ])
       setSelectedNodeId(id)
     },
-    [nodes.length, setNodes],
+    [nodes.length, setNodes, recordPre],
   )
 
   // Drag-drop from palette onto canvas
@@ -400,6 +503,7 @@ function GraphEditorInner({
     setGraphEnabled(false)
     setCreatedAt(0)
     setSelectedNodeId(null)
+    setHistory(emptyHistory())
   }, [setNodes, setEdges])
 
   // ── Save ──────────────────────────────────────────────────────────────────
@@ -438,12 +542,13 @@ function GraphEditorInner({
     const selectedIds = new Set(nodes.filter((n) => n.selected).map((n) => n.id))
     const hasSelectedEdges = edges.some((e) => e.selected)
     if (selectedIds.size === 0 && !hasSelectedEdges) return
+    recordPre()
     setNodes((ns) => ns.filter((n) => !n.selected))
     setEdges((es) =>
       es.filter((e) => !e.selected && !selectedIds.has(e.source) && !selectedIds.has(e.target)),
     )
     setSelectedNodeId(null)
-  }, [nodes, edges, setNodes, setEdges])
+  }, [nodes, edges, setNodes, setEdges, recordPre])
 
   // ── Toggle enabled ────────────────────────────────────────────────────────
   const handleToggleEnabled = useCallback(async () => {
@@ -496,6 +601,23 @@ function GraphEditorInner({
   const { cycleNodes, cycleEdges } = useMemo(
     () => detectControlCycles(nodes, edges),
     [nodes, edges],
+  )
+
+  // Wrap ReactFlow's own change handlers so a Delete-key removal (which never
+  // goes through handleDeleteSelected) still records an undo entry.
+  const handleNodesChange = useCallback(
+    (changes: NodeChange<BlockFlowNode>[]) => {
+      if (changes.some((c) => c.type === 'remove')) recordPre()
+      onNodesChange(changes)
+    },
+    [onNodesChange, recordPre],
+  )
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange<FlowEdge>[]) => {
+      if (changes.some((c) => c.type === 'remove')) recordPre()
+      onEdgesChange(changes)
+    },
+    [onEdgesChange, recordPre],
   )
 
   const ctxValue = useMemo(
@@ -576,6 +698,23 @@ function GraphEditorInner({
             </button>
           )}
 
+          <button
+            className={`${btnClass()} ${!canUndo(history) ? 'opacity-50' : ''}`}
+            onClick={doUndo}
+            disabled={!canUndo(history)}
+            title="Undo (Ctrl+Z)"
+          >
+            undo
+          </button>
+          <button
+            className={`${btnClass()} ${!canRedo(history) ? 'opacity-50' : ''}`}
+            onClick={doRedo}
+            disabled={!canRedo(history)}
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            redo
+          </button>
+
           <div className="flex-1" />
 
           {runStatus && <span className="text-text-faint font-mono text-[10px]">{runStatus}</span>}
@@ -623,11 +762,12 @@ function GraphEditorInner({
               edges={edges}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
               onConnect={onConnect}
               onNodeClick={onNodeClick}
               onNodeDragStart={onNodeDragStart}
+              onNodeDragStop={onNodeDragStop}
               onPaneClick={onPaneClick}
               isValidConnection={isValidConnection}
               fitView
