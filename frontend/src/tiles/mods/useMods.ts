@@ -118,6 +118,7 @@ export function useMods(serverId: string): ModsState {
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const refreshInstalled = useCallback(async (silent = false) => {
+    if (!serverId) return
     if (!silent) setInstalledLoading(true)
     setInstalledError(null)
     try {
@@ -172,6 +173,7 @@ export function useMods(serverId: string): ModsState {
   }, [serverId, refreshInstalled])
 
   const loadCategories = useCallback(async () => {
+    if (!serverId) return
     try {
       const cats = (await ModCategories(serverId)) as string[]
       setCategories(cats ?? [])
