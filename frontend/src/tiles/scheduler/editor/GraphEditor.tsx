@@ -23,6 +23,8 @@ import { BlockPalette } from './BlockPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
 import { NodeDataPanel } from './NodeDataPanel'
 import { QuickAddMenu } from './QuickAddMenu'
+import { Popover } from '../../../components/ui/Popover'
+import { usePopover } from '../../../hooks/usePopover'
 import {
   graphToFlow,
   flowToGraph,
@@ -97,6 +99,7 @@ function GraphEditorInner({
   const [graphEnabled, setGraphEnabled] = useState(false)
   const [createdAt, setCreatedAt] = useState(0)
   const [nameEditing, setNameEditing] = useState(false)
+  const graphMenu = usePopover()
 
   // ── Canvas state ──────────────────────────────────────────────────────────
   const [nodes, setNodes, onNodesChange] = useNodesState<BlockFlowNode>([])
@@ -527,22 +530,63 @@ function GraphEditorInner({
         {/* ── Toolbar ──────────────────────────────────────────────────── */}
         <div className="border-border-subtle bg-surface flex shrink-0 flex-wrap items-center gap-2 border-b-[0.5px] px-3 py-1.5">
           {/* Graph selector */}
-          <select
-            value={graphId ?? ''}
-            onChange={(e) => {
-              const g = graphs.find((x) => x.id === e.target.value)
-              if (g) loadGraph(g)
-            }}
-            className="bg-canvas border-border-subtle text-text-primary max-w-[160px] rounded border-[0.5px] px-1.5 py-0.5 font-mono text-[11px]"
-          >
-            {graphs.length === 0 && <option value="">— no graphs —</option>}
-            {graphs.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name || g.id}
-              </option>
-            ))}
-            {graphId === '' && <option value="">— new graph —</option>}
-          </select>
+          <div className="relative shrink-0">
+            <button
+              onClick={graphMenu.toggle}
+              className={`border-border-subtle text-text-primary flex max-w-[160px] shrink-0 items-center gap-1 rounded border-[0.5px] px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap transition-colors ${
+                graphMenu.open ? 'bg-hover' : 'bg-canvas'
+              }`}
+            >
+              <span className="text-text-faint text-[10px]">☰</span>
+              <span className="truncate">
+                {graphs.length === 0
+                  ? '— no graphs —'
+                  : graphId === ''
+                    ? '— new graph —'
+                    : (graphs.find((g) => g.id === graphId)?.name ?? graphId ?? '— new graph —')}
+              </span>
+            </button>
+
+            <Popover open={graphMenu.open} onClose={graphMenu.close} width={180} maxHeight={280}>
+              {graphs.length === 0 && (
+                <div className="text-text-faint px-3 py-1.5 font-mono text-xs">— no graphs —</div>
+              )}
+              {graphs.map((g) => {
+                const active = g.id === graphId
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => {
+                      loadGraph(g)
+                      graphMenu.close()
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                      active
+                        ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                        : 'text-text-primary bg-transparent'
+                    }`}
+                    onMouseEnter={(e) => {
+                      if (!active)
+                        (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                    }}
+                  >
+                    <span className={`text-accent w-3 ${active ? 'opacity-100' : 'opacity-0'}`}>
+                      ✓
+                    </span>
+                    {g.name || g.id}
+                  </button>
+                )
+              })}
+              {graphId === '' && (
+                <div className="text-accent flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs">
+                  <span className="w-3">✓</span>— new graph —
+                </div>
+              )}
+            </Popover>
+          </div>
 
           {/* Graph name */}
           {nameEditing ? (

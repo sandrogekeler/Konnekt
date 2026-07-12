@@ -379,7 +379,7 @@ export function QuickCommandsTile({ serverId }: TileProps) {
         createPortal(
           <div
             ref={dropdownRef}
-            className="fixed z-[9999] grid grid-cols-2 gap-1.5 overflow-y-auto rounded-[10px] border-[0.5px] border-white/10 bg-[#0d0e14] p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            className="modal-panel-in fixed z-[9999] grid grid-cols-2 gap-1.5 overflow-y-auto rounded-[10px] border-[0.5px] border-white/10 bg-[#0d0e14] p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
             // eslint-disable-next-line no-restricted-syntax -- position computed from getBoundingClientRect, not visible to Tailwind's static scanner
             style={{
               top: dropdownPos.top,
@@ -408,8 +408,8 @@ export function QuickCommandsTile({ serverId }: TileProps) {
         )}
 
       {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="border-border-subtle bg-canvas flex w-72 flex-col gap-4 rounded-xl border-[0.5px] p-5">
+        <div className="modal-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="modal-panel-in border-border-subtle bg-canvas flex w-80 flex-col gap-4 rounded-xl border-[0.5px] p-5">
             <div className="flex flex-col gap-1">
               <span className="text-text-primary text-sm font-semibold capitalize">
                 {confirmAction === 'stop' ? 'Stop server?' : 'Restart server?'}
@@ -456,34 +456,50 @@ export function QuickCommandsTile({ serverId }: TileProps) {
       )}
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="flex w-80 flex-col gap-3 rounded-xl border-[0.5px] border-white/10 bg-[#0d0e14] p-5">
-            <h3 className="text-sm font-semibold capitalize">{modal.type} Player</h3>
+        <div className="modal-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="modal-panel-in border-border-subtle bg-canvas flex w-80 flex-col gap-3 rounded-xl border-[0.5px] p-5">
+            <h3 className="text-text-primary text-sm font-semibold capitalize">
+              {modal.type} Player
+            </h3>
             <input
               type="text"
               value={modal.playerName}
               onChange={(e) => setModal((m) => m && { ...m, playerName: e.target.value })}
               placeholder="Player name"
               autoFocus
-              className="rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20"
+              className="bg-hover border-border-subtle text-text-primary rounded border-[0.5px] px-2 py-1.5 text-sm outline-none"
             />
             <input
               type="text"
               value={modal.reason}
               onChange={(e) => setModal((m) => m && { ...m, reason: e.target.value })}
               placeholder="Reason (optional)"
-              className="rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20"
+              className="bg-hover border-border-subtle text-text-primary rounded border-[0.5px] px-2 py-1.5 text-sm outline-none"
             />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setModal(null)}
-                className="px-3 py-1.5 text-xs text-white/50 transition-colors hover:text-white"
+                className="text-text-muted px-3 py-1.5 text-xs transition-colors"
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={submitModal}
-                className="rounded border border-red-500/30 bg-red-500/20 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/30"
+                className="rounded border-[0.5px] border-red-400/30 bg-red-400/15 px-3 py-1.5 text-xs text-red-400 transition-colors"
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background =
+                    'rgba(248,113,113,0.25)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background =
+                    'rgba(248,113,113,0.15)'
+                }}
               >
                 {modal.type === 'kick' ? 'Kick' : 'Ban'}
               </button>

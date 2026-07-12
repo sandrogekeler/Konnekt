@@ -18,7 +18,8 @@ export function Popover({ open, onClose, width = 160, maxHeight, children }: Pop
           transform: open ? 'scaleY(1) translateY(0)' : 'scaleY(0.85) translateY(-6px)',
           opacity: open ? 1 : 0,
           pointerEvents: open ? 'auto' : 'none',
-          transition: 'transform 160ms cubic-bezier(0.4,0,0.2,1), opacity 160ms ease',
+          transition:
+            'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) ease',
         }}
       >
         {maxHeight ? (

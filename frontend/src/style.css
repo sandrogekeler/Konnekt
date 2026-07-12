@@ -362,12 +362,47 @@ input[type='number']::-webkit-outer-spin-button {
   }
 }
 
+/* Modal/dialog enter animation — shared by Settings, Quick-Commands, and the
+   mods preview/dependency dialogs so every popup enters consistently instead
+   of popping in with no motion. */
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.modal-overlay-in {
+  animation: modal-overlay-in var(--duration-fast) var(--ease-standard);
+}
+.modal-panel-in {
+  animation: modal-panel-in var(--duration-panel) var(--ease-standard);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .backup-sphere-meridian {
     animation: none !important;
   }
   .backup-planet {
     animation: none !important;
+  }
+  .modal-overlay-in,
+  .modal-panel-in {
+    animation: none !important;
+  }
+  .ui-collapsible {
+    transition: none !important;
   }
 }
 

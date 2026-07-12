@@ -44,8 +44,8 @@ export function DependencyDialog({ primaryVersionId, dependencies, onConfirm, on
   const optional = dependencies.filter((d) => !d.required)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65">
-      <div className="bg-canvas border-border-subtle w-full max-w-md rounded-xl border p-5">
+    <div className="modal-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/65">
+      <div className="modal-panel-in bg-canvas border-border-subtle w-full max-w-md rounded-xl border p-5">
         <h2 className="text-text-primary mb-1 text-sm font-semibold">Dependencies</h2>
         <p className="text-text-muted mb-4 text-xs">
           This mod requires the following. Required dependencies will be installed automatically.

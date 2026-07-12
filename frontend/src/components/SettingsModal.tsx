@@ -62,12 +62,12 @@ export function SettingsModal({ open, onClose }: Props) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.65)]"
+      className="modal-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.65)]"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
     >
-      <div className="bg-canvas border-border-subtle flex h-[480px] w-[640px] overflow-hidden rounded-xl border-[0.5px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
+      <div className="modal-panel-in bg-canvas border-border-subtle flex h-[480px] w-[640px] overflow-hidden rounded-xl border-[0.5px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
         {/* Left nav */}
         <div className="bg-surface border-border-subtle flex w-40 shrink-0 flex-col gap-0.5 border-r-[0.5px] p-3">
           <div className="border-border-subtle border-b-[0.5px] px-2 pt-1 pb-3">
