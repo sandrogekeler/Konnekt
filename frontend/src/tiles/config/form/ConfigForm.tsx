@@ -5,6 +5,7 @@ import { parseYamlFields, applyYamlEdit } from './parseYaml'
 import { parseJsonFields, applyJsonEdit } from './parseJson'
 import { parseTomlFields, applyTomlEdit } from './parseToml'
 import { Toggle, NumberInput, TextInput, TextArea, Select, ChipList, MotdWidget } from './widgets'
+import { Collapsible } from '../../../components/ui/Collapsible'
 
 interface Props {
   format: string
@@ -29,7 +30,7 @@ function Field({
           className="flex w-full items-center gap-2 py-2 text-left"
         >
           <span
-            className={`text-text-muted text-[10px] transition-transform ${open ? 'rotate-90' : 'rotate-0'}`}
+            className={`text-text-muted duration-fast ease-standard text-[10px] transition-transform ${open ? 'rotate-90' : 'rotate-0'}`}
           >
             ▶
           </span>
@@ -38,13 +39,11 @@ function Field({
           </span>
         </button>
 
-        {open && (
-          <div className="pl-2">
-            {field.children?.map((child, i) => (
-              <Field key={i} field={child} onEdit={onEdit} />
-            ))}
-          </div>
-        )}
+        <Collapsible open={open} className="pl-2">
+          {field.children?.map((child, i) => (
+            <Field key={i} field={child} onEdit={onEdit} />
+          ))}
+        </Collapsible>
       </div>
     )
   }
