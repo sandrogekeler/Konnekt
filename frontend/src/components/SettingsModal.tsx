@@ -14,16 +14,20 @@ import { Segmented } from './ui/Segmented'
 import { ColorSwatch } from './ui/ColorSwatch'
 import { SettingRow } from './ui/SettingRow'
 import { OpenDataDir } from '../../wailsjs/go/main/App'
+import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
+import { CHANGELOG, CHANGELOG_URL } from '../lib/changelog'
+import type { ChangelogEntry } from '../lib/changelog'
 
 type UpdateFn = (patch: Partial<AppSettings>) => Promise<void>
 
-type Section = 'appearance' | 'general' | 'console' | 'notifications' | 'about'
+type Section = 'appearance' | 'general' | 'console' | 'notifications' | 'changelog' | 'about'
 
 const NAV: { id: Section; label: string }[] = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'general', label: 'General' },
   { id: 'console', label: 'Console' },
   { id: 'notifications', label: 'Notifications' },
+  { id: 'changelog', label: "What's New" },
   { id: 'about', label: 'About' },
 ]
 
@@ -115,6 +119,7 @@ export function SettingsModal({ open, onClose }: Props) {
             {section === 'notifications' && (
               <NotificationsPane settings={settings} update={update} />
             )}
+            {section === 'changelog' && <ChangelogPane />}
             {section === 'about' && <AboutPane />}
           </div>
         </div>
@@ -373,6 +378,104 @@ function NotificationsPane({ settings, update }: { settings: AppSettings; update
       >
         <Toggle checked={settings.notifyOnJoin} onChange={(v) => update({ notifyOnJoin: v })} />
       </SettingRow>
+    </div>
+  )
+}
+
+// ─── Changelog ────────────────────────────────────────────────────────────────
+
+function ChangelogItem({ entry }: { entry: ChangelogEntry }) {
+  const [showMinor, setShowMinor] = useState(false)
+  const formattedDate = new Date(entry.date).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+
+  return (
+    <div className="border-border-subtle border-b-[0.5px] py-3 last:border-b-0">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-text-primary text-sm">{entry.label}</span>
+        <span className="text-text-muted shrink-0 text-xs">{formattedDate}</span>
+      </div>
+      <ul className="mt-1.5 flex flex-col gap-1">
+        {entry.highlights.map((item, i) => (
+          <li key={i} className="text-text-secondary flex gap-1.5 text-xs">
+            <span className="text-text-faint">–</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      {entry.minor && entry.minor.length > 0 && (
+        <div className="mt-1.5">
+          <button
+            onClick={() => setShowMinor((v) => !v)}
+            className="text-text-faint hover:text-text-muted text-[11px] transition-colors"
+          >
+            {showMinor ? '−' : '+'} {entry.minor.length} smaller change
+            {entry.minor.length === 1 ? '' : 's'}
+          </button>
+          {showMinor && (
+            <ul className="mt-1 flex flex-col gap-1">
+              {entry.minor.map((item, i) => (
+                <li key={i} className="text-text-muted flex gap-1.5 text-xs">
+                  <span className="text-text-faint">–</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ChangelogPane() {
+  const [showEarlier, setShowEarlier] = useState(false)
+  const recent = CHANGELOG.slice(0, 3)
+  const earlier = CHANGELOG.slice(3)
+
+  const openChangelog = () => {
+    try {
+      BrowserOpenURL(CHANGELOG_URL)
+    } catch {
+      /* non-Wails context */
+    }
+  }
+
+  return (
+    <div className="flex flex-col py-2">
+      <div className="flex flex-col">
+        {recent.map((entry) => (
+          <ChangelogItem key={entry.label} entry={entry} />
+        ))}
+      </div>
+
+      {earlier.length > 0 && (
+        <div className="border-border-subtle border-b-[0.5px] py-2">
+          <button
+            onClick={() => setShowEarlier((v) => !v)}
+            className="text-text-muted hover:text-text-secondary text-xs transition-colors"
+          >
+            {showEarlier ? '▾' : '▸'} Earlier updates
+          </button>
+          {showEarlier && (
+            <div className="mt-1 flex flex-col">
+              {earlier.map((entry) => (
+                <ChangelogItem key={entry.label} entry={entry} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <button
+        onClick={openChangelog}
+        className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 mt-3 rounded border-[0.5px] py-1.5 text-xs transition-colors"
+      >
+        View full changelog on GitHub ↗
+      </button>
     </div>
   )
 }
