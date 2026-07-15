@@ -348,14 +348,6 @@ export function Planet({
             </group>
           )
         })}
-
-        {moons.length === 0 && focused && (
-          <Html position={[0, -1.5, 0]} center distanceFactor={12}>
-            <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#475569' }}>
-              no other dimensions
-            </span>
-          </Html>
-        )}
       </group>
     </group>
   )
