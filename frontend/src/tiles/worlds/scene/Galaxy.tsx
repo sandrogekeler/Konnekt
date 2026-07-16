@@ -85,7 +85,7 @@ function LayoutScaleController({
     if (outerRX > 0.0001 && outerRZ > 0.0001) {
       let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
       for (const [nx, ny] of NDC_CORNERS) {
-        tmpPoint.current.set(nx, ny, 0.5).unproject(state.camera)
+        tmpPoint.current.set(nx, ny, 0.5).unproject(state.camera as unknown as THREE.Camera)
         tmpOrigin.current.copy(state.camera.position)
         tmpDir.current.copy(tmpPoint.current).sub(tmpOrigin.current).normalize()
         if (Math.abs(tmpDir.current.y) < 0.0001) continue

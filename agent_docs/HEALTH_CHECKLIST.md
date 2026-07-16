@@ -157,6 +157,29 @@ todo list, not a target.
   job, for stronger end-to-end confidence than the `go build`/`pnpm build`
   smoke check gives.
 
+**P1 — CI blind spot: `@react-three/fiber`/`@types/three` resolution-dependent typecheck failure**
+- Found 2026-07-16: `frontend/src/tiles/worlds/scene/Galaxy.tsx`'s new
+  `LayoutScaleController` (from the worlds zoom-to-fit merge) called
+  `.unproject(state.camera)` — R3F's `state.camera` type and top-level
+  `@types/three@0.184.1`'s `Camera` type have diverged (newer three fields
+  like `reversedDepth`/`static`/`pivot` aren't on R3F's copy), so `tsc` should
+  reject the assignment. It passed in this repo's own CI (`pnpm typecheck` +
+  `pnpm build`, both on a `--frozen-lockfile` install) but failed a
+  contributor's local `wails dev`, which ran a fresh non-frozen `pnpm install`
+  that resolved a node_modules tree where the two `Camera` types diverge.
+  Fixed at the call site with the same cast the sibling file in the same
+  merge already uses (`WorldsScene.tsx`'s `state.camera as unknown as
+  THREE.PerspectiveCamera` precedent) — but the underlying gap is CI running
+  with a lockfile-pinned install that doesn't reproduce what a fresh install
+  resolves, so this class of type mismatch can land invisibly again.
+- Follow-up (not yet done): add a pnpm `overrides`/`resolutions` pin so
+  `@react-three/*` and the app's own `dependencies` resolve to one shared
+  `@types/three`, making this mismatch structurally impossible regardless of
+  install mode — rather than relying on catching it via a non-frozen install
+  in CI (which would also make CI slower/less reproducible). Needs research
+  into which packages currently pull their own `@types/three`/`three` copies
+  before picking the override.
+
 **Done — Lint/format enforcement (frontend)**
 - ✅ Migrated `frontend/` from Tailwind v3 (barely used) to v4, mapped the
   existing CSS-variable token system into `@theme inline`
