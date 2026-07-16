@@ -13,8 +13,9 @@ import { Toggle } from './ui/Toggle'
 import { Segmented } from './ui/Segmented'
 import { ColorSwatch } from './ui/ColorSwatch'
 import { SettingRow } from './ui/SettingRow'
-import { OpenDataDir } from '../../wailsjs/go/main/App'
+import { OpenDataDir, GetAppVersion, CheckForUpdates } from '../../wailsjs/go/main/App'
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
+import type { models } from '../../wailsjs/go/models'
 import { CHANGELOG, CHANGELOG_URL, groupByDate } from '../lib/changelog'
 import type { ChangelogEntry } from '../lib/changelog'
 
@@ -331,6 +332,15 @@ function GeneralPane({ settings, update }: { settings: AppSettings; update: Upda
           onChange={(v) => update({ confirmBeforeStop: v })}
         />
       </SettingRow>
+      <SettingRow
+        label="Check for updates on startup"
+        description="Silently check for a new release when Konnekt launches and notify if one is found."
+      >
+        <Toggle
+          checked={settings.checkUpdatesOnStartup}
+          onChange={(v) => update({ checkUpdatesOnStartup: v })}
+        />
+      </SettingRow>
     </div>
   )
 }
@@ -483,12 +493,46 @@ function ChangelogPane() {
 
 // ─── About ────────────────────────────────────────────────────────────────────
 
+type UpdateCheckState =
+  | { status: 'idle' }
+  | { status: 'checking' }
+  | { status: 'upToDate' }
+  | { status: 'available'; info: models.UpdateInfo }
+  | { status: 'error' }
+
 function AboutPane() {
+  const [version, setVersion] = useState<string | null>(null)
+  const [checkState, setCheckState] = useState<UpdateCheckState>({ status: 'idle' })
+
+  useEffect(() => {
+    GetAppVersion()
+      .then(setVersion)
+      .catch(() => setVersion(null))
+  }, [])
+
   const openFolder = () => {
     try {
       OpenDataDir().catch(() => {})
     } catch {
       /* non-Wails context */
+    }
+  }
+
+  const openRelease = (url: string) => {
+    try {
+      BrowserOpenURL(url)
+    } catch {
+      /* non-Wails context */
+    }
+  }
+
+  const runCheck = async () => {
+    setCheckState({ status: 'checking' })
+    try {
+      const info = await CheckForUpdates()
+      setCheckState(info.updateAvailable ? { status: 'available', info } : { status: 'upToDate' })
+    } catch {
+      setCheckState({ status: 'error' })
     }
   }
 
@@ -499,6 +543,10 @@ function AboutPane() {
         <span className="text-text-muted text-xs">Minecraft Server Manager</span>
       </div>
       <div className="flex flex-col gap-2">
+        <div className="text-text-secondary flex items-center justify-between text-xs">
+          <span>Version</span>
+          <span className="text-text-muted font-mono text-[11px]">{version ?? '—'}</span>
+        </div>
         <div className="text-text-secondary flex items-center justify-between text-xs">
           <span>License</span>
           <span className="text-text-muted">MIT</span>
@@ -519,6 +567,38 @@ function AboutPane() {
             ~/.config/konnekt ↗
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={runCheck}
+          disabled={checkState.status === 'checking'}
+          className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1.5 text-xs transition-colors disabled:opacity-50"
+        >
+          {checkState.status === 'checking' ? 'Checking…' : 'Check for updates'}
+        </button>
+
+        {checkState.status === 'upToDate' && (
+          <span className="text-text-muted text-center text-[11px]">You&apos;re up to date.</span>
+        )}
+        {checkState.status === 'error' && (
+          <span className="text-danger text-center text-[11px]">
+            Couldn&apos;t check for updates. Try again later.
+          </span>
+        )}
+        {checkState.status === 'available' && (
+          <div className="border-border-subtle flex flex-col gap-1.5 rounded border-[0.5px] p-2.5">
+            <span className="text-text-primary text-xs">
+              Update available: {checkState.info.latestVersion}
+            </span>
+            <button
+              onClick={() => openRelease(checkState.info.releaseUrl)}
+              className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1 text-[11px] transition-colors"
+            >
+              Download ↗
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -12,6 +12,8 @@ export function BrowseDirectory():Promise<string>;
 
 export function BrowseJarFile():Promise<string>;
 
+export function CheckForUpdates():Promise<models.UpdateInfo>;
+
 export function CreateBackup(arg1:string):Promise<models.Backup>;
 
 export function DeleteBackup(arg1:string,arg2:string):Promise<void>;
@@ -35,6 +37,8 @@ export function GetActiveServerID():Promise<string>;
 export function GetActiveTiles():Promise<Array<string>>;
 
 export function GetAppSettings():Promise<models.AppSettings>;
+
+export function GetAppVersion():Promise<string>;
 
 export function GetBackupWorlds(arg1:string,arg2:string):Promise<Array<models.WorldSystem>>;
 

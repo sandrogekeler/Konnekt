@@ -21,6 +21,7 @@ const DEFAULTS = {
   schedulerPaletteCollapsed: true,
   schedulerPaletteClosedCategories: {},
   consoleQuickCommandsCollapsed: false,
+  checkUpdatesOnStartup: true,
 }
 
 describe('useSettingsStore', () => {

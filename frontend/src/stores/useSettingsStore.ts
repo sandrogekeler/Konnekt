@@ -20,6 +20,7 @@ const DEFAULTS: AppSettings = {
   schedulerPaletteCollapsed: true,
   schedulerPaletteClosedCategories: {},
   consoleQuickCommandsCollapsed: false,
+  checkUpdatesOnStartup: true,
 }
 
 interface SettingsStore {

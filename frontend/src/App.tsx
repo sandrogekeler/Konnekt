@@ -14,11 +14,13 @@ import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessesStore } from './stores/useProcessesStore'
 import { emitNotification } from './lib/notify'
 import { prefetchHeavyChunks } from './lib/prefetch'
+import { useUpdateCheck } from './hooks/useUpdateCheck'
 import { EVENTS } from './lib/constants'
 
 function App() {
   const { activeId } = useServerConfigStore()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
+  const checkUpdatesOnStartup = useSettingsStore((s) => s.settings.checkUpdatesOnStartup)
   const [eulaRequired, setEulaRequired] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const autoStarted = useRef(false)
@@ -33,6 +35,8 @@ function App() {
   useEffect(() => {
     prefetchHeavyChunks()
   }, [])
+
+  useUpdateCheck(settingsLoaded && checkUpdatesOnStartup)
 
   // Auto-start active server on launch
   useEffect(() => {

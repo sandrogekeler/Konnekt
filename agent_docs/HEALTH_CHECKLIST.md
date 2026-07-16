@@ -186,6 +186,53 @@ todo list, not a target.
   the tree. `pnpm typecheck`/`pnpm build`/`pnpm lint` (0 errors)/`pnpm test`
   (165/165) all re-verified green after the removal.
 
+**P1 — Auto-updater: check shipped, release pipeline still open**
+- ✅ **In-app update check shipped.** `version.go` (package `main`) is the
+  single source of the app's version (`var Version = "0.1.0-dev"`), also
+  mirrored in `wails.json`'s `info.productVersion` for the built binary's
+  file metadata — the app previously had **no version anywhere** (confirmed
+  via grep before this work; `wails.json` had no `info` block, frontend
+  `package.json` sits at the placeholder `0.0.0`, the About pane showed
+  nothing). `backend/services/update.go`'s `UpdateService` queries
+  `GET /repos/sandrogekeler/Konnekt/releases/latest` on the GitHub REST API —
+  **GitHub Releases *is* the version database**, no separate backend needed;
+  each release is a git tag with per-platform binaries attached as assets.
+  `baseURL` is constructor-injected (unlike `modrinth.go`'s hardcoded
+  `modrinthBase`, a gap `update_test.go` deliberately avoids repeating) so
+  `CheckForUpdates` is fully covered by `httptest.Server`-backed tests:
+  update-available, up-to-date, 404-no-releases-yet (treated as "up to
+  date", not an error — the correct state until the first release is cut),
+  malformed JSON, and HTTP 500. `compareVersions` (semver-ish, `v`-prefix
+  tolerant, prerelease-sorts-lower) has its own table-driven test.
+  `GetAppVersion`/`CheckForUpdates` bound on `App` (`app.go`); Settings →
+  About shows the version + a "Check for updates" button (idle → checking →
+  up to date / update-available-with-Download-button / error); Settings →
+  General adds a "Check for updates on startup" toggle
+  (`AppSettings.CheckUpdatesOnStartup`, defaults `true` in
+  `config.go`'s `GetAppSettings()`). The startup path is a **one-shot check**
+  (`frontend/src/hooks/useUpdateCheck.ts`, tested with the established
+  `vi.mock('.../wailsjs/go/main/App')` + `renderHook` pattern), not a poll,
+  wired into `App.tsx` alongside the other one-shot startup effects — it
+  **no-ops when `Version` contains `-dev`** (a dev/`wails dev` build has no
+  installable artifact to update to), and failures (offline, no releases)
+  are silent by design since it's a background check, not a user action.
+- **Deferred, not built this pass — the release pipeline that actually
+  populates GitHub Releases.** A tagged `v*` push needs a
+  `.github/workflows/release.yml` that matrix-builds `wails build` per target
+  OS, stamps `Version` via `-ldflags "-X main.Version=$TAG"`, and uploads the
+  resulting binaries as release assets — without it, `CheckForUpdates` has
+  nothing to find (confirmed live: a real call against the actual GitHub API
+  today 404s, correctly reported as "up to date"). Code-signing/notarization
+  for the built binaries is an open question for that same workflow, not
+  addressed here. Also open: `frontend/src/lib/changelog.ts`'s
+  `CHANGELOG_URL` still points at `/commits/main` (see its own comment) —
+  flip to `/releases` once the first tagged release exists.
+- **Not a real auto-updater yet, by design of this pass** (see `ROADMAP.md`'s
+  "App auto-updater" line, now `[~]`): today's "update" is check-and-notify
+  with a Download button that opens the release page in the system browser —
+  no in-place download, install, or relaunch. That's a larger, riskier
+  follow-up (differs a lot by OS/packaging) intentionally out of scope here.
+
 **Done — Lint/format enforcement (frontend)**
 - ✅ Migrated `frontend/` from Tailwind v3 (barely used) to v4, mapped the
   existing CSS-variable token system into `@theme inline`

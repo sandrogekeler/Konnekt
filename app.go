@@ -24,6 +24,7 @@ type App struct {
 	schedulerService    *services.SchedulerService
 	worldService        *services.WorldService
 	modService          *services.ModService
+	updateService       *services.UpdateService
 	bus                 *services.EventBus
 	dataDir             string
 }
@@ -54,6 +55,7 @@ func NewApp() *App {
 		schedulerService:    sched,
 		worldService:        services.NewWorldService(cfg, srv, backup),
 		modService:          mods,
+		updateService:       services.NewUpdateService(),
 		bus:                 bus,
 	}
 }
@@ -137,6 +139,16 @@ func (a *App) SaveAppSettings(s models.AppSettings) error {
 
 func (a *App) OpenDataDir() error {
 	return services.OpenPath(a.dataDir)
+}
+
+// --- Updates ---
+
+func (a *App) GetAppVersion() string {
+	return Version
+}
+
+func (a *App) CheckForUpdates() (models.UpdateInfo, error) {
+	return a.updateService.CheckForUpdates(a.ctx, Version)
 }
 
 // --- Config editor ---

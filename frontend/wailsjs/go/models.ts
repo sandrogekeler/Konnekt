@@ -17,6 +17,7 @@ export namespace models {
 	    schedulerPaletteCollapsed: boolean;
 	    schedulerPaletteClosedCategories: Record<string, boolean>;
 	    consoleQuickCommandsCollapsed: boolean;
+	    checkUpdatesOnStartup: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -40,6 +41,7 @@ export namespace models {
 	        this.schedulerPaletteCollapsed = source["schedulerPaletteCollapsed"];
 	        this.schedulerPaletteClosedCategories = source["schedulerPaletteClosedCategories"];
 	        this.consoleQuickCommandsCollapsed = source["consoleQuickCommandsCollapsed"];
+	        this.checkUpdatesOnStartup = source["checkUpdatesOnStartup"];
 	    }
 	}
 	export class AttrValue {
@@ -928,6 +930,28 @@ export namespace models {
 		    }
 		    return a;
 		}
+	}
+	export class UpdateInfo {
+	    currentVersion: string;
+	    latestVersion: string;
+	    updateAvailable: boolean;
+	    releaseUrl: string;
+	    releaseNotes: string;
+	    publishedAt: string;
+
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentVersion = source["currentVersion"];
+	        this.latestVersion = source["latestVersion"];
+	        this.updateAvailable = source["updateAvailable"];
+	        this.releaseUrl = source["releaseUrl"];
+	        this.releaseNotes = source["releaseNotes"];
+	        this.publishedAt = source["publishedAt"];
+	    }
 	}
 
 }

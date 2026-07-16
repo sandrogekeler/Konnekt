@@ -22,6 +22,10 @@ export function BrowseJarFile() {
   return window['go']['main']['App']['BrowseJarFile']();
 }
 
+export function CheckForUpdates() {
+  return window['go']['main']['App']['CheckForUpdates']();
+}
+
 export function CreateBackup(arg1) {
   return window['go']['main']['App']['CreateBackup'](arg1);
 }
@@ -68,6 +72,10 @@ export function GetActiveTiles() {
 
 export function GetAppSettings() {
   return window['go']['main']['App']['GetAppSettings']();
+}
+
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
 }
 
 export function GetBackupWorlds(arg1, arg2) {
