@@ -242,7 +242,13 @@ export function WorldsScene({
   function selectWorld(name: string) {
     focusNameRef.current = name
     setFocusName(name)
-    setSelectedDimension(null)  // zoom in only; HUD opens on explicit body click
+    // Skip the intermediate planetary view for worlds with no other dimensions:
+    // go straight to the overworld focus (HUD + close zoom), matching what a
+    // second click would otherwise do. Worlds with orbiting dimensions still
+    // enter planetary view so the user can pick a dimension.
+    const world = worlds.find(w => w.name === name)
+    const hasOtherDimensions = !!world && world.dimensions.some(d => d.kind !== 'overworld')
+    setSelectedDimension(hasOtherDimensions ? null : 'overworld')
   }
 
   function goBack() {
