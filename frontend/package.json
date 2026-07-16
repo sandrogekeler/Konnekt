@@ -33,7 +33,6 @@
     "recharts": "^3.8.1",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
-    "skinview3d": "^3.4.2",
     "smol-toml": "^1.6.1",
     "three": "^0.184.0",
     "yaml": "^2.9.0",

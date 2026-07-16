@@ -59,7 +59,6 @@ stack and gopsutil's per-OS backends).
 | `@codemirror/lang-json`, `@codemirror/lang-yaml`, `@codemirror/state`, `@codemirror/view`, `@uiw/react-codemirror` | server.properties / config file editor (`tiles/config/EditorPanel.tsx`) |
 | `react-markdown`, `remark-gfm`, `rehype-raw` | Rendering mod descriptions / changelogs in the mods tile |
 | `smol-toml`, `yaml` | Parsing server config formats in the config tile |
-| `skinview3d` | **Reserved, not yet wired up** — for the Beta "player skin preview" tile (`ROADMAP.md` line 246). Not imported under `frontend/src/` today; keep until that tile is built, then wire it up or remove |
 
 Dev-only tooling (build, lint, format, test — Vite, TypeScript, ESLint,
 Prettier, Vitest, Tailwind, etc.) isn't itemized here; it's inspectable
@@ -71,3 +70,12 @@ the production bundle.
 - `uplot` — was listed as a direct dependency but never imported under
   `frontend/src/`; the performance tile's charts use `recharts` exclusively.
   Removed (see `HEALTH_CHECKLIST.md`'s "P2 — Repo hygiene").
+- `skinview3d` — was reserved for the not-yet-built Beta "player skin
+  preview" tile and never imported under `frontend/src/`. Removed because it
+  pinned its own `@types/three@0.156.0` + `three@0.156.1`, a second copy
+  alongside the app's `@types/three@0.184.1` + `three@0.184.0` — React Three
+  Fiber's `Camera` type could resolve against either copy depending on the
+  installer's `node_modules` layout, causing an install-dependent
+  `unproject()` type error in `tiles/worlds/scene/Galaxy.tsx` (see
+  `HEALTH_CHECKLIST.md`'s "P1 — CI blind spot" entry). Re-add, pinned to the
+  `0.184.x` line, when the skin-preview tile is actually built.
