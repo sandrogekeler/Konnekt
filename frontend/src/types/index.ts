@@ -17,6 +17,7 @@ export interface AppSettings {
   notifyOnJoin: boolean
   schedulerPaletteCollapsed: boolean
   schedulerPaletteClosedCategories: Record<string, boolean>
+  consoleQuickCommandsCollapsed: boolean
 }
 
 export interface TileProps {

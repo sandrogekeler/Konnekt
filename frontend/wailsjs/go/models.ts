@@ -16,11 +16,12 @@ export namespace models {
 	    notifyOnJoin: boolean;
 	    schedulerPaletteCollapsed: boolean;
 	    schedulerPaletteClosedCategories: Record<string, boolean>;
-	
+	    consoleQuickCommandsCollapsed: boolean;
+
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.theme = source["theme"];
@@ -38,6 +39,7 @@ export namespace models {
 	        this.notifyOnJoin = source["notifyOnJoin"];
 	        this.schedulerPaletteCollapsed = source["schedulerPaletteCollapsed"];
 	        this.schedulerPaletteClosedCategories = source["schedulerPaletteClosedCategories"];
+	        this.consoleQuickCommandsCollapsed = source["consoleQuickCommandsCollapsed"];
 	    }
 	}
 	export class AttrValue {

@@ -3,6 +3,7 @@ import { SendCommand } from '../../../wailsjs/go/main/App'
 import { useConsoleStore } from '../../stores/useConsoleStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { Segmented } from '../../components/ui/Segmented'
+import { QuickCommandsPanel } from '../../components/QuickCommandsPanel'
 import type { TileProps } from '../../types'
 import { useState } from 'react'
 
@@ -36,10 +37,12 @@ function highlightQuery(text: string, query: string) {
   )
 }
 
-export function ConsoleTile({ serverId }: TileProps) {
+export function ConsoleTile({ serverId, maximized }: TileProps) {
   const lines = useConsoleStore((s) => s.lines)
   const clear = useConsoleStore((s) => s.clear)
   const showTimestamps = useSettingsStore((s) => s.settings.consoleTimestamps)
+  const quickCommandsCollapsed = useSettingsStore((s) => s.settings.consoleQuickCommandsCollapsed)
+  const updateSettings = useSettingsStore((s) => s.update)
   const [input, setInput] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
   const [filterOpen, setFilterOpen] = useState(false)
@@ -80,8 +83,8 @@ export function ConsoleTile({ serverId }: TileProps) {
     [input, serverId],
   )
 
-  return (
-    <div className="flex h-full flex-col">
+  const consoleColumn = (
+    <div className="flex h-full min-w-0 flex-1 flex-col">
       {/* Search / filter toolbar — collapsed by default */}
       <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-1">
         <button
@@ -204,6 +207,39 @@ export function ConsoleTile({ serverId }: TileProps) {
           clr
         </button>
       </form>
+    </div>
+  )
+
+  if (!maximized) return consoleColumn
+
+  return (
+    <div className="flex h-full min-h-0">
+      {consoleColumn}
+      {quickCommandsCollapsed ? (
+        <button
+          onClick={() => updateSettings({ consoleQuickCommandsCollapsed: false })}
+          className="border-border-subtle text-text-faint hover:text-text-secondary flex w-6 shrink-0 items-center justify-center border-l-[0.5px] transition-colors"
+          title="Show quick commands"
+        >
+          <span className="font-mono text-[11px] select-none">‹</span>
+        </button>
+      ) : (
+        <div className="border-border-subtle flex w-56 shrink-0 flex-col border-l-[0.5px]">
+          <div className="border-border-subtle flex shrink-0 items-center justify-between border-b-[0.5px] px-3 py-2">
+            <span className="text-text-secondary font-title text-xs font-medium">Commands</span>
+            <button
+              onClick={() => updateSettings({ consoleQuickCommandsCollapsed: true })}
+              className="text-text-faint hover:text-text-secondary text-xs transition-colors"
+              title="Hide quick commands"
+            >
+              ›
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <QuickCommandsPanel serverId={serverId} columns={1} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
