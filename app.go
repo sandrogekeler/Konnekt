@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"konnekt/backend/models"
@@ -24,6 +27,7 @@ type App struct {
 	schedulerService    *services.SchedulerService
 	worldService        *services.WorldService
 	modService          *services.ModService
+	updateService       *services.UpdateService
 	bus                 *services.EventBus
 	dataDir             string
 }
@@ -43,6 +47,8 @@ func NewApp() *App {
 	sched.SetBus(bus)
 	mods := services.NewModService(cfg, srv)
 	mods.SetBus(bus)
+	update := services.NewUpdateService()
+	update.SetBus(bus)
 	return &App{
 		serverService:       srv,
 		configService:       cfg,
@@ -54,6 +60,7 @@ func NewApp() *App {
 		schedulerService:    sched,
 		worldService:        services.NewWorldService(cfg, srv, backup),
 		modService:          mods,
+		updateService:       update,
 		bus:                 bus,
 	}
 }
@@ -137,6 +144,42 @@ func (a *App) SaveAppSettings(s models.AppSettings) error {
 
 func (a *App) OpenDataDir() error {
 	return services.OpenPath(a.dataDir)
+}
+
+// --- Updates ---
+
+func (a *App) GetAppVersion() string {
+	return Version
+}
+
+func (a *App) CheckForUpdates() (models.UpdateInfo, error) {
+	return a.updateService.CheckForUpdates(a.ctx, Version)
+}
+
+// DownloadAndInstallUpdate downloads the latest release's binary for this
+// platform, verifies it, and replaces the running executable in place. On
+// success it relaunches the app and quits this process — the frontend won't
+// see a resolved promise in that case, only a live app restart. A dev build
+// (wails dev, no ldflags-stamped tag) has no installable artifact, so it's
+// rejected up front rather than attempting a check that would trivially fail.
+func (a *App) DownloadAndInstallUpdate() error {
+	if strings.Contains(Version, "-dev") {
+		return fmt.Errorf("update install: not available in dev builds")
+	}
+	if err := a.updateService.DownloadAndInstallUpdate(a.ctx, Version); err != nil {
+		return err
+	}
+
+	// Give the IPC response time to reach the frontend before the process
+	// exits, then relaunch the (now-replaced) executable and quit.
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		if exePath, err := os.Executable(); err == nil {
+			_ = exec.Command(exePath).Start()
+		}
+		runtime.Quit(a.ctx)
+	}()
+	return nil
 }
 
 // --- Config editor ---

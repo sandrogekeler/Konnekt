@@ -22,6 +22,10 @@ export function BrowseJarFile() {
   return window['go']['main']['App']['BrowseJarFile']();
 }
 
+export function CheckForUpdates() {
+  return window['go']['main']['App']['CheckForUpdates']();
+}
+
 export function CreateBackup(arg1) {
   return window['go']['main']['App']['CreateBackup'](arg1);
 }
@@ -50,6 +54,10 @@ export function DetectServerLoader(arg1) {
   return window['go']['main']['App']['DetectServerLoader'](arg1);
 }
 
+export function DownloadAndInstallUpdate() {
+  return window['go']['main']['App']['DownloadAndInstallUpdate']();
+}
+
 export function DuplicateWorld(arg1, arg2, arg3) {
   return window['go']['main']['App']['DuplicateWorld'](arg1, arg2, arg3);
 }
@@ -68,6 +76,10 @@ export function GetActiveTiles() {
 
 export function GetAppSettings() {
   return window['go']['main']['App']['GetAppSettings']();
+}
+
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
 }
 
 export function GetBackupWorlds(arg1, arg2) {

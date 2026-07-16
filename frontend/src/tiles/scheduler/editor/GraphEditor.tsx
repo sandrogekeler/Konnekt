@@ -14,6 +14,8 @@ import {
   type Connection,
   type Node as FlowNode,
   type Edge as FlowEdge,
+  type NodeChange,
+  type EdgeChange,
 } from '@xyflow/react'
 import { CATEGORY_COLOR } from './blockMeta'
 import { SchedulerCtx, type NodeRunState } from './schedulerContext'
@@ -23,9 +25,12 @@ import { BlockPalette } from './BlockPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
 import { NodeDataPanel } from './NodeDataPanel'
 import { QuickAddMenu } from './QuickAddMenu'
+import { Popover } from '../../../components/ui/Popover'
+import { usePopover } from '../../../hooks/usePopover'
 import {
   graphToFlow,
   flowToGraph,
+  graphSignature,
   isValidConnection as isValidGraphConnection,
   randId,
   defaultConfig,
@@ -33,8 +38,20 @@ import {
   type NodeData,
   type BlockFlowNode,
 } from './graphMapping'
+import { CloseConfirmDialog } from './CloseConfirmDialog'
+import {
+  emptyHistory,
+  record as recordHistory,
+  undo as undoHistory,
+  redo as redoHistory,
+  canUndo,
+  canRedo,
+  type HistoryState,
+  type GraphSnapshot,
+} from './graphHistory'
 import { EventsOn } from '../../../../wailsjs/runtime/runtime'
 import { EVENTS } from '../../../lib/constants'
+import { useUiStore } from '../../../stores/useUiStore'
 import type { models } from '../../../../wailsjs/go/models'
 
 // schedule:* event payload shapes (emitted by the Go engine via EventBus).
@@ -97,6 +114,7 @@ function GraphEditorInner({
   const [graphEnabled, setGraphEnabled] = useState(false)
   const [createdAt, setCreatedAt] = useState(0)
   const [nameEditing, setNameEditing] = useState(false)
+  const graphMenu = usePopover()
 
   // ── Canvas state ──────────────────────────────────────────────────────────
   const [nodes, setNodes, onNodesChange] = useNodesState<BlockFlowNode>([])
@@ -104,10 +122,43 @@ function GraphEditorInner({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [panelTab, setPanelTab] = useState<'config' | 'data'>('config')
 
+  // ── Undo/redo history (up to 10 past actions, tile-local — see graphHistory.ts) ──
+  const [history, setHistory] = useState<HistoryState>(emptyHistory())
+  const historyRef = useRef<HistoryState>(history)
+  const nodesRef = useRef<BlockFlowNode[]>(nodes)
+  const dragSnapshotRef = useRef<GraphSnapshot | null>(null)
+
   // ── UI state ──────────────────────────────────────────────────────────────
   const [runStatus, setRunStatus] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const runStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Unsaved-changes guard ─────────────────────────────────────────────────
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  // State (not a ref) so changing it — on load/save/discard — reliably
+  // invalidates the `dirty` memo below.
+  const [savedSig, setSavedSig] = useState('')
+  const dirty = useMemo(
+    () => graphSignature({ name: graphName, enabled: graphEnabled }, nodes, edges) !== savedSig,
+    [graphName, graphEnabled, nodes, edges, savedSig],
+  )
+  const dirtyRef = useRef(false)
+  useEffect(() => {
+    dirtyRef.current = dirty
+  }, [dirty])
+
+  // Veto a Dashboard-initiated close (Escape / backdrop / restore button /
+  // navbar) while there are unsaved changes, in favor of our own confirm
+  // dialog. Registered only while this editor is mounted (i.e. maximized).
+  const setCloseGuard = useUiStore((s) => s.setCloseGuard)
+  useEffect(() => {
+    setCloseGuard(() => {
+      if (!dirtyRef.current) return false
+      setShowCloseConfirm(true)
+      return true
+    })
+    return () => setCloseGuard(null)
+  }, [setCloseGuard])
 
   // ── Live run highlighting (driven by schedule:* events) ───────────────────
   const [nodeRunState, setNodeRunState] = useState<Map<string, NodeRunState>>(new Map())
@@ -144,8 +195,67 @@ function GraphEditorInner({
     edgesRef.current = edges
   }, [edges])
   useEffect(() => {
+    nodesRef.current = nodes
+  }, [nodes])
+  useEffect(() => {
     graphIdRef.current = graphId
   }, [graphId])
+  useEffect(() => {
+    historyRef.current = history
+  }, [history])
+
+  // Snapshot the pre-mutation graph into history. Calls sharing the same tag
+  // (e.g. successive keystrokes in one config field) coalesce into one entry.
+  const recordPre = useCallback((tag: string | null = null) => {
+    setHistory((h) => recordHistory(h, { nodes: nodesRef.current, edges: edgesRef.current }, tag))
+  }, [])
+
+  const applySnapshot = useCallback(
+    (snapshot: GraphSnapshot) => {
+      setNodes(snapshot.nodes)
+      setEdges(snapshot.edges)
+      setSelectedNodeId((id) => (id && snapshot.nodes.some((n) => n.id === id) ? id : null))
+      const ids = snapshot.nodes.map((n) => n.id)
+      setTimeout(() => updateNodeInternals(ids), 0)
+    },
+    [setNodes, setEdges, updateNodeInternals],
+  )
+
+  const doUndo = useCallback(() => {
+    const result = undoHistory(historyRef.current, {
+      nodes: nodesRef.current,
+      edges: edgesRef.current,
+    })
+    if (!result) return
+    setHistory(result.state)
+    applySnapshot(result.snapshot)
+  }, [applySnapshot])
+
+  const doRedo = useCallback(() => {
+    const result = redoHistory(historyRef.current, {
+      nodes: nodesRef.current,
+      edges: edgesRef.current,
+    })
+    if (!result) return
+    setHistory(result.state)
+    applySnapshot(result.snapshot)
+  }, [applySnapshot])
+
+  // ── Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo ─────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return
+      const key = e.key.toLowerCase()
+      if (key !== 'z' && key !== 'y') return
+      const tag = (document.activeElement as HTMLElement | null)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return
+      e.preventDefault()
+      if (key === 'y' || (key === 'z' && e.shiftKey)) doRedo()
+      else doUndo()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [doUndo, doRedo])
 
   // ── Subscribe to live run events ──────────────────────────────────────────
   // The engine emits these for every graph; we only reflect the loaded one.
@@ -244,6 +354,8 @@ function GraphEditorInner({
       setSelectedNodeId(null)
       setNodeRunState(new Map())
       setFiredEdges(new Set())
+      setSavedSig(graphSignature({ name: g.name, enabled: g.enabled }, animNodes, animEdges))
+      setHistory(emptyHistory())
       // Re-measure handle positions after the maximize animation (panel animates
       // for 180ms). ReactFlow's initial measurement runs while the panel ancestor
       // may still have scale < 1, producing stale edge endpoints. Waiting 220ms
@@ -264,6 +376,7 @@ function GraphEditorInner({
   // ── Connect handler ───────────────────────────────────────────────────────
   const onConnect = useCallback(
     (connection: Connection) => {
+      recordPre()
       const srcH = connection.sourceHandle ?? ''
       const isData = srcH.startsWith('data:')
       setEdges((es) =>
@@ -279,7 +392,7 @@ function GraphEditorInner({
         ),
       )
     },
-    [setEdges],
+    [setEdges, recordPre],
   )
 
   const isValidConnection = useCallback(
@@ -290,6 +403,9 @@ function GraphEditorInner({
   // ── Alt+drag → duplicate node at its original position ───────────────────
   const onNodeDragStart = useCallback(
     (e: MouseEvent | TouchEvent, node: FlowNode) => {
+      // Snapshot before any drag/duplicate mutation; onNodeDragStop decides
+      // whether the gesture actually changed anything worth an undo entry.
+      dragSnapshotRef.current = { nodes: nodesRef.current, edges: edgesRef.current }
       if (!('altKey' in e) || !e.altKey) return
       const newId = randId()
       setNodes((ns) => [
@@ -321,6 +437,23 @@ function GraphEditorInner({
     [setNodes, setEdges],
   )
 
+  // A completed drag (move, or Alt-drag duplicate+move) is one undo entry —
+  // recorded here rather than on drag start, so a no-op click/Alt-click
+  // (no actual position change or new node) doesn't pollute the history.
+  const onNodeDragStop = useCallback(() => {
+    const snap = dragSnapshotRef.current
+    dragSnapshotRef.current = null
+    if (!snap) return
+    const changed =
+      nodesRef.current.length !== snap.nodes.length ||
+      nodesRef.current.some((n) => {
+        const prev = snap.nodes.find((p) => p.id === n.id)
+        return !prev || prev.position.x !== n.position.x || prev.position.y !== n.position.y
+      })
+    if (!changed) return
+    setHistory((h) => recordHistory(h, snap))
+  }, [])
+
   // ── Node selection ────────────────────────────────────────────────────────
   const onNodeClick = useCallback((_: React.MouseEvent, node: FlowNode) => {
     setSelectedNodeId(node.id)
@@ -336,6 +469,9 @@ function GraphEditorInner({
   const updateNodeConfig = useCallback(
     (key: string, value: unknown) => {
       if (!selectedNodeId) return
+      // Tagged so a burst of keystrokes on the same field coalesces into one
+      // undo entry (restoring the pre-edit value), instead of one per change.
+      recordPre(`cfg:${selectedNodeId}:${key}`)
       setNodes((ns) =>
         ns.map((n) =>
           n.id === selectedNodeId
@@ -347,12 +483,13 @@ function GraphEditorInner({
         ),
       )
     },
-    [selectedNodeId, setNodes],
+    [selectedNodeId, setNodes, recordPre],
   )
 
   // ── Add block ─────────────────────────────────────────────────────────────
   const addBlock = useCallback(
     (def: models.BlockDef, position?: { x: number; y: number }) => {
+      recordPre()
       const id = randId()
       const pos = position ?? { x: 80 + nodes.length * 30, y: 80 + nodes.length * 20 }
       setNodes((ns) => [
@@ -370,7 +507,7 @@ function GraphEditorInner({
       ])
       setSelectedNodeId(id)
     },
-    [nodes.length, setNodes],
+    [nodes.length, setNodes, recordPre],
   )
 
   // Drag-drop from palette onto canvas
@@ -400,6 +537,8 @@ function GraphEditorInner({
     setGraphEnabled(false)
     setCreatedAt(0)
     setSelectedNodeId(null)
+    setSavedSig(graphSignature({ name: 'New graph', enabled: false }, [], []))
+    setHistory(emptyHistory())
   }, [setNodes, setEdges])
 
   // ── Save ──────────────────────────────────────────────────────────────────
@@ -414,6 +553,7 @@ function GraphEditorInner({
       const saved = await onSave(graph)
       setGraphId(saved.id)
       setCreatedAt(saved.createdAt)
+      setSavedSig(graphSignature({ name: graphName, enabled: graphEnabled }, nodes, edges))
       return saved.id
     } finally {
       setSaving(false)
@@ -438,12 +578,13 @@ function GraphEditorInner({
     const selectedIds = new Set(nodes.filter((n) => n.selected).map((n) => n.id))
     const hasSelectedEdges = edges.some((e) => e.selected)
     if (selectedIds.size === 0 && !hasSelectedEdges) return
+    recordPre()
     setNodes((ns) => ns.filter((n) => !n.selected))
     setEdges((es) =>
       es.filter((e) => !e.selected && !selectedIds.has(e.source) && !selectedIds.has(e.target)),
     )
     setSelectedNodeId(null)
-  }, [nodes, edges, setNodes, setEdges])
+  }, [nodes, edges, setNodes, setEdges, recordPre])
 
   // ── Toggle enabled ────────────────────────────────────────────────────────
   const handleToggleEnabled = useCallback(async () => {
@@ -498,6 +639,23 @@ function GraphEditorInner({
     [nodes, edges],
   )
 
+  // Wrap ReactFlow's own change handlers so a Delete-key removal (which never
+  // goes through handleDeleteSelected) still records an undo entry.
+  const handleNodesChange = useCallback(
+    (changes: NodeChange<BlockFlowNode>[]) => {
+      if (changes.some((c) => c.type === 'remove')) recordPre()
+      onNodesChange(changes)
+    },
+    [onNodesChange, recordPre],
+  )
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange<FlowEdge>[]) => {
+      if (changes.some((c) => c.type === 'remove')) recordPre()
+      onEdgesChange(changes)
+    },
+    [onEdgesChange, recordPre],
+  )
+
   const ctxValue = useMemo(
     () => ({
       blockDefs: defMap,
@@ -527,22 +685,63 @@ function GraphEditorInner({
         {/* ── Toolbar ──────────────────────────────────────────────────── */}
         <div className="border-border-subtle bg-surface flex shrink-0 flex-wrap items-center gap-2 border-b-[0.5px] px-3 py-1.5">
           {/* Graph selector */}
-          <select
-            value={graphId ?? ''}
-            onChange={(e) => {
-              const g = graphs.find((x) => x.id === e.target.value)
-              if (g) loadGraph(g)
-            }}
-            className="bg-canvas border-border-subtle text-text-primary max-w-[160px] rounded border-[0.5px] px-1.5 py-0.5 font-mono text-[11px]"
-          >
-            {graphs.length === 0 && <option value="">— no graphs —</option>}
-            {graphs.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name || g.id}
-              </option>
-            ))}
-            {graphId === '' && <option value="">— new graph —</option>}
-          </select>
+          <div className="relative shrink-0">
+            <button
+              onClick={graphMenu.toggle}
+              className={`border-border-subtle text-text-primary flex max-w-[160px] shrink-0 items-center gap-1 rounded border-[0.5px] px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap transition-colors ${
+                graphMenu.open ? 'bg-hover' : 'bg-canvas'
+              }`}
+            >
+              <span className="text-text-faint text-[10px]">☰</span>
+              <span className="truncate">
+                {graphs.length === 0
+                  ? '— no graphs —'
+                  : graphId === ''
+                    ? '— new graph —'
+                    : (graphs.find((g) => g.id === graphId)?.name ?? graphId ?? '— new graph —')}
+              </span>
+            </button>
+
+            <Popover open={graphMenu.open} onClose={graphMenu.close} width={180} maxHeight={280}>
+              {graphs.length === 0 && (
+                <div className="text-text-faint px-3 py-1.5 font-mono text-xs">— no graphs —</div>
+              )}
+              {graphs.map((g) => {
+                const active = g.id === graphId
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => {
+                      loadGraph(g)
+                      graphMenu.close()
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                      active
+                        ? 'text-accent bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]'
+                        : 'text-text-primary bg-transparent'
+                    }`}
+                    onMouseEnter={(e) => {
+                      if (!active)
+                        (e.currentTarget as HTMLElement).style.background = 'var(--hover-surface)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                    }}
+                  >
+                    <span className={`text-accent w-3 ${active ? 'opacity-100' : 'opacity-0'}`}>
+                      ✓
+                    </span>
+                    {g.name || g.id}
+                  </button>
+                )
+              })}
+              {graphId === '' && (
+                <div className="text-accent flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs">
+                  <span className="w-3">✓</span>— new graph —
+                </div>
+              )}
+            </Popover>
+          </div>
 
           {/* Graph name */}
           {nameEditing ? (
@@ -557,10 +756,16 @@ function GraphEditorInner({
           ) : (
             <span
               onClick={() => setNameEditing(true)}
-              className="text-text-muted border-border-subtle min-w-[60px] cursor-text border-b-[0.5px] border-dashed font-mono text-[11px]"
+              className="text-text-muted border-border-subtle flex min-w-[60px] cursor-text items-center gap-1.5 border-b-[0.5px] border-dashed font-mono text-[11px]"
               title="Click to rename"
             >
               {graphName || 'Untitled'}
+              {dirty && (
+                <span
+                  className="bg-accent h-1.5 w-1.5 shrink-0 rounded-full"
+                  title="Unsaved changes"
+                />
+              )}
             </span>
           )}
 
@@ -575,6 +780,23 @@ function GraphEditorInner({
               {graphEnabled ? '[on]' : '[off]'}
             </button>
           )}
+
+          <button
+            className={`${btnClass()} ${!canUndo(history) ? 'opacity-50' : ''}`}
+            onClick={doUndo}
+            disabled={!canUndo(history)}
+            title="Undo (Ctrl+Z)"
+          >
+            undo
+          </button>
+          <button
+            className={`${btnClass()} ${!canRedo(history) ? 'opacity-50' : ''}`}
+            onClick={doRedo}
+            disabled={!canRedo(history)}
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            redo
+          </button>
 
           <div className="flex-1" />
 
@@ -623,11 +845,12 @@ function GraphEditorInner({
               edges={edges}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
               onConnect={onConnect}
               onNodeClick={onNodeClick}
               onNodeDragStart={onNodeDragStart}
+              onNodeDragStop={onNodeDragStop}
               onPaneClick={onPaneClick}
               isValidConnection={isValidConnection}
               fitView
@@ -703,6 +926,23 @@ function GraphEditorInner({
             setQuickAdd(null)
           }}
           onClose={() => setQuickAdd(null)}
+        />
+      )}
+
+      {showCloseConfirm && (
+        <CloseConfirmDialog
+          saving={saving}
+          onCancel={() => setShowCloseConfirm(false)}
+          onDiscard={() => {
+            setSavedSig(graphSignature({ name: graphName, enabled: graphEnabled }, nodes, edges))
+            setShowCloseConfirm(false)
+            useUiStore.getState().requestCloseMaximize()
+          }}
+          onSaveAndClose={async () => {
+            await handleSave()
+            setShowCloseConfirm(false)
+            useUiStore.getState().requestCloseMaximize()
+          }}
         />
       )}
     </SchedulerCtx.Provider>

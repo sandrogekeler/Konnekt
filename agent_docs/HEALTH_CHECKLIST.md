@@ -157,6 +157,109 @@ todo list, not a target.
   job, for stronger end-to-end confidence than the `go build`/`pnpm build`
   smoke check gives.
 
+**P1 — CI blind spot: `@react-three/fiber`/`@types/three` resolution-dependent typecheck failure**
+- Found 2026-07-16: `frontend/src/tiles/worlds/scene/Galaxy.tsx`'s new
+  `LayoutScaleController` (from the worlds zoom-to-fit merge) called
+  `.unproject(state.camera)` — R3F's `state.camera` type and the app's
+  `@types/three` `Camera` type had diverged (newer three fields like
+  `reversedDepth`/`static`/`pivot` weren't on R3F's copy), so `tsc` should
+  reject the assignment. It passed in this repo's own CI (`pnpm typecheck` +
+  `pnpm build`, both on a `--frozen-lockfile` install) but failed a
+  contributor's local `wails dev`, which ran a fresh non-frozen `pnpm install`
+  that resolved a node_modules tree where the two `Camera` types diverge.
+  First patched at the call site with the same cast the sibling file in the
+  same merge already uses (`WorldsScene.tsx`'s `state.camera as unknown as
+  THREE.PerspectiveCamera` precedent) — kept as belt-and-suspenders, but that
+  alone left the underlying tree still capable of producing more of these.
+- ✅ **Root cause found and removed.** The tree carried **two** `@types/three`/
+  `three` copies: the app's own `@types/three@0.184.1`/`three@0.184.0`, and
+  `@types/three@0.156.0`/`three@0.156.1` pinned by `skinview3d` (a dependency
+  that was never imported anywhere under `frontend/src/` — see "P2 — Repo
+  hygiene" below). Depending on how a given `pnpm install` laid out
+  `node_modules`, R3F's camera type could bind to either copy; the
+  0.156.0-era `Camera` predates the fields 0.184.1 added, producing the
+  mismatch. CI and prior sandbox installs happened to dedupe to 0.184.1, so
+  this was invisible there — only a fresh install on the reporting
+  contributor's machine resolved the conflicting layout. Removed `skinview3d`
+  (`pnpm remove skinview3d` in `frontend/`); confirmed via `pnpm-lock.yaml`
+  that exactly one `@types/three@0.184.1` and one `three@0.184.0` remain in
+  the tree. `pnpm typecheck`/`pnpm build`/`pnpm lint` (0 errors)/`pnpm test`
+  (165/165) all re-verified green after the removal.
+
+**P1 — Auto-updater: check, release pipeline, and in-place install all shipped**
+- ✅ **In-app update check shipped.** `version.go` (package `main`) is the
+  single source of the app's version (`var Version = "0.1.0-dev"`), also
+  mirrored in `wails.json`'s `info.productVersion` for the built binary's
+  file metadata — the app previously had **no version anywhere** (confirmed
+  via grep before this work; `wails.json` had no `info` block, frontend
+  `package.json` sits at the placeholder `0.0.0`, the About pane showed
+  nothing). `backend/services/update.go`'s `UpdateService` queries
+  `GET /repos/sandrogekeler/Konnekt/releases/latest` on the GitHub REST API —
+  **GitHub Releases *is* the version database**, no separate backend needed;
+  each release is a git tag with per-platform binaries attached as assets.
+  `baseURL` is constructor-injected (unlike `modrinth.go`'s hardcoded
+  `modrinthBase`, a gap `update_test.go` deliberately avoids repeating) so
+  `CheckForUpdates` is fully covered by `httptest.Server`-backed tests:
+  update-available, up-to-date, 404-no-releases-yet (treated as "up to
+  date", not an error — the correct state until the first release is cut),
+  malformed JSON, and HTTP 500. `compareVersions` (semver-ish, `v`-prefix
+  tolerant, prerelease-sorts-lower) has its own table-driven test.
+  `GetAppVersion`/`CheckForUpdates` bound on `App` (`app.go`); Settings →
+  About shows the version + a "Check for updates" button (idle → checking →
+  up to date / update-available-with-Download-button / error); Settings →
+  General adds a "Check for updates on startup" toggle
+  (`AppSettings.CheckUpdatesOnStartup`, defaults `true` in
+  `config.go`'s `GetAppSettings()`). The startup path is a **one-shot check**
+  (`frontend/src/hooks/useUpdateCheck.ts`, tested with the established
+  `vi.mock('.../wailsjs/go/main/App')` + `renderHook` pattern), not a poll,
+  wired into `App.tsx` alongside the other one-shot startup effects — it
+  **no-ops when `Version` contains `-dev`** (a dev/`wails dev` build has no
+  installable artifact to update to), and failures (offline, no releases)
+  are silent by design since it's a background check, not a user action.
+- ✅ **Release pipeline shipped.** `.github/workflows/release.yml` triggers on
+  a `v*` tag push, runs `wails build` on `windows-latest` (matching `ci.yml`'s
+  backend job / the shipping target) with `-ldflags "-X main.Version=$TAG"`,
+  stages the binary as `konnekt-windows-amd64.exe` alongside a
+  `checksums.txt` (SHA256), and publishes both as release assets via `gh
+  release create`. macOS/Linux matrix legs are a documented follow-up, not
+  built — see below.
+- ✅ **In-place install shipped.** Settings → About's "Download & Install"
+  button (previously just opened the release page) now calls
+  `App.DownloadAndInstallUpdate()`, which re-checks the latest release, picks
+  the asset matching the running platform (`platformAssetNameFor`, windows
+  only today — other platforms get a clear "not published yet" error instead
+  of guessing a name nothing publishes), downloads `checksums.txt`, streams
+  the binary while verifying its SHA256 against it, and replaces the running
+  executable in place via `github.com/minio/selfupdate` — which owns the
+  Windows "can't overwrite a running exe" rename dance and auto-rolls-back on
+  a failed write (recorded in `DEPENDENCIES.md`). On success the app spawns
+  the replaced binary and quits via `runtime.Quit`; on failure (offline
+  mid-download, a Program-Files install without write permission, a bad
+  checksum) the frontend falls back to the original "open release page"
+  button rather than silently failing. Progress streams over the existing
+  `EventBus` (`EventUpdateProgress` in `events.go`) to a Wails
+  `EventsOn` listener in `SettingsModal.tsx`'s `AboutPane`, cleaned up on
+  unmount — not `useEffect` polling, per `CLAUDE.md`'s rule. Dev builds
+  (`Version` containing `-dev`) are rejected up front (in both `App.go` and
+  the About pane's UI, which disables the button with a hint) since a `wails
+  dev` process has no packaged binary to replace — this is also why the
+  feature can only be exercised end-to-end against a real packaged build, not
+  `wails dev`. Testable seams split out for this: `platformAssetNameFor` and
+  `selectPlatformAssets` take `goos`/`goarch` as parameters rather than
+  reading `runtime.GOOS`/`GOARCH` directly, and `downloadAndApply` takes a
+  `TargetPath` override, so `update_test.go` exercises the real
+  download+checksum-verify+`selfupdate.Apply` path (success, and a rejected
+  checksum mismatch leaving the original file untouched) against a temp file
+  instead of the actual running executable, all from a single (non-Windows)
+  dev machine.
+- Also done: `frontend/src/lib/changelog.ts`'s `CHANGELOG_URL` flipped from
+  `/commits/main` to `/releases` now that the release pipeline exists.
+- **Deferred, not built this pass:** code-signing/notarization for the
+  published binaries (unsigned builds trigger Windows SmartScreen warnings —
+  functional, just not polished); macOS/Linux release legs and self-update
+  support (`platformAssetNameFor` is structured to add a case per platform,
+  but no asset-naming convention or code-signing story exists for either yet).
+
 **Done — Lint/format enforcement (frontend)**
 - ✅ Migrated `frontend/` from Tailwind v3 (barely used) to v4, mapped the
   existing CSS-variable token system into `@theme inline`
@@ -848,9 +951,15 @@ todo list, not a target.
   for the node-system rework tracked below.
 - ✅ Removed the unused `uplot` npm dependency (confirmed unimported anywhere
   under `frontend/src/` — the performance tile's charts use `recharts`
-  exclusively). `skinview3d` is **kept intentionally**: reserved for the
-  not-yet-built Beta "player skin preview" tile (`ROADMAP.md`), documented in
-  `agent_docs/DEPENDENCIES.md` so it isn't mistaken for dead weight later.
+  exclusively).
+- ✅ **Reversal:** `skinview3d` — previously kept intentionally as reserved
+  for the not-yet-built Beta "player skin preview" tile — has since been
+  **removed**. It pinned its own `@types/three@0.156.0`/`three@0.156.1`, a
+  second copy alongside the app's `0.184.x` line that caused an
+  install-layout-dependent type mismatch in the Worlds tile's R3F camera
+  code (see "P1 — CI blind spot" above for the full incident). Re-add,
+  pinned to `0.184.x`, when the skin-preview tile is actually built —
+  tracked in `agent_docs/DEPENDENCIES.md`'s "Removed" section.
 - ✅ Deleted the stale root-level `Roadmap.md` — a status log fully superseded
   by `agent_docs/ROADMAP.md` (which it already deferred to for feature scope)
   and out of date (e.g. still listed "Split the JS bundle" as planned

@@ -20,6 +20,8 @@ const DEFAULTS = {
   notifyOnJoin: false,
   schedulerPaletteCollapsed: true,
   schedulerPaletteClosedCategories: {},
+  consoleQuickCommandsCollapsed: false,
+  checkUpdatesOnStartup: true,
 }
 
 describe('useSettingsStore', () => {

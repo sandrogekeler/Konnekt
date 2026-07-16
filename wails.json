@@ -9,5 +9,8 @@
   "author": {
     "name": "Alessandro Gekeler",
     "email": "alessandrogekeler@proton.me"
+  },
+  "info": {
+    "productVersion": "0.1.0-dev"
   }
 }

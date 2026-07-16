@@ -19,6 +19,8 @@ const DEFAULTS: AppSettings = {
   notifyOnJoin: false,
   schedulerPaletteCollapsed: true,
   schedulerPaletteClosedCategories: {},
+  consoleQuickCommandsCollapsed: false,
+  checkUpdatesOnStartup: true,
 }
 
 interface SettingsStore {

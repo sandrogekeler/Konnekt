@@ -3,22 +3,23 @@ import { create } from 'zustand'
 interface Process {
   id: string
   label: string
+  filename?: string
   percent: number
   status: 'running' | 'done' | 'failed'
 }
 
 interface ProcessesStore {
   processes: Record<string, Process>
-  start: (id: string, label: string) => void
+  start: (id: string, label: string, filename?: string) => void
   updateProgress: (id: string, percent: number) => void
   finish: (id: string, status: 'done' | 'failed') => void
 }
 
 export const useProcessesStore = create<ProcessesStore>((set) => ({
   processes: {},
-  start: (id, label) =>
+  start: (id, label, filename) =>
     set((s) => ({
-      processes: { ...s.processes, [id]: { id, label, percent: 0, status: 'running' } },
+      processes: { ...s.processes, [id]: { id, label, filename, percent: 0, status: 'running' } },
     })),
   updateProgress: (id, percent) =>
     set((s) => {

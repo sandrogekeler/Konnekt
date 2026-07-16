@@ -121,6 +121,7 @@ func (s *ConfigService) GetAppSettings() (models.AppSettings, error) {
 		ConsoleBufferLines:               1000,
 		SchedulerPaletteCollapsed:        true,
 		SchedulerPaletteClosedCategories: map[string]bool{},
+		CheckUpdatesOnStartup:            true,
 	}
 	data, err := os.ReadFile(filepath.Join(s.dataDir, "app_settings.json"))
 	if os.IsNotExist(err) {

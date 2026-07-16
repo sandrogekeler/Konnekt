@@ -4,6 +4,7 @@ import type { models } from '../../../../wailsjs/go/models'
 import {
   graphToFlow,
   flowToGraph,
+  graphSignature,
   isValidConnection,
   detectControlCycles,
   randId,
@@ -363,5 +364,73 @@ describe('defaultConfig', () => {
       ],
     )
     expect(defaultConfig(d)).toEqual({ a: 'hi' })
+  })
+})
+
+describe('graphSignature', () => {
+  const meta = { name: 'g1', enabled: true }
+
+  it('is stable for the same graph across calls', () => {
+    const nodes = [flowNode('n1', 'data.constant', { value: 1 })]
+    const edges = [flowEdge('e1', 'n1', 'n2', 'ctrl:out', 'ctrl:in')]
+    expect(graphSignature(meta, nodes, edges)).toBe(graphSignature(meta, nodes, edges))
+  })
+
+  it('changes when a node moves', () => {
+    const n1 = flowNode('n1', 'data.constant', { value: 1 })
+    const n2 = { ...n1, position: { x: 40, y: 40 } }
+    expect(graphSignature(meta, [n1], [])).not.toBe(graphSignature(meta, [n2], []))
+  })
+
+  it('changes when node config changes', () => {
+    const n1 = flowNode('n1', 'data.constant', { value: 1 })
+    const n2 = flowNode('n1', 'data.constant', { value: 2 })
+    expect(graphSignature(meta, [n1], [])).not.toBe(graphSignature(meta, [n2], []))
+  })
+
+  it('changes when the graph name or enabled flag changes', () => {
+    const nodes = [flowNode('n1', 'data.constant', { value: 1 })]
+    expect(graphSignature(meta, nodes, [])).not.toBe(
+      graphSignature({ name: 'g2', enabled: true }, nodes, []),
+    )
+    expect(graphSignature(meta, nodes, [])).not.toBe(
+      graphSignature({ name: 'g1', enabled: false }, nodes, []),
+    )
+  })
+
+  it('changes when edges are added, removed, or rewired', () => {
+    const nodes = [
+      flowNode('n1', 'data.constant', {}),
+      flowNode('n2', 'data.constant', {}),
+      flowNode('n3', 'data.constant', {}),
+    ]
+    const e1 = [flowEdge('e1', 'n1', 'n2', 'ctrl:out', 'ctrl:in')]
+    const e2 = [flowEdge('e1', 'n1', 'n3', 'ctrl:out', 'ctrl:in')]
+    expect(graphSignature(meta, nodes, e1)).not.toBe(graphSignature(meta, nodes, e2))
+    expect(graphSignature(meta, nodes, e1)).not.toBe(graphSignature(meta, nodes, []))
+  })
+
+  it('ignores node/edge array order', () => {
+    const n1 = flowNode('n1', 'data.constant', {})
+    const n2 = flowNode('n2', 'data.constant', {})
+    const e1 = flowEdge('e1', 'n1', 'n2', 'ctrl:out', 'ctrl:in')
+    const e2 = flowEdge('e2', 'n1', 'n2', 'data:out', 'data:in')
+    expect(graphSignature(meta, [n1, n2], [e1, e2])).toBe(graphSignature(meta, [n2, n1], [e2, e1]))
+  })
+
+  it('ignores _collapsed (a view toggle, not graph content)', () => {
+    const n1 = flowNode('n1', 'data.constant', { value: 1 })
+    const n2 = flowNode('n1', 'data.constant', { value: 1, _collapsed: true })
+    expect(graphSignature(meta, [n1], [])).toBe(graphSignature(meta, [n2], []))
+  })
+
+  it('ignores React Flow transient fields like selected and _animDelay', () => {
+    const n1 = flowNode('n1', 'data.constant', { value: 1 })
+    const n2 = {
+      ...n1,
+      selected: true,
+      data: { ...n1.data, _animDelay: 123 },
+    }
+    expect(graphSignature(meta, [n1], [])).toBe(graphSignature(meta, [n2], []))
   })
 })

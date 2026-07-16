@@ -13,11 +13,14 @@ import { useConsoleStore } from './stores/useConsoleStore'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessesStore } from './stores/useProcessesStore'
 import { emitNotification } from './lib/notify'
+import { prefetchHeavyChunks } from './lib/prefetch'
+import { useUpdateCheck } from './hooks/useUpdateCheck'
 import { EVENTS } from './lib/constants'
 
 function App() {
   const { activeId } = useServerConfigStore()
   const settingsLoaded = useSettingsStore((s) => s.loaded)
+  const checkUpdatesOnStartup = useSettingsStore((s) => s.settings.checkUpdatesOnStartup)
   const [eulaRequired, setEulaRequired] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const autoStarted = useRef(false)
@@ -26,6 +29,14 @@ function App() {
   useEffect(() => {
     useSettingsStore.getState().load()
   }, [])
+
+  // Warm the heavy lazy-loaded tile chunks (worlds scene, charts) during
+  // idle time so the first tile open doesn't stutter on a cold fetch+eval.
+  useEffect(() => {
+    prefetchHeavyChunks()
+  }, [])
+
+  useUpdateCheck(settingsLoaded && checkUpdatesOnStartup)
 
   // Auto-start active server on launch
   useEffect(() => {
@@ -136,8 +147,10 @@ function App() {
     let c4: (() => void) | undefined
     let c5: (() => void) | undefined
     try {
-      c1 = EventsOn(EVENTS.BACKUP_STARTED, (data?: { serverID?: string }) => {
-        useProcessesStore.getState().start(data?.serverID ?? 'backup', 'Backing up world…')
+      c1 = EventsOn(EVENTS.BACKUP_STARTED, (data?: { serverID?: string; filename?: string }) => {
+        useProcessesStore
+          .getState()
+          .start(data?.serverID ?? 'backup', 'Backing up world…', data?.filename)
       })
       c2 = EventsOn(EVENTS.BACKUP_PROGRESS, (data?: { serverID?: string; percent?: number }) => {
         useProcessesStore.getState().updateProgress(data?.serverID ?? 'backup', data?.percent ?? 0)

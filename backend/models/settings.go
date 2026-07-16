@@ -20,4 +20,8 @@ type AppSettings struct {
 
 	SchedulerPaletteCollapsed        bool            `json:"schedulerPaletteCollapsed"`
 	SchedulerPaletteClosedCategories map[string]bool `json:"schedulerPaletteClosedCategories"`
+
+	ConsoleQuickCommandsCollapsed bool `json:"consoleQuickCommandsCollapsed"`
+
+	CheckUpdatesOnStartup bool `json:"checkUpdatesOnStartup"`
 }

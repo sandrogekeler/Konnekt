@@ -13,17 +13,24 @@ import { Toggle } from './ui/Toggle'
 import { Segmented } from './ui/Segmented'
 import { ColorSwatch } from './ui/ColorSwatch'
 import { SettingRow } from './ui/SettingRow'
-import { OpenDataDir } from '../../wailsjs/go/main/App'
+import { OpenDataDir, GetAppVersion, CheckForUpdates, DownloadAndInstallUpdate } from '../../wailsjs/go/main/App'
+import { BrowserOpenURL, EventsOn } from '../../wailsjs/runtime/runtime'
+import type { models } from '../../wailsjs/go/models'
+import { CHANGELOG, CHANGELOG_URL, groupByDate } from '../lib/changelog'
+import type { ChangelogEntry } from '../lib/changelog'
+import { EVENTS } from '../lib/constants'
+import { isDevBuild } from '../hooks/useUpdateCheck'
 
 type UpdateFn = (patch: Partial<AppSettings>) => Promise<void>
 
-type Section = 'appearance' | 'general' | 'console' | 'notifications' | 'about'
+type Section = 'appearance' | 'general' | 'console' | 'notifications' | 'changelog' | 'about'
 
 const NAV: { id: Section; label: string }[] = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'general', label: 'General' },
   { id: 'console', label: 'Console' },
   { id: 'notifications', label: 'Notifications' },
+  { id: 'changelog', label: "What's New" },
   { id: 'about', label: 'About' },
 ]
 
@@ -62,12 +69,12 @@ export function SettingsModal({ open, onClose }: Props) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.65)]"
+      className="modal-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.65)]"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
     >
-      <div className="bg-canvas border-border-subtle flex h-[480px] w-[640px] overflow-hidden rounded-xl border-[0.5px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
+      <div className="modal-panel-in bg-canvas border-border-subtle flex h-[480px] w-[640px] overflow-hidden rounded-xl border-[0.5px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
         {/* Left nav */}
         <div className="bg-surface border-border-subtle flex w-40 shrink-0 flex-col gap-0.5 border-r-[0.5px] p-3">
           <div className="border-border-subtle border-b-[0.5px] px-2 pt-1 pb-3">
@@ -115,6 +122,7 @@ export function SettingsModal({ open, onClose }: Props) {
             {section === 'notifications' && (
               <NotificationsPane settings={settings} update={update} />
             )}
+            {section === 'changelog' && <ChangelogPane />}
             {section === 'about' && <AboutPane />}
           </div>
         </div>
@@ -326,6 +334,15 @@ function GeneralPane({ settings, update }: { settings: AppSettings; update: Upda
           onChange={(v) => update({ confirmBeforeStop: v })}
         />
       </SettingRow>
+      <SettingRow
+        label="Check for updates on startup"
+        description="Silently check for a new release when Konnekt launches and notify if one is found."
+      >
+        <Toggle
+          checked={settings.checkUpdatesOnStartup}
+          onChange={(v) => update({ checkUpdatesOnStartup: v })}
+        />
+      </SettingRow>
     </div>
   )
 }
@@ -377,14 +394,173 @@ function NotificationsPane({ settings, update }: { settings: AppSettings; update
   )
 }
 
+// ─── Changelog ────────────────────────────────────────────────────────────────
+
+function ChangelogItem({ entry }: { entry: ChangelogEntry }) {
+  const [showMinor, setShowMinor] = useState(false)
+  const formattedDate = new Date(entry.date).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+
+  return (
+    <div className="border-border-subtle border-b-[0.5px] py-3 last:border-b-0">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-text-primary text-sm">{entry.label}</span>
+        <span className="text-text-muted shrink-0 text-xs">{formattedDate}</span>
+      </div>
+      <ul className="mt-1.5 flex flex-col gap-1">
+        {entry.highlights.map((item, i) => (
+          <li key={i} className="text-text-secondary flex gap-1.5 text-xs">
+            <span className="text-text-faint">–</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      {entry.minor && entry.minor.length > 0 && (
+        <div className="mt-1.5">
+          <button
+            onClick={() => setShowMinor((v) => !v)}
+            className="text-text-faint hover:text-text-muted text-[11px] transition-colors"
+          >
+            {showMinor ? '−' : '+'} {entry.minor.length} smaller change
+            {entry.minor.length === 1 ? '' : 's'}
+          </button>
+          {showMinor && (
+            <ul className="mt-1 flex flex-col gap-1">
+              {entry.minor.map((item, i) => (
+                <li key={i} className="text-text-muted flex gap-1.5 text-xs">
+                  <span className="text-text-faint">–</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ChangelogPane() {
+  const [showEarlier, setShowEarlier] = useState(false)
+  const grouped = groupByDate(CHANGELOG)
+  const recent = grouped.slice(0, 3)
+  const earlier = grouped.slice(3)
+
+  const openChangelog = () => {
+    try {
+      BrowserOpenURL(CHANGELOG_URL)
+    } catch {
+      /* non-Wails context */
+    }
+  }
+
+  return (
+    <div className="flex flex-col py-2">
+      <div className="flex flex-col">
+        {recent.map((entry) => (
+          <ChangelogItem key={entry.date} entry={entry} />
+        ))}
+      </div>
+
+      {earlier.length > 0 && (
+        <div className="border-border-subtle border-b-[0.5px] py-2">
+          <button
+            onClick={() => setShowEarlier((v) => !v)}
+            className="text-text-muted hover:text-text-secondary text-xs transition-colors"
+          >
+            {showEarlier ? '▾' : '▸'} Earlier updates
+          </button>
+          {showEarlier && (
+            <div className="mt-1 flex flex-col">
+              {earlier.map((entry) => (
+                <ChangelogItem key={entry.date} entry={entry} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <button
+        onClick={openChangelog}
+        className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 mt-3 rounded border-[0.5px] py-1.5 text-xs transition-colors"
+      >
+        View full changelog on GitHub ↗
+      </button>
+    </div>
+  )
+}
+
 // ─── About ────────────────────────────────────────────────────────────────────
 
+type UpdateCheckState =
+  | { status: 'idle' }
+  | { status: 'checking' }
+  | { status: 'upToDate' }
+  | { status: 'available'; info: models.UpdateInfo }
+  | { status: 'downloading'; info: models.UpdateInfo; percent: number }
+  | { status: 'installFailed'; info: models.UpdateInfo; message: string }
+  | { status: 'error' }
+
 function AboutPane() {
+  const [version, setVersion] = useState<string | null>(null)
+  const [checkState, setCheckState] = useState<UpdateCheckState>({ status: 'idle' })
+
+  useEffect(() => {
+    GetAppVersion()
+      .then(setVersion)
+      .catch(() => setVersion(null))
+  }, [])
+
+  // Streaming download progress, per CLAUDE.md's "no useEffect polling — use
+  // a Wails event listener" rule. Only applied while actively downloading;
+  // cleaned up on unmount so a closed Settings modal doesn't leak a listener.
+  useEffect(() => {
+    const off = EventsOn(EVENTS.UPDATE_PROGRESS, (d?: { percent?: number }) => {
+      setCheckState((prev) => (prev.status === 'downloading' ? { ...prev, percent: d?.percent ?? prev.percent } : prev))
+    })
+    return () => off()
+  }, [])
+
   const openFolder = () => {
     try {
       OpenDataDir().catch(() => {})
     } catch {
       /* non-Wails context */
+    }
+  }
+
+  const openRelease = (url: string) => {
+    try {
+      BrowserOpenURL(url)
+    } catch {
+      /* non-Wails context */
+    }
+  }
+
+  const runCheck = async () => {
+    setCheckState({ status: 'checking' })
+    try {
+      const info = await CheckForUpdates()
+      setCheckState(info.updateAvailable ? { status: 'available', info } : { status: 'upToDate' })
+    } catch {
+      setCheckState({ status: 'error' })
+    }
+  }
+
+  const runInstall = async (info: models.UpdateInfo) => {
+    setCheckState({ status: 'downloading', info, percent: 0 })
+    try {
+      // On success the app relaunches on the new version — this promise may
+      // never resolve in this process. On failure (offline mid-download, a
+      // permission-denied swap, a bad checksum) it rejects and we fall back
+      // to the manual "open release page" path below.
+      await DownloadAndInstallUpdate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setCheckState({ status: 'installFailed', info, message })
     }
   }
 
@@ -395,6 +571,10 @@ function AboutPane() {
         <span className="text-text-muted text-xs">Minecraft Server Manager</span>
       </div>
       <div className="flex flex-col gap-2">
+        <div className="text-text-secondary flex items-center justify-between text-xs">
+          <span>Version</span>
+          <span className="text-text-muted font-mono text-[11px]">{version ?? '—'}</span>
+        </div>
         <div className="text-text-secondary flex items-center justify-between text-xs">
           <span>License</span>
           <span className="text-text-muted">MIT</span>
@@ -415,6 +595,79 @@ function AboutPane() {
             ~/.config/konnekt ↗
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={runCheck}
+          disabled={checkState.status === 'checking' || checkState.status === 'downloading'}
+          className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1.5 text-xs transition-colors disabled:opacity-50"
+        >
+          {checkState.status === 'checking' ? 'Checking…' : 'Check for updates'}
+        </button>
+
+        {checkState.status === 'upToDate' && (
+          <span className="text-text-muted text-center text-[11px]">You&apos;re up to date.</span>
+        )}
+        {checkState.status === 'error' && (
+          <span className="text-danger text-center text-[11px]">
+            Couldn&apos;t check for updates. Try again later.
+          </span>
+        )}
+        {checkState.status === 'available' && (
+          <div className="border-border-subtle flex flex-col gap-1.5 rounded border-[0.5px] p-2.5">
+            <span className="text-text-primary text-xs">
+              Update available: {checkState.info.latestVersion}
+            </span>
+            {isDevBuild(version ?? '') ? (
+              <span className="text-text-muted text-[11px]">
+                Not available in dev builds — restart via a packaged build to install updates.
+              </span>
+            ) : (
+              <button
+                onClick={() => runInstall(checkState.info)}
+                className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1 text-[11px] transition-colors"
+              >
+                Download &amp; Install
+              </button>
+            )}
+            <button
+              onClick={() => openRelease(checkState.info.releaseUrl)}
+              className="text-text-muted hover:text-text-secondary text-[11px] transition-colors"
+            >
+              or open the release page ↗
+            </button>
+          </div>
+        )}
+        {checkState.status === 'downloading' && (
+          <div className="border-border-subtle flex flex-col gap-1.5 rounded border-[0.5px] p-2.5">
+            <span className="text-text-primary text-xs">
+              Downloading {checkState.info.latestVersion}… {checkState.percent}%
+            </span>
+            <div className="bg-hover h-1.5 overflow-hidden rounded-full">
+              <div
+                className="bg-accent h-full transition-all duration-300"
+                // eslint-disable-next-line no-restricted-syntax -- width is a live download-progress percent
+                style={{ width: `${checkState.percent}%` }}
+              />
+            </div>
+            <span className="text-text-muted text-center text-[11px]">
+              Konnekt will restart automatically once the download finishes.
+            </span>
+          </div>
+        )}
+        {checkState.status === 'installFailed' && (
+          <div className="border-border-subtle flex flex-col gap-1.5 rounded border-[0.5px] p-2.5">
+            <span className="text-danger text-xs">Couldn&apos;t install automatically.</span>
+            <span className="text-text-muted text-[11px]">{checkState.message}</span>
+            <button
+              onClick={() => openRelease(checkState.info.releaseUrl)}
+              className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1 text-[11px] transition-colors"
+            >
+              Open release page ↗
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

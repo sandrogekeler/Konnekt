@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLayoutStore } from '../stores/useLayoutStore'
 import { SaveLayoutPreset } from '../../wailsjs/go/main/App'
 import { DEFAULT_LAYOUT_PRESETS } from '../lib/constants'
+import { Collapsible } from './ui/Collapsible'
 
 export function LayoutPresets() {
   const { presets, activePresetName, savePreset, loadPreset, loadPresets, deletePreset } =
@@ -47,17 +48,13 @@ export function LayoutPresets() {
       >
         <span>Layouts</span>
         <span
-          className={`inline-block transition-transform duration-200 ease-[ease] ${collapsed ? '-rotate-90' : 'rotate-0'}`}
+          className={`duration-fast ease-standard inline-block transition-transform ${collapsed ? '-rotate-90' : 'rotate-0'}`}
         >
           ▾
         </span>
       </button>
 
-      <div
-        className={`min-w-0 overflow-hidden transition-[max-height] duration-200 ease-[ease] ${
-          collapsed ? 'max-h-0' : 'max-h-[2000px]'
-        }`}
-      >
+      <Collapsible open={!collapsed} className="min-w-0">
         <div className="flex min-h-0 min-w-0 flex-col gap-2">
           {presets.map((preset) => (
             <div key={preset.name} className="flex items-center gap-1">
@@ -148,7 +145,7 @@ export function LayoutPresets() {
             {resetting ? 'Resetting…' : '↺ Reset to defaults'}
           </button>
         </div>
-      </div>
+      </Collapsible>
     </div>
   )
 }
