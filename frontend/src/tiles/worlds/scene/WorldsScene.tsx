@@ -26,6 +26,12 @@ const CLOSE_DIST_PLANET  = 2.5  // camera distance when the main planet is the H
 const ZOOM_LAMBDA  = 3.2
 const CAM_LAMBDA   = 4.5  // single time-constant for all camera transitions (tunable)
 
+// Wheel-driven user zoom multiplier layered on top of the auto zoom-to-fit
+// scale computed by Galaxy's LayoutScaleController.
+const USER_ZOOM_MIN = 0.45
+const USER_ZOOM_MAX = 2.5
+const WHEEL_ZOOM_SENSITIVITY = 0.0012
+
 // Precomputed unit direction: offset applied from the focused body to place the camera eye
 const FOCUS_DIR = new THREE.Vector3(0, FOCUS_ELEV, FOCUS_BACK).normalize()
 
@@ -133,9 +139,10 @@ interface ControllerProps {
   camRef:                React.RefObject<CameraControls | null>
   hudOpenRef:            React.MutableRefObject<boolean>
   selectedDimensionRef:  React.MutableRefObject<string | null>
+  layoutScaleRef:        React.MutableRefObject<number>
 }
 
-function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef, selectedDimensionRef }: ControllerProps) {
+function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenRef, selectedDimensionRef, layoutScaleRef }: ControllerProps) {
   const hudOffsetRef  = useRef(0)
   // Live camera state — damped toward desiredEye/desiredTarget each frame
   const currentEye    = useRef(new THREE.Vector3(0, 14, 5))
@@ -164,7 +171,11 @@ function SceneController({ focusNameRef, positionsRef, zoomRef, camRef, hudOpenR
       const isMoon  = dim !== null && dim !== 'overworld'
       const moonPos = isMoon ? positionsRef.current.get(`${name}/${dim}`) : undefined
       const bodyPos = (isMoon && moonPos) ? moonPos : planetPos
-      const dist    = isMoon ? CLOSE_DIST_MOON : (dim === 'overworld' ? CLOSE_DIST_PLANET : FOCUS_DIST)
+      // Base distance scaled by the current zoom-to-fit layout scale so a focused
+      // body frames correctly regardless of the overview zoom level it was
+      // selected at (the body's own world position is already scaled — only the
+      // camera offset needs compensating).
+      const dist    = (isMoon ? CLOSE_DIST_MOON : (dim === 'overworld' ? CLOSE_DIST_PLANET : FOCUS_DIST)) * layoutScaleRef.current
 
       desiredTarget.current.copy(bodyPos)
       desiredEye.current.copy(bodyPos).addScaledVector(FOCUS_DIR, dist)
@@ -217,6 +228,12 @@ export function WorldsScene({
   const camRef                = useRef<CameraControls>(null)
   const hudOpenRef            = useRef(false)
   const selectedDimensionRef  = useRef<string | null>(null)
+  // Wheel-driven zoom multiplier (galaxy overview only) and the resulting
+  // damped scale published by Galaxy's LayoutScaleController each frame —
+  // see Galaxy.tsx for the zoom-to-fit implementation.
+  const userZoomRef           = useRef(1)
+  const layoutScaleRef        = useRef(1)
+  const wrapperRef            = useRef<HTMLDivElement>(null)
 
   // Keep refs in sync each render so SceneController reads the latest value each frame
   hudOpenRef.current           = !!(focusName && selectedDimension)
@@ -232,7 +249,27 @@ export function WorldsScene({
     focusNameRef.current = null
     setFocusName(null)
     setSelectedDimension(null)
+    userZoomRef.current = 1  // reset wheel zoom on return to the galaxy overview
   }
+
+  // Non-passive wheel listener so we can preventDefault (mirrors BackupCarousel.tsx's
+  // precedent). Ignored while a planet is focused — scrolling then either does nothing
+  // (galaxy button visible) or hits the HUD panel's own overflowY:auto scroll, which
+  // this must not fight.
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    function handleWheel(e: WheelEvent) {
+      if (focusNameRef.current) return
+      e.preventDefault()
+      userZoomRef.current = THREE.MathUtils.clamp(
+        userZoomRef.current * Math.exp(-e.deltaY * WHEEL_ZOOM_SENSITIVITY),
+        USER_ZOOM_MIN, USER_ZOOM_MAX,
+      )
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
 
   const hudWorld = focusName ? worlds.find(w => w.name === focusName) ?? null : null
   const hudOpen  = !!(focusName && selectedDimension)
@@ -249,7 +286,7 @@ export function WorldsScene({
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Entrance reveal — wrapper div so the WebGL drawing-buffer size (set by Canvas
           layout, already correct after the 220ms gate) is never affected by transform */}
-      <div style={{
+      <div ref={wrapperRef} style={{
         position: 'absolute', inset: 0,
         opacity:    revealed ? 1 : 0,
         transition: revealed ? 'opacity 0.4s cubic-bezier(0.25,0,0.25,1)' : 'none',
@@ -277,6 +314,9 @@ export function WorldsScene({
               selectedDimension={selectedDimension}
               onSelectWorld={selectWorld}
               onSelectDimension={kind => setSelectedDimension(k => k === kind ? null : kind)}
+              focusNameRef={focusNameRef}
+              userZoomRef={userZoomRef}
+              layoutScaleRef={layoutScaleRef}
             />
 
             {/* SceneController last so all planet positions are written before it reads them */}
@@ -287,6 +327,7 @@ export function WorldsScene({
               camRef={camRef}
               hudOpenRef={hudOpenRef}
               selectedDimensionRef={selectedDimensionRef}
+              layoutScaleRef={layoutScaleRef}
             />
           </SceneScaleGroup>
         </Suspense>
