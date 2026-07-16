@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import * as App from '../../wailsjs/go/main/App'
+import type { models } from '../../wailsjs/go/models'
 import { useNotificationsStore } from '../stores/useNotificationsStore'
 import { useUpdateCheck, isDevBuild } from './useUpdateCheck'
 
@@ -45,7 +46,8 @@ describe('useUpdateCheck', () => {
       releaseUrl: 'https://example.com',
       releaseNotes: '',
       publishedAt: '',
-    })
+      assets: [],
+    } as unknown as models.UpdateInfo)
     renderHook(() => useUpdateCheck(true))
     await waitFor(() =>
       expect(useNotificationsStore.getState().items).toHaveLength(1),
@@ -65,7 +67,8 @@ describe('useUpdateCheck', () => {
       releaseUrl: '',
       releaseNotes: '',
       publishedAt: '',
-    })
+      assets: [],
+    } as unknown as models.UpdateInfo)
     renderHook(() => useUpdateCheck(true))
     await waitFor(() => expect(App.CheckForUpdates).toHaveBeenCalledTimes(1))
     expect(useNotificationsStore.getState().items).toHaveLength(0)

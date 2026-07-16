@@ -28,6 +28,8 @@ export function DeleteWorld(arg1:string,arg2:string):Promise<void>;
 
 export function DetectServerLoader(arg1:string):Promise<models.ServerConfig>;
 
+export function DownloadAndInstallUpdate():Promise<void>;
+
 export function DuplicateWorld(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function GetActiveLayout():Promise<string>;

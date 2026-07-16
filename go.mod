@@ -3,12 +3,14 @@ module konnekt
 go 1.24.0
 
 require (
+	github.com/minio/selfupdate v0.6.0
 	github.com/shirou/gopsutil/v4 v4.26.5
 	github.com/wailsapp/wails/v2 v2.12.0
 	golang.org/x/sys v0.41.0
 )
 
 require (
+	aead.dev/minisign v0.2.0 // indirect
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/ebitengine/purego v0.10.0 // indirect

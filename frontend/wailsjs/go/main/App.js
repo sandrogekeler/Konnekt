@@ -54,6 +54,10 @@ export function DetectServerLoader(arg1) {
   return window['go']['main']['App']['DetectServerLoader'](arg1);
 }
 
+export function DownloadAndInstallUpdate() {
+  return window['go']['main']['App']['DownloadAndInstallUpdate']();
+}
+
 export function DuplicateWorld(arg1, arg2, arg3) {
   return window['go']['main']['App']['DuplicateWorld'](arg1, arg2, arg3);
 }

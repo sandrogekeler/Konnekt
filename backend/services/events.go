@@ -28,4 +28,7 @@ const (
 	EventModInstalled       = "mod:installed"        // {serverID, fileName}
 	EventModInstallFailed   = "mod:install-failed"   // {serverID, fileName, error}
 	EventModChanged         = "mod:changed"          // {serverID} — list changed (enable/disable/uninstall)
+
+	// Self-update lifecycle.
+	EventUpdateProgress = "update:progress" // {percent}
 )

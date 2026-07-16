@@ -38,6 +38,7 @@ with another library doing the same job.
 
 | Module | Rationale |
 |---|---|
+| `github.com/minio/selfupdate` | In-place self-update: replaces the running executable with a checksum-verified download (`backend/services/update.go`), handling the Windows "can't overwrite a running exe" rename dance and automatic rollback on a failed write. Maintained fork of the long-standard `inconshreveable/go-update`; reimplementing that platform-specific swap/rollback logic by hand wasn't worth it. |
 | `github.com/shirou/gopsutil/v4` | Cross-platform CPU/RAM stats polling (`backend/services/stats.go`) |
 | `github.com/wailsapp/wails/v2` | App shell — Go↔WebView bridge, IPC binding generation |
 | `golang.org/x/sys` | Windows syscalls for Job Object child-process cleanup (`backend/services/server_windows.go`) |
