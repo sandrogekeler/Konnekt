@@ -186,7 +186,7 @@ todo list, not a target.
   the tree. `pnpm typecheck`/`pnpm build`/`pnpm lint` (0 errors)/`pnpm test`
   (165/165) all re-verified green after the removal.
 
-**P1 — Auto-updater: check shipped, release pipeline still open**
+**P1 — Auto-updater: check, release pipeline, and in-place install all shipped**
 - ✅ **In-app update check shipped.** `version.go` (package `main`) is the
   single source of the app's version (`var Version = "0.1.0-dev"`), also
   mirrored in `wails.json`'s `info.productVersion` for the built binary's
@@ -216,22 +216,49 @@ todo list, not a target.
   **no-ops when `Version` contains `-dev`** (a dev/`wails dev` build has no
   installable artifact to update to), and failures (offline, no releases)
   are silent by design since it's a background check, not a user action.
-- **Deferred, not built this pass — the release pipeline that actually
-  populates GitHub Releases.** A tagged `v*` push needs a
-  `.github/workflows/release.yml` that matrix-builds `wails build` per target
-  OS, stamps `Version` via `-ldflags "-X main.Version=$TAG"`, and uploads the
-  resulting binaries as release assets — without it, `CheckForUpdates` has
-  nothing to find (confirmed live: a real call against the actual GitHub API
-  today 404s, correctly reported as "up to date"). Code-signing/notarization
-  for the built binaries is an open question for that same workflow, not
-  addressed here. Also open: `frontend/src/lib/changelog.ts`'s
-  `CHANGELOG_URL` still points at `/commits/main` (see its own comment) —
-  flip to `/releases` once the first tagged release exists.
-- **Not a real auto-updater yet, by design of this pass** (see `ROADMAP.md`'s
-  "App auto-updater" line, now `[~]`): today's "update" is check-and-notify
-  with a Download button that opens the release page in the system browser —
-  no in-place download, install, or relaunch. That's a larger, riskier
-  follow-up (differs a lot by OS/packaging) intentionally out of scope here.
+- ✅ **Release pipeline shipped.** `.github/workflows/release.yml` triggers on
+  a `v*` tag push, runs `wails build` on `windows-latest` (matching `ci.yml`'s
+  backend job / the shipping target) with `-ldflags "-X main.Version=$TAG"`,
+  stages the binary as `konnekt-windows-amd64.exe` alongside a
+  `checksums.txt` (SHA256), and publishes both as release assets via `gh
+  release create`. macOS/Linux matrix legs are a documented follow-up, not
+  built — see below.
+- ✅ **In-place install shipped.** Settings → About's "Download & Install"
+  button (previously just opened the release page) now calls
+  `App.DownloadAndInstallUpdate()`, which re-checks the latest release, picks
+  the asset matching the running platform (`platformAssetNameFor`, windows
+  only today — other platforms get a clear "not published yet" error instead
+  of guessing a name nothing publishes), downloads `checksums.txt`, streams
+  the binary while verifying its SHA256 against it, and replaces the running
+  executable in place via `github.com/minio/selfupdate` — which owns the
+  Windows "can't overwrite a running exe" rename dance and auto-rolls-back on
+  a failed write (recorded in `DEPENDENCIES.md`). On success the app spawns
+  the replaced binary and quits via `runtime.Quit`; on failure (offline
+  mid-download, a Program-Files install without write permission, a bad
+  checksum) the frontend falls back to the original "open release page"
+  button rather than silently failing. Progress streams over the existing
+  `EventBus` (`EventUpdateProgress` in `events.go`) to a Wails
+  `EventsOn` listener in `SettingsModal.tsx`'s `AboutPane`, cleaned up on
+  unmount — not `useEffect` polling, per `CLAUDE.md`'s rule. Dev builds
+  (`Version` containing `-dev`) are rejected up front (in both `App.go` and
+  the About pane's UI, which disables the button with a hint) since a `wails
+  dev` process has no packaged binary to replace — this is also why the
+  feature can only be exercised end-to-end against a real packaged build, not
+  `wails dev`. Testable seams split out for this: `platformAssetNameFor` and
+  `selectPlatformAssets` take `goos`/`goarch` as parameters rather than
+  reading `runtime.GOOS`/`GOARCH` directly, and `downloadAndApply` takes a
+  `TargetPath` override, so `update_test.go` exercises the real
+  download+checksum-verify+`selfupdate.Apply` path (success, and a rejected
+  checksum mismatch leaving the original file untouched) against a temp file
+  instead of the actual running executable, all from a single (non-Windows)
+  dev machine.
+- Also done: `frontend/src/lib/changelog.ts`'s `CHANGELOG_URL` flipped from
+  `/commits/main` to `/releases` now that the release pipeline exists.
+- **Deferred, not built this pass:** code-signing/notarization for the
+  published binaries (unsigned builds trigger Windows SmartScreen warnings —
+  functional, just not polished); macOS/Linux release legs and self-update
+  support (`platformAssetNameFor` is structured to add a case per platform,
+  but no asset-naming convention or code-signing story exists for either yet).
 
 **Done — Lint/format enforcement (frontend)**
 - ✅ Migrated `frontend/` from Tailwind v3 (barely used) to v4, mapped the

@@ -266,15 +266,18 @@ Beta work begins only after all Alpha tiles are complete and stable.
 - [ ] Extended performance history (24h, 7-day) with persistent storage
 - [~] OS desktop notifications — shipped early, via WebView Notification API
   (lib/notify.ts), not the planned Wails runtime.EventsEmit → OS notify route
-- [~] App auto-updater — shipped: manual "Check for updates" button (Settings
-  → About) + optional check-on-startup notification, both querying GitHub
-  Releases (`backend/services/update.go`'s `UpdateService`, no separate
-  version DB — see `HEALTH_CHECKLIST.md`'s "Auto-updater" entry). Not yet: an
-  actual *auto*-updater — today's "update" is a Download button that opens the
-  release page in the system browser; in-place download+install/relaunch is
-  still open. Also blocked on the release CI workflow that would actually
-  populate GitHub Releases with tagged, per-platform binaries (documented,
-  not yet built — same entry).
+- [x] App auto-updater — manual "Check for updates" button (Settings → About)
+  + optional check-on-startup notification, both querying GitHub Releases
+  (`backend/services/update.go`'s `UpdateService`, no separate version DB).
+  "Download & Install" now downloads the release asset for the running
+  platform, verifies it against `checksums.txt` (SHA256), replaces the running
+  executable in place via `github.com/minio/selfupdate`, and relaunches — no
+  manual download. `.github/workflows/release.yml` (tag-triggered `wails
+  build`, `-ldflags "-X main.Version=$TAG"`) populates GitHub Releases with
+  the binary + checksums. Windows-first (the shipping target); other
+  platforms report a clear "not published yet" error instead of guessing an
+  asset name. Not yet: code-signing/notarization for the built binaries — see
+  `HEALTH_CHECKLIST.md`'s "Auto-updater" entry.
 - [x] Dark/light theme toggle — shipped early: light/dark/system + accent picker,
   CSS variable tokens, persisted (lib/theme.ts, useSettingsStore)
 - [ ] Keyboard shortcuts (configurable, stored in settings)

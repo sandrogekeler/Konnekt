@@ -23,6 +23,7 @@ export const EVENTS = {
   MOD_INSTALLED:        'mod:installed',
   MOD_INSTALL_FAILED:   'mod:install-failed',
   MOD_CHANGED:          'mod:changed',
+  UPDATE_PROGRESS:      'update:progress',
 } as const
 
 export const DEFAULT_LAYOUT_PRESETS = [

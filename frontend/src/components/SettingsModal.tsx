@@ -13,11 +13,13 @@ import { Toggle } from './ui/Toggle'
 import { Segmented } from './ui/Segmented'
 import { ColorSwatch } from './ui/ColorSwatch'
 import { SettingRow } from './ui/SettingRow'
-import { OpenDataDir, GetAppVersion, CheckForUpdates } from '../../wailsjs/go/main/App'
-import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
+import { OpenDataDir, GetAppVersion, CheckForUpdates, DownloadAndInstallUpdate } from '../../wailsjs/go/main/App'
+import { BrowserOpenURL, EventsOn } from '../../wailsjs/runtime/runtime'
 import type { models } from '../../wailsjs/go/models'
 import { CHANGELOG, CHANGELOG_URL, groupByDate } from '../lib/changelog'
 import type { ChangelogEntry } from '../lib/changelog'
+import { EVENTS } from '../lib/constants'
+import { isDevBuild } from '../hooks/useUpdateCheck'
 
 type UpdateFn = (patch: Partial<AppSettings>) => Promise<void>
 
@@ -498,6 +500,8 @@ type UpdateCheckState =
   | { status: 'checking' }
   | { status: 'upToDate' }
   | { status: 'available'; info: models.UpdateInfo }
+  | { status: 'downloading'; info: models.UpdateInfo; percent: number }
+  | { status: 'installFailed'; info: models.UpdateInfo; message: string }
   | { status: 'error' }
 
 function AboutPane() {
@@ -508,6 +512,16 @@ function AboutPane() {
     GetAppVersion()
       .then(setVersion)
       .catch(() => setVersion(null))
+  }, [])
+
+  // Streaming download progress, per CLAUDE.md's "no useEffect polling — use
+  // a Wails event listener" rule. Only applied while actively downloading;
+  // cleaned up on unmount so a closed Settings modal doesn't leak a listener.
+  useEffect(() => {
+    const off = EventsOn(EVENTS.UPDATE_PROGRESS, (d?: { percent?: number }) => {
+      setCheckState((prev) => (prev.status === 'downloading' ? { ...prev, percent: d?.percent ?? prev.percent } : prev))
+    })
+    return () => off()
   }, [])
 
   const openFolder = () => {
@@ -533,6 +547,20 @@ function AboutPane() {
       setCheckState(info.updateAvailable ? { status: 'available', info } : { status: 'upToDate' })
     } catch {
       setCheckState({ status: 'error' })
+    }
+  }
+
+  const runInstall = async (info: models.UpdateInfo) => {
+    setCheckState({ status: 'downloading', info, percent: 0 })
+    try {
+      // On success the app relaunches on the new version — this promise may
+      // never resolve in this process. On failure (offline mid-download, a
+      // permission-denied swap, a bad checksum) it rejects and we fall back
+      // to the manual "open release page" path below.
+      await DownloadAndInstallUpdate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setCheckState({ status: 'installFailed', info, message })
     }
   }
 
@@ -572,7 +600,7 @@ function AboutPane() {
       <div className="flex flex-col gap-2">
         <button
           onClick={runCheck}
-          disabled={checkState.status === 'checking'}
+          disabled={checkState.status === 'checking' || checkState.status === 'downloading'}
           className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1.5 text-xs transition-colors disabled:opacity-50"
         >
           {checkState.status === 'checking' ? 'Checking…' : 'Check for updates'}
@@ -591,11 +619,52 @@ function AboutPane() {
             <span className="text-text-primary text-xs">
               Update available: {checkState.info.latestVersion}
             </span>
+            {isDevBuild(version ?? '') ? (
+              <span className="text-text-muted text-[11px]">
+                Not available in dev builds — restart via a packaged build to install updates.
+              </span>
+            ) : (
+              <button
+                onClick={() => runInstall(checkState.info)}
+                className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1 text-[11px] transition-colors"
+              >
+                Download &amp; Install
+              </button>
+            )}
+            <button
+              onClick={() => openRelease(checkState.info.releaseUrl)}
+              className="text-text-muted hover:text-text-secondary text-[11px] transition-colors"
+            >
+              or open the release page ↗
+            </button>
+          </div>
+        )}
+        {checkState.status === 'downloading' && (
+          <div className="border-border-subtle flex flex-col gap-1.5 rounded border-[0.5px] p-2.5">
+            <span className="text-text-primary text-xs">
+              Downloading {checkState.info.latestVersion}… {checkState.percent}%
+            </span>
+            <div className="bg-hover h-1.5 overflow-hidden rounded-full">
+              <div
+                className="bg-accent h-full transition-all duration-300"
+                // eslint-disable-next-line no-restricted-syntax -- width is a live download-progress percent
+                style={{ width: `${checkState.percent}%` }}
+              />
+            </div>
+            <span className="text-text-muted text-center text-[11px]">
+              Konnekt will restart automatically once the download finishes.
+            </span>
+          </div>
+        )}
+        {checkState.status === 'installFailed' && (
+          <div className="border-border-subtle flex flex-col gap-1.5 rounded border-[0.5px] p-2.5">
+            <span className="text-danger text-xs">Couldn&apos;t install automatically.</span>
+            <span className="text-text-muted text-[11px]">{checkState.message}</span>
             <button
               onClick={() => openRelease(checkState.info.releaseUrl)}
               className="text-accent border-accent/30 bg-accent/10 hover:bg-accent/15 rounded border-[0.5px] py-1 text-[11px] transition-colors"
             >
-              Download ↗
+              Open release page ↗
             </button>
           </div>
         )}

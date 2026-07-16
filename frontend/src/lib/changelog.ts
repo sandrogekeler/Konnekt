@@ -20,6 +20,16 @@ export interface ChangelogEntry {
 // a safety net, not something to lean on when curating.
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    label: 'In-place auto-updater',
+    date: '2026-07-16',
+    highlights: [
+      'Settings → About’s "Download & Install" now downloads, verifies, and installs updates in place, then restarts the app — no more manual download',
+    ],
+    minor: [
+      'Added a tag-triggered release pipeline that publishes checksummed Windows binaries to GitHub Releases',
+    ],
+  },
+  {
     label: 'Brand & UI polish',
     date: '2026-07-14',
     highlights: [
@@ -82,7 +92,6 @@ export function groupByDate(entries: readonly ChangelogEntry[]): ChangelogEntry[
   return [...merged.values()]
 }
 
-// "Open GitHub for older changelogs" target. Commit history is guaranteed
-// non-empty (unlike /releases, which has no tags yet); swap to
-// `.../Konnekt/releases` once the project starts cutting GitHub Releases.
-export const CHANGELOG_URL = 'https://github.com/sandrogekeler/Konnekt/commits/main'
+// "Open GitHub for older changelogs" target — GitHub Releases, now that
+// .github/workflows/release.yml cuts them on every v* tag push.
+export const CHANGELOG_URL = 'https://github.com/sandrogekeler/Konnekt/releases'
