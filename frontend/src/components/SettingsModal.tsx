@@ -15,7 +15,7 @@ import { ColorSwatch } from './ui/ColorSwatch'
 import { SettingRow } from './ui/SettingRow'
 import { OpenDataDir } from '../../wailsjs/go/main/App'
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
-import { CHANGELOG, CHANGELOG_URL } from '../lib/changelog'
+import { CHANGELOG, CHANGELOG_URL, groupByDate } from '../lib/changelog'
 import type { ChangelogEntry } from '../lib/changelog'
 
 type UpdateFn = (patch: Partial<AppSettings>) => Promise<void>
@@ -433,8 +433,9 @@ function ChangelogItem({ entry }: { entry: ChangelogEntry }) {
 
 function ChangelogPane() {
   const [showEarlier, setShowEarlier] = useState(false)
-  const recent = CHANGELOG.slice(0, 3)
-  const earlier = CHANGELOG.slice(3)
+  const grouped = groupByDate(CHANGELOG)
+  const recent = grouped.slice(0, 3)
+  const earlier = grouped.slice(3)
 
   const openChangelog = () => {
     try {
@@ -448,7 +449,7 @@ function ChangelogPane() {
     <div className="flex flex-col py-2">
       <div className="flex flex-col">
         {recent.map((entry) => (
-          <ChangelogItem key={entry.label} entry={entry} />
+          <ChangelogItem key={entry.date} entry={entry} />
         ))}
       </div>
 
@@ -463,7 +464,7 @@ function ChangelogPane() {
           {showEarlier && (
             <div className="mt-1 flex flex-col">
               {earlier.map((entry) => (
-                <ChangelogItem key={entry.label} entry={entry} />
+                <ChangelogItem key={entry.date} entry={entry} />
               ))}
             </div>
           )}

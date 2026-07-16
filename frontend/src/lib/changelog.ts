@@ -1,5 +1,5 @@
 export interface ChangelogEntry {
-  /** Human label for the release, e.g. 'Alpha — July 2026'. No semver exists yet. */
+  /** Human title of what changed, e.g. 'Brand & UI polish'. No semver exists yet. */
   label: string
   /** ISO date 'YYYY-MM-DD', used for ordering + display. */
   date: string
@@ -11,9 +11,16 @@ export interface ChangelogEntry {
 
 // Ordered newest-first. Keep this the single source of truth for the in-app
 // "What's New" pane; prepend new releases at the top.
+//
+// Convention: add exactly one entry per calendar date — fold everything that
+// shipped that day into its highlights/minor rather than adding a second
+// entry with the same date. groupByDate() below merges same-date entries
+// defensively (folding later entries' highlights/minor into the first one
+// seen and dropping their labels) so a slip doesn't break the UI, but that's
+// a safety net, not something to lean on when curating.
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
-    label: 'Alpha — Brand & UI polish',
+    label: 'Brand & UI polish',
     date: '2026-07-14',
     highlights: [
       'New brand typography across the app (Satoshi / Excon / Ranade type system)',
@@ -24,7 +31,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     ],
   },
   {
-    label: 'Alpha — Backups & scheduler fixes',
+    label: 'Backups & scheduler fixes',
     date: '2026-07-06',
     highlights: [
       'Backups solar-system view now animates every sphere in uniformly',
@@ -35,7 +42,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     ],
   },
   {
-    label: 'Alpha — Scheduler graph typing',
+    label: 'Scheduler graph typing',
     date: '2026-07-03',
     highlights: [
       'Scheduler now enforces data-port type compatibility when wiring graph edges, preventing invalid connections',
@@ -46,6 +53,34 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     ],
   },
 ]
+
+/**
+ * Merges entries that share the same date into a single display entry.
+ * Assumes newest-first input. The first entry seen for a date keeps its
+ * label; any later entries for that same date fold their highlights/minor
+ * into it and are dropped, preserving overall newest-first order.
+ */
+export function groupByDate(entries: readonly ChangelogEntry[]): ChangelogEntry[] {
+  const merged = new Map<string, ChangelogEntry>()
+
+  for (const entry of entries) {
+    const existing = merged.get(entry.date)
+    if (!existing) {
+      merged.set(entry.date, {
+        ...entry,
+        highlights: [...entry.highlights],
+        minor: entry.minor ? [...entry.minor] : undefined,
+      })
+      continue
+    }
+    existing.highlights.push(...entry.highlights)
+    if (entry.minor && entry.minor.length > 0) {
+      existing.minor = [...(existing.minor ?? []), ...entry.minor]
+    }
+  }
+
+  return [...merged.values()]
+}
 
 // "Open GitHub for older changelogs" target. Commit history is guaranteed
 // non-empty (unlike /releases, which has no tags yet); swap to
