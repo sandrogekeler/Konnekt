@@ -126,7 +126,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
                     onClick={() => onPick(def)}
                     onMouseEnter={() => setHighlightIdx(i)}
                     className={`text-text-primary flex cursor-pointer items-center gap-1.5 border-l-2 px-3 py-1 font-mono text-[11px] select-none ${
-                      isHilit ? `bg-canvas ${borderClass}` : 'border-l-transparent bg-transparent'
+                      isHilit ? `bg-hover ${borderClass}` : 'border-l-transparent bg-transparent'
                     }`}
                   >
                     <span className="flex-1">{def.label}</span>
@@ -146,7 +146,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
                   key={cat}
                   onMouseEnter={() => setActiveCategory(cat)}
                   className={`flex cursor-default items-center gap-1.5 border-l-2 px-3 py-[5px] font-mono text-[11px] select-none ${textClass} ${
-                    isActive ? `bg-canvas ${borderClass}` : 'border-l-transparent bg-transparent'
+                    isActive ? `bg-hover ${borderClass}` : 'border-l-transparent bg-transparent'
                   }`}
                 >
                   <span>{icon}</span>
@@ -175,7 +175,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLDivElement
                 el.style.borderLeftColor = activeColor
-                el.style.background = 'var(--bg-base)'
+                el.style.background = 'var(--hover-surface)'
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLDivElement
