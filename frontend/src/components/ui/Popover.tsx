@@ -3,15 +3,24 @@ interface PopoverProps {
   onClose: () => void
   width?: number | string
   maxHeight?: number
+  align?: 'left' | 'right'
   children: React.ReactNode
 }
 
-export function Popover({ open, onClose, width = 160, maxHeight, children }: PopoverProps) {
+export function Popover({
+  open,
+  onClose,
+  width = 160,
+  maxHeight,
+  align = 'right',
+  children,
+}: PopoverProps) {
+  const alignClass = align === 'left' ? 'left-0 origin-top-left' : 'right-0 origin-top-right'
   return (
     <>
       {open && <div className="fixed inset-0 z-[200]" onClick={onClose} />}
       <div
-        className="border-border-subtle bg-elevated absolute top-[calc(100%_+_4px)] right-0 z-[201] origin-top-right overflow-hidden rounded-lg border-[0.5px] shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-md"
+        className={`border-border-subtle bg-elevated absolute top-[calc(100%_+_4px)] z-[201] overflow-hidden rounded-lg border-[0.5px] shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-md ${alignClass}`}
         // eslint-disable-next-line no-restricted-syntax -- width prop + open-driven animation are runtime-computed, not visible to Tailwind's static scanner
         style={{
           minWidth: width,
