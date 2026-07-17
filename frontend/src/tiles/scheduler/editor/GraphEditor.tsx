@@ -702,7 +702,13 @@ function GraphEditorInner({
               </span>
             </button>
 
-            <Popover open={graphMenu.open} onClose={graphMenu.close} width={180} maxHeight={280}>
+            <Popover
+              open={graphMenu.open}
+              onClose={graphMenu.close}
+              width={180}
+              maxHeight={280}
+              align="left"
+            >
               {graphs.length === 0 && (
                 <div className="text-text-faint px-3 py-1.5 font-mono text-xs">— no graphs —</div>
               )}
@@ -728,10 +734,12 @@ function GraphEditorInner({
                       if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
                     }}
                   >
-                    <span className={`text-accent w-3 ${active ? 'opacity-100' : 'opacity-0'}`}>
+                    <span
+                      className={`text-accent w-3 shrink-0 ${active ? 'opacity-100' : 'opacity-0'}`}
+                    >
                       ✓
                     </span>
-                    {g.name || g.id}
+                    <span className="min-w-0 truncate">{g.name || g.id}</span>
                   </button>
                 )
               })}

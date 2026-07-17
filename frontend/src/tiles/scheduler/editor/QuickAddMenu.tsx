@@ -84,7 +84,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
   const activeColor = activeCategory ? (CATEGORY_COLOR[activeCategory] ?? '#6b7280') : '#6b7280'
 
   const panelClass =
-    'fixed z-[1001] w-40 bg-surface border-[0.5px] border-border-subtle rounded overflow-hidden'
+    'fixed z-[1001] w-40 bg-elevated border-[0.5px] border-border-subtle rounded-lg overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-md'
 
   return createPortal(
     <>
@@ -98,7 +98,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
         style={{ left: primaryLeft, top: primaryTop }}
       >
         {/* Search input */}
-        <div className="border-border-subtle flex items-center gap-1 border-b-[0.5px] px-2 py-[5px]">
+        <div className="border-border-subtle flex items-center gap-1 border-b-[0.5px] px-3 py-[5px]">
           <span className="text-text-faint text-[9px]">⌕</span>
           <input
             ref={inputRef}
@@ -114,7 +114,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
         <div className="max-h-[260px] overflow-y-auto">
           {isSearching ? (
             filtered.length === 0 ? (
-              <div className="text-text-faint px-2 py-1.5 font-mono text-[11px]">no results</div>
+              <div className="text-text-faint px-3 py-1.5 font-mono text-[11px]">no results</div>
             ) : (
               filtered.map((def, i) => {
                 const isHilit = i === highlightIdx
@@ -125,7 +125,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
                     title={def.description}
                     onClick={() => onPick(def)}
                     onMouseEnter={() => setHighlightIdx(i)}
-                    className={`text-text-primary flex cursor-pointer items-center gap-1.5 border-l-2 px-2 py-1 font-mono text-[11px] select-none ${
+                    className={`text-text-primary flex cursor-pointer items-center gap-1.5 border-l-2 px-3 py-1 font-mono text-[11px] select-none ${
                       isHilit ? `bg-canvas ${borderClass}` : 'border-l-transparent bg-transparent'
                     }`}
                   >
@@ -145,7 +145,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
                 <div
                   key={cat}
                   onMouseEnter={() => setActiveCategory(cat)}
-                  className={`flex cursor-default items-center gap-1.5 border-l-2 px-2 py-[5px] font-mono text-[11px] select-none ${textClass} ${
+                  className={`flex cursor-default items-center gap-1.5 border-l-2 px-3 py-[5px] font-mono text-[11px] select-none ${textClass} ${
                     isActive ? `bg-canvas ${borderClass}` : 'border-l-transparent bg-transparent'
                   }`}
                 >
@@ -171,7 +171,7 @@ export function QuickAddMenu({ blockDefs, screenPos, onPick, onClose }: Props) {
               key={def.id}
               title={def.description}
               onClick={() => onPick(def)}
-              className="text-text-primary cursor-pointer border-l-2 border-l-transparent px-2 py-[5px] font-mono text-[11px] select-none"
+              className="text-text-primary cursor-pointer border-l-2 border-l-transparent px-3 py-[5px] font-mono text-[11px] select-none"
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLDivElement
                 el.style.borderLeftColor = activeColor
