@@ -1,11 +1,11 @@
 # Graph Report - repo  (2026-07-18)
 
 ## Corpus Check
-- 218 files · ~184,447 words
+- 217 files · ~183,569 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1896 nodes · 3620 edges · 127 communities (90 shown, 37 thin omitted)
+- 1888 nodes · 3613 edges · 125 communities (88 shown, 37 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 142 edges (avg confidence: 0.76)
 - Token cost: 0 input · 0 output
 
@@ -128,8 +128,6 @@
 - Collapsible.tsx
 - update.go
 - .CheckForUpdates
-- EventsOn
-- BackupCarousel.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `App` - 97 edges
@@ -146,27 +144,27 @@
 ## Surprising Connections (you probably didn't know these)
 - `NewApp()` --calls--> `NewBackupService()`  [INFERRED]
   app.go → backend/services/backup.go
+- `NewApp()` --calls--> `NewConfigEditorService()`  [INFERRED]
+  app.go → backend/services/config_editor.go
+- `NewApp()` --calls--> `NewConfigService()`  [INFERRED]
+  app.go → backend/services/config.go
 - `NewApp()` --calls--> `NewEventBus()`  [INFERRED]
   app.go → backend/services/eventbus.go
 - `NewApp()` --calls--> `NewModService()`  [INFERRED]
   app.go → backend/services/modservice.go
-- `NewApp()` --calls--> `NewRconService()`  [INFERRED]
-  app.go → backend/services/rcon.go
-- `NewApp()` --calls--> `NewSchedulerService()`  [INFERRED]
-  app.go → backend/services/scheduler.go
 
 ## Import Cycles
 - 3-file cycle: `frontend/src/stores/useTileStore.ts -> frontend/src/tiles/registry.ts -> frontend/src/tiles/backups/index.tsx -> frontend/src/stores/useTileStore.ts`
 
-## Communities (127 total, 37 thin omitted)
+## Communities (125 total, 37 thin omitted)
 
 ### Community 0 - "ConfigForm.tsx"
-Cohesion: 0.05
-Nodes (65): Collapsible(), CollapsibleProps, mockScrollHeight(), outerOf(), collapseEmptyRows(), item(), ConfigSummary(), displayValue() (+57 more)
+Cohesion: 0.15
+Nodes (16): Props, ConfigField, ChipList(), COLOR_MAP, FORMAT_BUTTONS, MC_COLORS, MotdPreviewLine(), MotdSegment (+8 more)
 
 ### Community 1 - "ModService"
-Cohesion: 0.08
-Nodes (22): NewModrinthClient(), atomicCopyFile(), bestDisplayName(), Context, InstalledMod, ModProject, ModSearchResult, ModUpdateInfo (+14 more)
+Cohesion: 0.09
+Nodes (21): atomicCopyFile(), bestDisplayName(), Context, InstalledMod, ModProject, ModSearchResult, ModUpdateInfo, ModVersion (+13 more)
 
 ### Community 2 - "ExecContext"
 Cohesion: 0.06
@@ -181,32 +179,32 @@ Cohesion: 0.07
 Nodes (46): checkAttrType(), goTypeLabel(), newAttrScope(), readBuiltinAttribute(), resolveCustomValue(), attrToPropertyKey(), BlockDef, Context (+38 more)
 
 ### Community 6 - "InstalledPanel.tsx"
-Cohesion: 0.07
-Nodes (56): Popover(), PopoverProps, usePopover(), PLUGIN_LOADERS, fmtBytes(), fmtCount(), relativeTime(), BrowsePanel() (+48 more)
+Cohesion: 0.08
+Nodes (50): Popover(), PopoverProps, Toggle(), ToggleProps, usePopover(), fmtBytes(), fmtCount(), relativeTime() (+42 more)
 
 ### Community 7 - "index.tsx"
-Cohesion: 0.26
-Nodes (10): BackupCard(), extractID(), fmtBytes(), fmtDate(), BackupRow(), DimRow(), KIND_COLOR, KIND_LABEL (+2 more)
+Cohesion: 0.05
+Nodes (56): BackupCard(), BackupCardProps, BackupCarousel(), BackupCarouselProps, centerXForOffset(), visualHalfWidth(), BackupRunningDialog(), Props (+48 more)
 
 ### Community 8 - "ServerService"
 Cohesion: 0.06
 Nodes (28): NewRconService(), readFull(), readPacket(), stripColors(), T, TestReadPacketRejectsTooLong(), TestReadPacketRejectsTooShort(), TestStripColors() (+20 more)
 
 ### Community 9 - "ConfigService"
-Cohesion: 0.07
-Nodes (25): NewApp(), extFormat(), ConfigFile, makeConfigFile(), NewConfigEditorService(), AppSettings, ServerConfig, NewConfigService() (+17 more)
+Cohesion: 0.08
+Nodes (23): extFormat(), ConfigFile, makeConfigFile(), NewConfigEditorService(), AppSettings, ServerConfig, NewConfigService(), banIndex() (+15 more)
 
 ### Community 10 - "modrinth.go"
 Cohesion: 0.07
-Nodes (42): ModProject, buildFacets(), Client, Context, ModProject, ModSearchResult, ModVersion, ResolvedDependency (+34 more)
+Nodes (44): ModProject, buildFacets(), Client, Context, ModProject, ModSearchResult, ModVersion, ResolvedDependency (+36 more)
 
 ### Community 11 - "WorldHud.tsx"
-Cohesion: 0.53
-Nodes (4): useServerStore, StatsTile(), tpsColor(), GetServerStatus()
+Cohesion: 0.10
+Nodes (19): useServerStore, StatsTile(), tpsColor(), Props, ControllerProps, FOCUS_DIR, FOCUS_DIST, Props (+11 more)
 
 ### Community 12 - "index.ts"
-Cohesion: 0.19
-Nodes (14): defaultStatus, ServerStore, PlayersTile(), PlayerCard(), Props, PlayerGrid(), Props, PlayerRoster() (+6 more)
+Cohesion: 0.12
+Nodes (22): defaultStatus, ServerStore, PlayerCard(), Props, formatDate(), PendingAction, PlayerDetailPopup(), Props (+14 more)
 
 ### Community 13 - "SchedulerService"
 Cohesion: 0.10
@@ -242,79 +240,79 @@ Nodes (28): CloseConfirmDialog(), Props, edgeTypes, GraphEditorInner(), GraphEdi
 
 ### Community 21 - "App.tsx"
 Cohesion: 0.21
-Nodes (13): ActiveProcesses(), Process, ProcessesStore, useProcessesStore, BackupsTileExpanded(), BackupsState, useBackups(), CreateBackup() (+5 more)
+Nodes (12): ActiveProcesses(), Process, ProcessesStore, useProcessesStore, cfg(), ModsExpanded(), ModsSummary(), ModsTile() (+4 more)
 
 ### Community 22 - "dependencies"
 Cohesion: 0.09
 Nodes (22): dependencies, @codemirror/lang-json, @codemirror/lang-yaml, @codemirror/state, @codemirror/view, postprocessing, react, react-dom (+14 more)
 
 ### Community 23 - "Dashboard.tsx"
-Cohesion: 0.14
-Nodes (20): Dashboard(), findBestPosition(), flipTransform(), resolveDropCell(), TileCrate(), prefetchHeavyChunks(), warm(), useServerConfigStore (+12 more)
+Cohesion: 0.13
+Nodes (21): Dashboard(), findBestPosition(), flipTransform(), resolveDropCell(), TileCrate(), ALL_TILE_IDS, ALL_TILE_IDS, DEFAULT_ACTIVE (+13 more)
 
 ### Community 24 - "SettingsModal.tsx"
-Cohesion: 0.09
-Nodes (18): BG_STYLE_OPTIONS, ChangelogPane(), NAV, Props, Section, SettingsModal(), THEME_OPTIONS, UpdateCheckState (+10 more)
+Cohesion: 0.08
+Nodes (24): BG_STYLE_OPTIONS, ChangelogPane(), Props, Section, THEME_OPTIONS, UpdateCheckState, UpdateFn, ColorSwatch() (+16 more)
 
 ### Community 25 - "index.tsx"
-Cohesion: 0.14
-Nodes (18): HistoryChart(), HistoryDatum, SparkChart(), SparkDatum, fmtTime(), fmtTps(), tpsColor(), tpsStrokeColor() (+10 more)
+Cohesion: 0.13
+Nodes (19): HistoryChart(), HistoryDatum, SparkChart(), SparkDatum, fmtTime(), fmtTps(), tpsColor(), tpsStrokeColor() (+11 more)
 
 ### Community 26 - "scheduler.go"
 Cohesion: 0.10
 Nodes (20): AttrValue, Edge, Node, ConfigField, DataPort, FieldOption, AttrValue, BlockDef (+12 more)
 
 ### Community 27 - "nbt.go"
-Cohesion: 0.24
-Nodes (19): byteGet(), compoundGet(), Reader, WorldMeta, intGet(), longGet(), readByte(), readLevelDat() (+11 more)
+Cohesion: 0.21
+Nodes (21): byteGet(), compoundGet(), Reader, WorldMeta, intGet(), longGet(), readByte(), readLevelDat() (+13 more)
 
 ### Community 28 - "devDependencies"
 Cohesion: 0.10
 Nodes (21): devDependencies, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, prettier (+13 more)
 
 ### Community 29 - "useServerConfigStore.ts"
-Cohesion: 0.16
-Nodes (16): configToForm(), emptyForm, FormState, mergeRamIntoArgs(), parseRamFromArgs(), ServerSelector(), ServerConfigStore, cfg() (+8 more)
+Cohesion: 0.18
+Nodes (16): configToForm(), emptyForm, FormState, mergeRamIntoArgs(), parseRamFromArgs(), ServerSelector(), ServerConfigStore, useServerConfigStore (+8 more)
 
 ### Community 30 - "compilerOptions"
 Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, allowSyntheticDefaultImports, esModuleInterop, forceConsistentCasingInFileNames, isolatedModules, jsx, lib (+10 more)
 
 ### Community 31 - "useServerStore"
-Cohesion: 0.06
-Nodes (31): Galaxy(), LayoutScaleControllerProps, NDC_CORNERS, planetRadius(), Props, OrbitPath(), Props, OrbitRing() (+23 more)
+Cohesion: 0.11
+Nodes (16): Galaxy(), LayoutScaleControllerProps, NDC_CORNERS, planetRadius(), OrbitPath(), Props, OrbitRing(), Props (+8 more)
 
 ### Community 32 - "index.tsx"
-Cohesion: 0.13
-Nodes (23): arrayMove(), CmdItem, CmdKind, DEFAULT_LABELS, DropdownPos, makeItem(), ModalState, newId() (+15 more)
+Cohesion: 0.18
+Nodes (16): arrayMove(), CmdItem, CmdKind, DEFAULT_LABELS, DropdownPos, makeItem(), ModalState, newId() (+8 more)
 
 ### Community 33 - "BlockNode.tsx"
 Cohesion: 0.22
 Nodes (14): CATEGORY_BORDER_CLASS, CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_ORDER, CATEGORY_TEXT_CLASS, CTRL_PORT_COLOR, orderedCategories(), PORT_TYPE_COLOR (+6 more)
 
 ### Community 34 - "useLayoutStore.ts"
-Cohesion: 0.23
-Nodes (11): LayoutPresets(), DEFAULT_LAYOUT_PRESETS, LayoutStore, persistActiveLayout(), useLayoutStore, LayoutPreset, DeleteLayoutPreset(), GetActiveLayout() (+3 more)
+Cohesion: 0.17
+Nodes (14): LayoutPresets(), DEFAULT_LAYOUT_PRESETS, EVENTS, PLUGIN_LOADERS, LayoutStore, persistActiveLayout(), useLayoutStore, StatsSnapshot (+6 more)
 
 ### Community 35 - "index.tsx"
-Cohesion: 0.18
-Nodes (12): BackupsTile(), QuickCommandsTile(), GraphEditor(), SchedulerTile(), formatNextRun(), Props, SchedulerSummary(), fmtBytes() (+4 more)
+Cohesion: 0.23
+Nodes (10): classifyLine(), ConsoleStore, LogLine, useConsoleStore, ConsoleTile(), highlightQuery(), LEVEL_CLASS, LEVEL_FILTER_OPTIONS (+2 more)
 
 ### Community 36 - "package.json"
 Cohesion: 0.12
 Nodes (15): author, bugs, url, description, homepage, keywords, license, main (+7 more)
 
 ### Community 37 - "useBackups.ts"
-Cohesion: 0.53
-Nodes (5): EulaModal(), Props, AcceptEula(), StartServer(), BrowserOpenURL()
+Cohesion: 0.25
+Nodes (12): App(), EulaModal(), Props, NAV, SettingsModal(), prefetchHeavyChunks(), warm(), useSettingsStore (+4 more)
 
 ### Community 38 - "index.tsx"
-Cohesion: 0.35
-Nodes (9): App(), AboutPane(), isDevBuild(), useUpdateCheck(), emitNotification(), CheckForUpdates(), DownloadAndInstallUpdate(), GetAppVersion() (+1 more)
+Cohesion: 0.20
+Nodes (13): AboutPane(), isDevBuild(), useUpdateCheck(), emitNotification(), TITLES, NotificationsStore, NotifItem, NotifKind (+5 more)
 
 ### Community 39 - "useSettingsStore.ts"
-Cohesion: 0.14
-Nodes (14): classifyLine(), ConsoleStore, LogLine, useConsoleStore, DEFAULTS, SettingsStore, DEFAULTS, useSettingsStore (+6 more)
+Cohesion: 0.20
+Nodes (9): DEFAULTS, SettingsStore, DEFAULTS, validBgStyles, validSkinIds, validThemes, AppSettings, GetAppSettings() (+1 more)
 
 ### Community 40 - "ConfigField"
 Cohesion: 0.14
@@ -341,12 +339,12 @@ Cohesion: 0.22
 Nodes (6): ErrorBoundary, Props, State, SplashScreen(), container, root
 
 ### Community 46 - "theme.ts"
-Cohesion: 0.18
-Nodes (11): FOCUS, FocusTarget, buildConfigs(), buildDimDots(), DimDot, djb2(), KIND_COLOR, SolarSystem() (+3 more)
+Cohesion: 0.21
+Nodes (14): RowProps, FieldType, inferType(), labelFromKey(), applyJsonEdit(), parseJsonFields(), valueToField(), applyPropertyEdit() (+6 more)
 
 ### Community 47 - "PlayerDetailPopup.tsx"
 Cohesion: 0.23
-Nodes (8): BackupRunningDialog(), Props, BackupsSummary(), fmtBytes(), fmtRelTime(), Props, BackupRowProps, ConfirmState
+Nodes (13): ConfigSummary(), displayValue(), ORDERED_KEYS, parseRawProps(), PropRow(), Props, stripCodes(), valueColorClass() (+5 more)
 
 ### Community 48 - "wails.json"
 Cohesion: 0.15
@@ -365,8 +363,8 @@ Cohesion: 0.27
 Nodes (7): isValidConnection(), ConcreteType, normalizeType(), portTypesCompatible(), resolveDataPortType(), ResolvedType, TYPE_ALIASES
 
 ### Community 52 - "useWorlds.ts"
-Cohesion: 0.42
-Nodes (8): useWorlds(), BackupWorld(), DeleteWorld(), DuplicateWorld(), ListWorlds(), OpenWorldFolder(), RenameWorld(), SetActiveWorld()
+Cohesion: 0.28
+Nodes (11): fmtBytes(), WorldsScene, WorldsTile(), useWorlds(), BackupWorld(), DeleteWorld(), DuplicateWorld(), ListWorlds() (+3 more)
 
 ### Community 53 - "Konnekt"
 Cohesion: 0.22
@@ -389,8 +387,8 @@ Cohesion: 0.29
 Nodes (6): name, pnpm, onlyBuiltDependencies, private, type, version
 
 ### Community 58 - "index.tsx"
-Cohesion: 0.29
-Nodes (11): graph(), useScheduler(), DeleteScheduleGraph(), GetScheduleBlockDefs(), GetScheduleGraphs(), GetScheduleNextRuns(), GetScheduleRunHistory(), PreviewScheduleNode() (+3 more)
+Cohesion: 0.18
+Nodes (16): GraphEditor(), SchedulerTile(), formatNextRun(), Props, SchedulerSummary(), graph(), useScheduler(), DeleteScheduleGraph() (+8 more)
 
 ### Community 59 - "compilerOptions"
 Cohesion: 0.29
@@ -422,7 +420,7 @@ Nodes (4): devDependencies, lefthook, name, private
 
 ### Community 71 - "NewApp"
 Cohesion: 0.10
-Nodes (31): truncate(), compareVersions(), findAsset(), Client, Context, Reader, UpdateAsset, UpdateInfo (+23 more)
+Nodes (30): NewApp(), compareVersions(), findAsset(), Client, Context, UpdateAsset, UpdateInfo, NewUpdateService() (+22 more)
 
 ### Community 74 - "server.go"
 Cohesion: 0.50
@@ -437,43 +435,35 @@ Cohesion: 0.50
 Nodes (3): distAssets, entry, files
 
 ### Community 115 - "EditorPanel.tsx"
-Cohesion: 0.20
-Nodes (9): ServerInfoPanelProps, WorldConfig, WorldSystem, capitalize(), DimRow(), KIND_COLOR, KIND_LABEL, WorldInfoPanel() (+1 more)
+Cohesion: 0.22
+Nodes (11): appTheme, EditorPanel(), FORMAT_COLORS, FORMAT_LABELS, formSupported(), langExtension(), Props, ViewToggleProps (+3 more)
 
 ### Community 116 - "index.tsx"
-Cohesion: 0.16
-Nodes (14): Option, Segmented(), SegmentedProps, TITLES, NotificationsStore, NotifItem, NotifKind, useNotificationsStore (+6 more)
+Cohesion: 0.24
+Nodes (9): Option, Segmented(), SegmentedProps, FILTER_OPTIONS, KIND_CLASS, KIND_ICON, KindFilter, matchesFilter() (+1 more)
 
 ### Community 117 - "parseYaml.ts"
-Cohesion: 0.22
-Nodes (10): ACCENT_PRESETS, applySkin(), BUILTIN_SKINS, DANGER_PRESETS, hexToRgbChannels(), prevSkinTokenKeys, SkinApplyArgs, SkinDefinition (+2 more)
+Cohesion: 0.29
+Nodes (7): collapseEmptyRows(), item(), applyYamlEdit(), extractComment(), hasAlias(), parseYamlFields(), yamlNodeToField()
 
 ### Community 118 - "FileList.tsx"
-Cohesion: 0.16
-Nodes (11): Props, FileList(), FORMAT_COLORS, FORMAT_LABELS, Props, ConfigTile(), useConfigEditor(), ConfigFile (+3 more)
+Cohesion: 0.22
+Nodes (4): FileList(), FORMAT_COLORS, FORMAT_LABELS, Props
 
 ### Community 119 - "parseToml.ts"
-Cohesion: 0.24
-Nodes (8): formatDate(), PendingAction, PlayerDetailPopup(), Props, BanPlayer(), GetPlayerDetail(), KickPlayer(), PardonPlayer()
+Cohesion: 0.39
+Nodes (7): ConfigForm(), applyTomlEdit(), escapeRegex(), findInlineComment(), parseTomlFields(), tomlValueToField(), toTomlLiteral()
 
 ### Community 121 - "Collapsible.tsx"
-Cohesion: 0.25
-Nodes (7): Conclusion, Graphify assessment, Konnekt — Convention Drift Audit (2026-07-18), Method, What drifted, What held (no drift), Why this audit exists
+Cohesion: 0.47
+Nodes (4): Collapsible(), CollapsibleProps, mockScrollHeight(), outerOf()
 
 ### Community 122 - "update.go"
 Cohesion: 0.50
 Nodes (3): UpdateAsset, UpdateAsset, UpdateInfo
 
-### Community 125 - "EventsOn"
-Cohesion: 0.43
-Nodes (6): EVENTS, useBackupWorlds(), usePerformanceHistory(), GetBackupWorlds(), GetStatsHistory(), EventsOn()
-
-### Community 126 - "BackupCarousel.tsx"
-Cohesion: 0.43
-Nodes (6): BackupCardProps, BackupCarousel(), BackupCarouselProps, centerXForOffset(), visualHalfWidth(), Backup
-
 ## Knowledge Gaps
-- **347 isolated node(s):** `Backup`, `ConfigFile`, `ConsoleLine`, `LayoutPreset`, `ModGalleryImg` (+342 more)
+- **341 isolated node(s):** `Backup`, `ConfigFile`, `ConsoleLine`, `LayoutPreset`, `ModGalleryImg` (+336 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -481,16 +471,16 @@ Nodes (6): BackupCardProps, BackupCarousel(), BackupCarouselProps, centerXForOff
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `ServerService` connect `ServerService` to `SchedulerService`, `App.tsx`?**
-  _High betweenness centrality (0.377) - this node is a cross-community bridge._
+  _High betweenness centrality (0.383) - this node is a cross-community bridge._
 - **Why does `Process` connect `App.tsx` to `ServerService`?**
-  _High betweenness centrality (0.366) - this node is a cross-community bridge._
+  _High betweenness centrality (0.371) - this node is a cross-community bridge._
 - **Why does `EventBus` connect `SchedulerService` to `ModService`, `BackupService`, `AttrScope`, `NewApp`, `ServerService`, `App`?**
-  _High betweenness centrality (0.282) - this node is a cross-community bridge._
+  _High betweenness centrality (0.286) - this node is a cross-community bridge._
 - **What connects `Backup`, `ConfigFile`, `ConsoleLine` to the rest of the system?**
-  _347 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `ConfigForm.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05058717253839205 - nodes in this community are weakly interconnected._
+  _341 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ModService` be split into smaller, more focused modules?**
-  _Cohesion score 0.083710407239819 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08627450980392157 - nodes in this community are weakly interconnected._
 - **Should `ExecContext` be split into smaller, more focused modules?**
   _Cohesion score 0.0625694187338023 - nodes in this community are weakly interconnected._
+- **Should `BackupService` be split into smaller, more focused modules?**
+  _Cohesion score 0.05839727195225917 - nodes in this community are weakly interconnected._

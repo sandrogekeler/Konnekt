@@ -6,6 +6,15 @@ checking `agent_docs/DEPENDENCIES.md`") and
 dependencies are added, removed, or repurposed — it's a decision record, not a
 lockfile mirror.
 
+## System build dependencies (not a Go/npm dependency, but tracked here)
+
+Linux builds (dev and the release CI's `build-linux`/`package-rpm` jobs) need
+system packages Go modules don't cover, since Wails links against the host's
+webkit2gtk: `libgtk-3-dev`/`gtk3-devel` and `libwebkit2gtk-4.1-dev`/
+`webkit2gtk4.1-devel` (`webkit2gtk4.1` + `gtk3` at runtime — see
+`build/linux/konnekt.spec`'s `Requires:`). No Rocky/RHEL 9 equivalent exists;
+see `agent_docs/CLAUDE.md`'s "Linux builds" section for why.
+
 ## Policy
 
 **Before adding a Go dependency:**

@@ -158,6 +158,8 @@ func (s *ServerService) Start(serverID string, jarPath string, jvmArgs []string,
 		return fmt.Errorf("failed to get stderr pipe: %w", err)
 	}
 
+	configureProcAttr(s.cmd) // platform process-group/job setup, must precede Start
+
 	if err := s.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}

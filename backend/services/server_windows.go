@@ -10,6 +10,10 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// configureProcAttr is a no-op on Windows: process-tree cleanup is handled by
+// the Job Object assigned in createJob after Start, not via SysProcAttr.
+func configureProcAttr(cmd *exec.Cmd) {}
+
 // jobobjectBasicLimitInformation mirrors JOBOBJECT_BASIC_LIMIT_INFORMATION.
 // Explicit padding matches the Windows SDK layout on 64-bit.
 type jobobjectBasicLimitInformation struct {

@@ -170,8 +170,9 @@ func TestPlatformAssetNameFor(t *testing.T) {
 	}{
 		{"windows", "amd64", "konnekt-windows-amd64.exe", false},
 		{"windows", "arm64", "konnekt-windows-arm64.exe", false},
+		{"linux", "amd64", "konnekt-linux-amd64", false},
+		{"linux", "arm64", "konnekt-linux-arm64", false},
 		{"darwin", "amd64", "", true},
-		{"linux", "amd64", "", true},
 	}
 	for _, c := range cases {
 		got, err := platformAssetNameFor(c.goos, c.goarch)

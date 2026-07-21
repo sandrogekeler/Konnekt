@@ -995,8 +995,8 @@
     "semantic_hash": ""
   },
   "agent_docs/HEALTH_CHECKLIST.md": {
-    "mtime": 1784374484.4044585,
-    "ast_hash": "7e10c444a0d41deff6fb9feca3a12c1f",
+    "mtime": 1784227414.2776766,
+    "ast_hash": "c972a89b8e85e3c9a6cc79362b568d8e",
     "semantic_hash": ""
   },
   "agent_docs/ROADMAP.md": {
@@ -1172,11 +1172,6 @@
   ".github/workflows/release.yml": {
     "mtime": 1784227414.2756598,
     "ast_hash": "942177bf94ada7257bf572b737bd0030",
-    "semantic_hash": ""
-  },
-  "agent_docs/CONVENTION_AUDIT.md": {
-    "mtime": 1784374472.2900143,
-    "ast_hash": "9d00048e90ed8c114ddda108f9e1185c",
     "semantic_hash": ""
   }
 }

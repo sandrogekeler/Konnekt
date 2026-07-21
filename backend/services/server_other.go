@@ -2,14 +2,15 @@
 
 package services
 
-import "os"
+import "syscall"
 
 func (s *ServerService) createJob() {}
 func (s *ServerService) closeJob()  {}
 
+// killTree signals the whole process group rooted at pid (see server_linux.go /
+// server_unix.go, which put the Java process in its own group via Setpgid before
+// Start). The negative pid is the POSIX convention for "the group", so this
+// reaches children a plain os.Process.Kill on pid alone would miss.
 func killTree(pid int) {
-	p, err := os.FindProcess(pid)
-	if err == nil {
-		_ = p.Kill() //nolint:errcheck // most commonly fails because the process already exited
-	}
+	_ = syscall.Kill(-pid, syscall.SIGKILL) //nolint:errcheck // best-effort; most commonly fails because the process already exited
 }

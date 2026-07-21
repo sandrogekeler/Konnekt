@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Konnekt
+Comment=Minecraft server dashboard
+Exec=/usr/bin/konnekt
+Icon=konnekt
+Terminal=false
+Categories=Game;Utility;
+StartupWMClass=konnekt

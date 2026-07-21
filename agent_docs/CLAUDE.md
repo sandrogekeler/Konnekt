@@ -11,28 +11,19 @@ Modular tile-based UI. Dark console aesthetic. Local-first, no cloud dependency.
 - **Styling**: Tailwind CSS v4
 - **State**: Zustand
 - **Tile grid**: react-grid-layout
-- **IPC**: Wails auto-generated bindings (`frontend/src/wailsjs/`)
+- **IPC**: Wails auto-generated bindings (`frontend/wailsjs/`)
 - **Package manager**: pnpm (frontend), Go modules (backend)
 
 ## Project structure
 
 ```
+app.go, main.go, version.go  # Wails entrypoint, App struct, version (repo root)
 backend/
-  app.go              # Wails app entrypoint, binds all services
-  services/
-    server.go         # Process management (spawn/kill Java, log streaming)
-    rcon.go           # RCON client
-    backup.go
-    scheduler.go
-    config.go         # server.properties read/write
-    stats.go          # CPU/RAM/TPS polling
-  models/
-    server.go         # Shared Go structs (auto-bound to TS)
-    player.go
-    layout.go
-  main.go
+  services/           # Process mgmt, RCON, backups, scheduler, config, stats, updates
+  models/             # Shared Go structs (auto-bound to TS)
 
 frontend/
+  wailsjs/            # Auto-generated bindings — DO NOT EDIT MANUALLY
   src/
     components/       # Reusable UI components
     tiles/            # One folder per tile (index.tsx + types.ts)
@@ -40,8 +31,6 @@ frontend/
     stores/           # Zustand stores (one per domain)
     hooks/            # Custom React hooks
     lib/              # Shared utilities, constants
-    types/            # Global TypeScript types
-    wailsjs/          # Auto-generated — DO NOT EDIT MANUALLY
 ```
 
 ## Architecture rules
@@ -62,26 +51,13 @@ frontend/
 Adding a new tile:
 1. Create `frontend/src/tiles/MyTile/index.tsx` and `types.ts`
 2. Register it in `frontend/src/tiles/registry.ts` with `id`, `label`,
-   `icon`, `defaultW`, `defaultH`, `minW`, `minH`, and `component`
+   `icon`, `defaultW`, `defaultH`, `minW`, `minH`, and `component` — extend
+   this file, never restructure it
 3. No changes to core layout system required
-
-Tile registry entry shape:
-```ts
-{
-  id: string
-  label: string
-  icon: string
-  defaultW: number
-  defaultH: number
-  minW: number
-  minH: number
-  component: React.FC<TileProps>
-}
-```
 
 ## IPC conventions
 
-- Bind Go methods on the `App` struct in `backend/app.go`
+- Bind Go methods on the `App` struct in `app.go` (repo root)
 - Method names: `PascalCase` in Go → `PascalCase` in generated TS bindings
 - Always return `(T, error)` from bound Go methods
 - Handle errors in frontend with a shared `useWailsCall()` hook
@@ -101,6 +77,9 @@ Tile registry entry shape:
   inline-styles-everywhere convention; see `agent_docs/HEALTH_CHECKLIST.md`
   Milestone 2 for the tile-by-tile migration in progress.
 - Go: `gofmt` enforced, errors always handled (no blank `_` ignores)
+- Heavy per-tile dependencies (three.js, recharts) are lazy-loaded via
+  `React.lazy` + `Suspense` (see `frontend/src/tiles/worlds/index.tsx`); keep
+  the entry bundle under the 550 KB gzip budget enforced by `pnpm check-bundle`.
 
 ## Build & dev commands
 
@@ -110,14 +89,48 @@ wails build           # Production binary
 wails generate module # Regenerate TS bindings after Go changes
 pnpm typecheck        # tsc --noEmit (run from frontend/)
 pnpm lint             # ESLint (run from frontend/)
-go vet ./...          # Go static analysis (run from backend/)
+pnpm test             # vitest (run from frontend/)
+pnpm format           # Prettier --write (run from frontend/)
+pnpm check-bundle     # Enforce 550 KB gzip entry-chunk budget (run from frontend/)
+go vet ./...          # Go static analysis (repo root — single module)
+go test ./...         # Go tests (repo root)
 ```
 
-Always run `pnpm typecheck` and `go vet ./...` after a series of changes.
+Always run `pnpm typecheck`, `pnpm lint`, and `go vet ./...` after a series of
+changes. A lefthook pre-commit hook already runs Prettier + ESLint +
+`tsc --noEmit` on staged frontend files and `gofmt` + `go vet` on staged Go
+files; CI (`.github/workflows/ci.yml`) re-runs typecheck/lint/build/test on
+every push and PR.
 
-## Rocky Linux 10 build note
+## Testing
 
-If WebKit detection fails, build with:
+- Frontend: `vitest` + `jsdom` + `@testing-library/react`. Mock Wails
+  bindings with `vi.mock('.../wailsjs/go/main/App')` rather than requiring a
+  real Wails bridge — see any `frontend/src/stores/*.test.ts` for the pattern.
+- Backend: standard `go test`, table-driven where it fits; use
+  `httptest.Server` for HTTP clients (see `update_test.go`, `modrinth_test.go`).
+- New logic (Go services, Zustand store logic, pure helpers) should ship with
+  tests.
+
+## Versioning & releases
+
+`version.go`'s `Version` var is the single source of the app version,
+mirrored in `wails.json`'s `info.productVersion`. `.github/workflows/release.yml`
+builds and publishes on `v*` tags; the in-app updater
+(`backend/services/update.go`) checks GitHub Releases. Only relevant when
+cutting a release.
+
+## Linux builds
+
+The published Linux release (`konnekt-linux-amd64` + an `.rpm`) is built with
+`-tags webkit2_41` against webkit2gtk-4.1 (see
+`.github/workflows/release.yml`'s `build-linux`/`package-rpm` jobs and
+`build/linux/`), which covers Rocky/RHEL 10, Fedora 36+, Ubuntu 22.04+, and
+Debian 12+. Rocky/RHEL 9 is not supported — it never received webkit2gtk-4.1
+and EL10 dropped 4.0, so the two aren't binary-compatible.
+
+On a Rocky Linux 10 dev machine (or any distro on the 4.1 side), if WebKit
+detection fails, build with:
 ```bash
 wails build -tags webkit2_41
 wails dev -tags webkit2_41
@@ -140,7 +153,7 @@ during alpha.
 
 ## Do not
 
-- Do not edit files under `frontend/src/wailsjs/` — they are auto-generated
+- Do not edit files under `frontend/wailsjs/` — they are auto-generated
 - Do not call OS or filesystem operations from frontend TypeScript
 - Do not use `localStorage` or `sessionStorage` — persist via Go file I/O
   writing JSON to the Wails app data directory

@@ -113,17 +113,5 @@
   "111": "vite-env.d.ts",
   "112": "vite.config.ts",
   "113": "konnekt",
-  "114": "main.js",
-  "115": "EditorPanel.tsx",
-  "116": "index.tsx",
-  "117": "parseYaml.ts",
-  "118": "FileList.tsx",
-  "119": "parseToml.ts",
-  "120": "UpdateAsset",
-  "121": "Collapsible.tsx",
-  "122": "update.go",
-  "123": ".CheckForUpdates",
-  "124": "version.go",
-  "125": "EventsOn",
-  "126": "BackupCarousel.tsx"
+  "114": "main.js"
 }

@@ -117,7 +117,7 @@ Konnekt integrates with popular server mods and plugins to extend its core featu
 ## Why Konnekt
 
 - **Local-first.** All app state is stored locally on disk — no account, no cloud dependency, no telemetry required to run your server.
-- **Cross-platform.** Built on [Wails](https://wails.io/), so it runs as a native app on Windows, macOS, and Linux.
+- **Cross-platform.** Built on [Wails](https://wails.io/); official builds ship for Windows and Linux (see [Platform support](#platform-support)), and it also runs as a native app on macOS from source.
 - **One dashboard, not ten tools.** Console, stats, scheduling, worlds, backups, config, and mods all live in the same window instead of separate scripts and plugins.
 
 ## Tech stack
@@ -129,9 +129,22 @@ Konnekt integrates with popular server mods and plugins to extend its core featu
 - **World visualizer:** three.js / @react-three/fiber
 - **Config editing:** CodeMirror
 
+## Platform support
+
+Prebuilt releases are published for:
+
+- **Windows** (`konnekt-windows-amd64.exe`)
+- **Linux** (`konnekt-linux-amd64`, plus an `.rpm` for Rocky/RHEL 10 and
+  Fedora), built against webkit2gtk-4.1 — this covers Rocky/RHEL 10, Fedora
+  36+, Ubuntu 22.04+, and Debian 12+. **Rocky/RHEL 9 is not supported**: EL9
+  never received webkit2gtk-4.1, and EL10 dropped webkit2gtk-4.0, so the two
+  are not binary-compatible.
+- **macOS** is not published as a release yet, but builds from source via
+  `wails build` like any other platform.
+
 ## Getting started
 
-Requires [Go](https://go.dev/), [Node.js](https://nodejs.org/) with [pnpm](https://pnpm.io/), and the [Wails CLI](https://wails.io/docs/gettingstarted/installation).
+Requires [Go](https://go.dev/), [Node.js](https://nodejs.org/) with [pnpm](https://pnpm.io/), and the [Wails CLI](https://wails.io/docs/gettingstarted/installation). On Linux you'll also need `webkit2gtk` and `gtk3` development packages — run `wails doctor` to see exactly what's missing for your distro.
 
 ```bash
 # install dependencies

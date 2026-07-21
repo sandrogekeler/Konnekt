@@ -1,3 +1,6 @@
+See @agent_docs/CLAUDE.md for architecture, conventions, and build/test
+commands, and @agent_docs/DEPENDENCIES.md before adding any dependency.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

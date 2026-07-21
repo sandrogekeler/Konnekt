@@ -124,14 +124,17 @@ func (s *UpdateService) CheckForUpdates(ctx context.Context, currentVersion stri
 
 // platformAssetNameFor returns the release asset name expected for goos/goarch,
 // matching the naming convention release.yml publishes under
-// (konnekt-<goos>-<goarch>[.exe]). Only Windows is shipped today; other
-// platforms report an error rather than guessing a name nothing publishes.
-// Takes goos/goarch as parameters (rather than reading runtime.GOOS/GOARCH
-// directly) so it's testable for every platform from any single dev machine.
+// (konnekt-<goos>-<goarch>[.exe]). Windows and Linux (amd64, raw binary — the
+// RPM is a separate, non-self-updating asset) are shipped; other platforms
+// report an error rather than guessing a name nothing publishes. Takes
+// goos/goarch as parameters (rather than reading runtime.GOOS/GOARCH directly)
+// so it's testable for every platform from any single dev machine.
 func platformAssetNameFor(goos, goarch string) (string, error) {
 	switch goos {
 	case "windows":
 		return fmt.Sprintf("konnekt-windows-%s.exe", goarch), nil
+	case "linux":
+		return fmt.Sprintf("konnekt-linux-%s", goarch), nil
 	default:
 		return "", fmt.Errorf("update install: no self-update asset published for %s/%s yet", goos, goarch)
 	}

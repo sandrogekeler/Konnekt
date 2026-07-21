@@ -216,19 +216,30 @@ todo list, not a target.
   **no-ops when `Version` contains `-dev`** (a dev/`wails dev` build has no
   installable artifact to update to), and failures (offline, no releases)
   are silent by design since it's a background check, not a user action.
-- ✅ **Release pipeline shipped.** `.github/workflows/release.yml` triggers on
-  a `v*` tag push, runs `wails build` on `windows-latest` (matching `ci.yml`'s
-  backend job / the shipping target) with `-ldflags "-X main.Version=$TAG"`,
-  stages the binary as `konnekt-windows-amd64.exe` alongside a
-  `checksums.txt` (SHA256), and publishes both as release assets via `gh
-  release create`. macOS/Linux matrix legs are a documented follow-up, not
-  built — see below.
-- ✅ **In-place install shipped.** Settings → About's "Download & Install"
-  button (previously just opened the release page) now calls
-  `App.DownloadAndInstallUpdate()`, which re-checks the latest release, picks
-  the asset matching the running platform (`platformAssetNameFor`, windows
-  only today — other platforms get a clear "not published yet" error instead
-  of guessing a name nothing publishes), downloads `checksums.txt`, streams
+- ✅ **Release pipeline shipped, now with a Linux leg.**
+  `.github/workflows/release.yml` triggers on a `v*` tag push and runs four
+  jobs: `build-windows` (unchanged, `windows-latest`, `-ldflags "-X
+  main.Version=$TAG"`), `build-linux` (in an `ubuntu:22.04` **container** —
+  pins glibc 2.35 + webkit2gtk-4.1 independently of the `ubuntu-22.04` runner
+  image's own deprecation schedule — with `wails build -tags webkit2_41`),
+  `package-rpm` (in a `rockylinux/rockylinux:10` container, packages the
+  Linux binary built above into an `.rpm` with a `.desktop` entry and
+  hand-declared `Requires: webkit2gtk4.1, gtk3` since `AutoReqProv: no` is set
+  — see `build/linux/konnekt.spec`), and `publish` (aggregates
+  `konnekt-windows-amd64.exe`, `konnekt-linux-amd64`, and the `.rpm` into one
+  `checksums.txt` and a single `gh release create`). Rocky/RHEL **9** is
+  deliberately not covered: EL9 never shipped webkit2gtk-4.1 and EL10 dropped
+  4.0, so one binary can't span both — see the README's Platform support
+  section. macOS is still not built in CI — a documented follow-up, not
+  built.
+- ✅ **In-place install shipped, Windows + Linux.** Settings → About's
+  "Download & Install" button (previously just opened the release page) now
+  calls `App.DownloadAndInstallUpdate()`, which re-checks the latest release,
+  picks the asset matching the running platform (`platformAssetNameFor`
+  covers `windows` and `linux`; other platforms — and an RPM install's
+  root-owned `/usr/bin`, caught generically by `selfupdate`'s
+  `CheckPermissions` — get a clear error instead of a silent failure or a
+  guessed name nothing publishes), downloads `checksums.txt`, streams
   the binary while verifying its SHA256 against it, and replaces the running
   executable in place via `github.com/minio/selfupdate` — which owns the
   Windows "can't overwrite a running exe" rename dance and auto-rolls-back on
@@ -256,9 +267,22 @@ todo list, not a target.
   `/commits/main` to `/releases` now that the release pipeline exists.
 - **Deferred, not built this pass:** code-signing/notarization for the
   published binaries (unsigned builds trigger Windows SmartScreen warnings —
-  functional, just not polished); macOS/Linux release legs and self-update
+  functional, just not polished); a macOS release leg and its self-update
   support (`platformAssetNameFor` is structured to add a case per platform,
-  but no asset-naming convention or code-signing story exists for either yet).
+  but no asset-naming convention or code-signing story exists for macOS yet);
+  a second Linux leg for Rocky/RHEL 9 (webkit2gtk-4.0), which would need the
+  updater to probe the host's installed webkit version rather than assume 4.1.
+- Also fixed alongside the Linux release leg: on non-Windows, `killTree`
+  previously killed only the direct Java PID, and the process was never put
+  in its own process group at spawn — so a Konnekt crash orphaned the running
+  Minecraft server instead of the OS reaping it (the Windows Job Object
+  already handled this). `server.go` now calls a new `configureProcAttr(cmd)`
+  hook immediately before `Start()`; `server_linux.go` sets
+  `Setpgid: true, Pdeathsig: SIGKILL` (the closest Linux analogue to the Job
+  Object, best-effort since `Pdeathsig` is scoped to the parent OS thread and
+  Go can migrate goroutines across threads), `server_unix.go` (`!windows &&
+  !linux`) sets `Setpgid` only, and `killTree` in `server_other.go` now
+  signals the whole group via `syscall.Kill(-pid, ...)`.
 
 **Done — Lint/format enforcement (frontend)**
 - ✅ Migrated `frontend/` from Tailwind v3 (barely used) to v4, mapped the
@@ -1051,3 +1075,12 @@ todo list, not a target.
 **P2 — Memoization pass**
 - Add `React.memo` to the most expensive tile components (3D scenes, chart
   tiles) identified during a profiling pass.
+
+**P3 — Bound method missing `(T, error)` return**
+- Found during the 2026-07-18 convention audit (`agent_docs/CONVENTION_AUDIT.md`):
+  `GetAppVersion() string` (`app.go:151`) is the only method bound on the Wails
+  `App` struct that doesn't return `(T, error)` — the concrete instance of the
+  Stable-pillar item "All Go methods bound to the Wails `App` struct return
+  `(T, error)`". Low-risk (a version string can't fail), but the odd one out.
+  Change to `(string, error)` and update the binding's caller
+  (`frontend/src/hooks/useUpdateCheck.ts` / the About pane) when convenient.
