@@ -6,15 +6,11 @@ It's built for Minecraft server admins and hobbyists who self-host vanilla, Pape
 
 > **Status:** Alpha. Core management, scheduling, worlds, backups, and mods are functional; see [Roadmap](#roadmap) for what's still coming.
 
-![Dashboard overview placeholder](docs/images/dashboard-overview.png)
-
 ## Features
 
 ### Multi-server management
 
 Add and configure any number of server instances — jar path, JVM arguments, working directory — and start, stop, or restart them independently, with a guided EULA acceptance flow for first-time setup.
-
-![Server management placeholder](docs/images/server-management.png)
 
 ### Live console
 
@@ -26,13 +22,9 @@ Stream server logs in real time, send commands directly, and set up your own qui
 
 Keep an eye on TPS, RAM usage, player count, and uptime at a glance, with a rolling performance history chart to spot trends and troubleshoot lag.
 
-![Stats and performance placeholder](docs/images/stats-performance.png)
-
 ### Player management
 
 See who's online and kick, ban, or pardon players without leaving the dashboard.
-
-![Player management placeholder](docs/images/player-management.png)
 
 ### Visual scheduler
 
@@ -74,8 +66,6 @@ Every feature lives in a draggable, resizable tile that snaps to a grid. Stash t
 ### Notifications
 
 An in-app notification feed plus native OS desktop notifications for crashes, joins/leaves, backup completion, TPS drops, and scheduler events.
-
-![Notifications placeholder](docs/images/notifications.png)
 
 ## Compatibility
 
@@ -166,4 +156,5 @@ See [`agent_docs/ROADMAP.md`](agent_docs/ROADMAP.md) for the full scope.
 - [`agent_docs/CLAUDE.md`](agent_docs/CLAUDE.md) — architecture and stack overview
 - [`agent_docs/ROADMAP.md`](agent_docs/ROADMAP.md) — full feature roadmap
 - [`agent_docs/DEPENDENCIES.md`](agent_docs/DEPENDENCIES.md) — dependency notes
-- [`agent_docs/HEALTH_CHECKLIST.md`](agent_docs/HEALTH_CHECKLIST.md) — codebase health checklist
+- [`agent_docs/HEALTH_CHECKLIST.md`](agent_docs/HEALTH_CHECKLIST.md) — codebase health checklist (evergreen yardstick + open backlog)
+- [`agent_docs/HEALTH_LOG.md`](agent_docs/HEALTH_LOG.md) — completed remediation history

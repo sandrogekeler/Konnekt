@@ -372,7 +372,7 @@ mirrors the one active server like the desktop does (default: mirror).
 4. If new Go data is needed:
    a. Add struct to `backend/models/` if it crosses the IPC boundary
    b. Add method to relevant service in `backend/services/` c. Bind method on App struct in `backend/app.go` d. Run `wails generate module` to regenerate TS bindings
-   e. Import from `frontend/src/wailsjs/go/main/` in the tile
+   e. Import from `frontend/wailsjs/go/main/` in the tile
 5. Run `pnpm typecheck` and `go vet ./...` before marking done
 6. Remote-readiness (keeps the future Remote Access feature cheap — see below):
    a. Fetch data only through generated bindings — never raw `window.go`

@@ -21,8 +21,9 @@ frontend/node_modules/
 # Local Minecraft test servers
 testserver*/
 
-# Claude Code local settings
-.claude/
+# Claude Code — commit the shared config (settings.json hooks + launch.json
+# dev-server presets); keep only personal permission overrides local.
+.claude/settings.local.json
 
 # Graphify knowledge graph (regenerable via `graphify update .`)
 graphify-out/

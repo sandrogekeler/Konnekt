@@ -102,6 +102,29 @@ changes. A lefthook pre-commit hook already runs Prettier + ESLint +
 files; CI (`.github/workflows/ci.yml`) re-runs typecheck/lint/build/test on
 every push and PR.
 
+**Definition of done:** after those gates pass, sanity-check the area you
+touched against the four pillars in `agent_docs/HEALTH_CHECKLIST.md`
+(Clean / Stable / Scalable / Performant), and confirm the change is in scope for
+the current milestone per `agent_docs/ROADMAP.md` (Alpha vs Beta — do not
+scaffold Beta features during Alpha). Track any gap you can't fix now under that
+checklist's `Open backlog`.
+
+## Local tooling
+
+- **graphify** — the AST knowledge-graph tool this repo's Claude Code setup is
+  built around. `.claude/settings.json` registers PreToolUse hooks that nudge
+  toward `graphify query`/`explain`/`path` before raw source reads/greps (see
+  the root `CLAUDE.md` graphify rules). Install it so `graphify` is on your
+  `PATH` (e.g. `pipx install graphify` or `pip install --user graphify`), then
+  run `graphify update .` to generate `graphify-out/` — gitignored and
+  regenerable, AST-only, no API cost. Without graphify installed the hooks
+  simply no-op (a harmless per-call notice; nothing blocks). Re-run `graphify
+  update .` after code changes to keep the graph current.
+- **`.claude/` config is committed** (`settings.json` hooks + `launch.json`
+  dev-server presets) so every clone and cloud agent inherits the same setup;
+  only `.claude/settings.local.json` (the personal permission allowlist) is
+  gitignored.
+
 ## Testing
 
 - Frontend: `vitest` + `jsdom` + `@testing-library/react`. Mock Wails
