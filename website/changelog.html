@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Changelog — Konnekt</title>
+    <meta
+      name="description"
+      content="Every Konnekt release and what changed, sourced live from GitHub Releases."
+    />
+    <meta name="theme-color" content="#05060a" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      document.documentElement.className = document.documentElement.className.replace('no-js', '')
+    </script>
+  </head>
+  <body>
+    <nav class="nav scrolled" id="nav">
+      <div class="nav-inner">
+        <a href="./index.html#top" class="wordmark">Konnekt</a>
+        <ul class="nav-links">
+          <li><a href="./index.html#features">Features</a></li>
+          <li><a href="./index.html#scheduler">Scheduler</a></li>
+          <li><a href="./download.html">Download</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a class="btn btn-primary btn-sm" href="./download.html">Download</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="subpage">
+      <div class="container">
+        <div class="subpage-head">
+          <span class="eyebrow">() changelog</span>
+          <h1>What's <span class="accent">new</span></h1>
+          <p>
+            Every release and what changed, pulled straight from GitHub — the same source the app's
+            "What's new" reads.
+          </p>
+        </div>
+
+        <div class="state-box" id="cl-loading">
+          <div class="spinner"></div>
+          Loading releases from GitHub…
+        </div>
+
+        <div class="changelog is-hidden" id="cl-list"></div>
+
+        <div class="state-box is-error is-hidden" id="cl-error">
+          <p class="state-title" id="cl-error-title">Couldn't load the changelog</p>
+          <p id="cl-error-msg"></p>
+          <p style="margin-top: 18px">
+            <a
+              class="btn btn-secondary btn-sm"
+              href="https://github.com/sandrogekeler/Konnekt/releases"
+              target="_blank"
+              rel="noopener"
+              >Open releases on GitHub</a
+            >
+          </p>
+        </div>
+
+        <a class="subpage-back" href="./index.html">&larr; Back to home</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <span class="wordmark" style="font-size: 15px">Konnekt</span>
+          <span class="footer-tag">ALPHA</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/sandrogekeler/Konnekt" target="_blank" rel="noopener"
+            >GitHub</a
+          >
+          <a href="./index.html#features">Features</a>
+          <a href="./download.html">Download</a>
+        </div>
+        <span class="footer-copy">&copy; 2026 Konnekt</span>
+      </div>
+    </footer>
+
+    <script src="./main.js"></script>
+    <script src="./release.js"></script>
+    <script src="./markdown.js"></script>
+    <script src="./changelog.js"></script>
+  </body>
+</html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Download Konnekt</title>
+    <meta
+      name="description"
+      content="Download Konnekt — the modular, local-first Minecraft server dashboard. We auto-detect your platform and point you at the latest build."
+    />
+    <meta name="theme-color" content="#05060a" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      document.documentElement.className = document.documentElement.className.replace('no-js', '')
+    </script>
+  </head>
+  <body>
+    <nav class="nav scrolled" id="nav">
+      <div class="nav-inner">
+        <a href="./index.html#top" class="wordmark">Konnekt</a>
+        <ul class="nav-links">
+          <li><a href="./index.html#features">Features</a></li>
+          <li><a href="./index.html#scheduler">Scheduler</a></li>
+          <li><a href="./changelog.html">Changelog</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a
+            class="btn btn-secondary btn-sm"
+            href="https://github.com/sandrogekeler/Konnekt"
+            target="_blank"
+            rel="noopener"
+            >View on GitHub</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <main class="subpage">
+      <div class="container">
+        <div class="subpage-head">
+          <span class="version-pill" id="dl-version"
+            ><span class="dot"></span> checking latest…</span
+          >
+          <h1>Download <span class="accent">Konnekt</span></h1>
+          <p>
+            Free, open-source and local-first. We detect your platform and point you at the right
+            build.
+          </p>
+        </div>
+
+        <!-- Loading -->
+        <div class="state-box" id="dl-loading">
+          <div class="spinner"></div>
+          Fetching the latest release from GitHub…
+        </div>
+
+        <!-- Loaded content -->
+        <div id="dl-content" class="is-hidden">
+          <div class="download-primary" id="dl-primary"></div>
+          <div class="download-others">
+            <h3>All downloads</h3>
+            <div class="dl-grid" id="dl-grid"></div>
+          </div>
+          <p class="dl-footnote" id="dl-footnote"></p>
+        </div>
+
+        <!-- Error / empty -->
+        <div class="state-box is-error is-hidden" id="dl-error">
+          <p class="state-title" id="dl-error-title">Couldn't reach GitHub</p>
+          <p id="dl-error-msg"></p>
+          <p style="margin-top: 18px">
+            <a
+              class="btn btn-secondary btn-sm"
+              href="https://github.com/sandrogekeler/Konnekt/releases"
+              target="_blank"
+              rel="noopener"
+              >Open releases on GitHub</a
+            >
+          </p>
+        </div>
+
+        <a class="subpage-back" href="./index.html">&larr; Back to home</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <span class="wordmark" style="font-size: 15px">Konnekt</span>
+          <span class="footer-tag">ALPHA</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/sandrogekeler/Konnekt" target="_blank" rel="noopener"
+            >GitHub</a
+          >
+          <a href="./index.html#features">Features</a>
+          <a href="./changelog.html">Changelog</a>
+        </div>
+        <span class="footer-copy">&copy; 2026 Konnekt</span>
+      </div>
+    </footer>
+
+    <script src="./main.js"></script>
+    <script src="./release.js"></script>
+    <script src="./download.js"></script>
+  </body>
+</html>
